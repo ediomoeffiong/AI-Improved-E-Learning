@@ -16,181 +16,166 @@ const Navbar = () => {
   };
 
   return (
-    <nav style={{ backgroundColor: '#3b82f6', color: 'white', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
-      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Link to="/" style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'white', textDecoration: 'none' }}>E-Learning</Link>
-        
-        {/* Desktop Menu */}
-        <div className="desktop-menu" style={{ display: 'none' }}>
-          <Link to="/" style={{ color: 'white', marginRight: '1.5rem', textDecoration: 'none' }}>Home</Link>
-          <Link to="/dashboard" style={{ color: 'white', marginRight: '1.5rem', textDecoration: 'none' }}>Dashboard</Link>
+    <nav className="w-full bg-blue-600">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          <Link to="/" className="text-xl font-bold text-white">E-Learning</Link>
           
-          {/* Quiz Dropdown */}
-          <div style={{ position: 'relative', marginRight: '1.5rem', display: 'inline-block' }}>
-            <button 
-              onClick={() => toggleDropdown('quiz')} 
-              style={{ color: 'white', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-            >
-              Quiz
-              <svg xmlns="http://www.w3.org/2000/svg" style={{ height: '1rem', width: '1rem', marginLeft: '0.25rem' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            {openDropdown === 'quiz' && (
-              <div style={{ position: 'absolute', zIndex: 10, marginTop: '0.5rem', width: '12rem', backgroundColor: 'white', borderRadius: '0.375rem', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', padding: '0.25rem 0', color: '#4b5563' }}>
-                <Link to="/quiz/dashboard" style={{ display: 'block', padding: '0.5rem 1rem', color: '#4b5563', textDecoration: 'none' }}>Dashboard</Link>
-                <Link to="/quiz/badges" style={{ display: 'block', padding: '0.5rem 1rem', color: '#4b5563', textDecoration: 'none' }}>Badges</Link>
-                <Link to="/quiz/achievements" style={{ display: 'block', padding: '0.5rem 1rem', color: '#4b5563', textDecoration: 'none' }}>Achievements</Link>
-                <Link to="/quiz/leaderboard" style={{ display: 'block', padding: '0.5rem 1rem', color: '#4b5563', textDecoration: 'none' }}>Leaderboard</Link>
-              </div>
-            )}
-          </div>
-          
-          {/* Classroom Dropdown */}
-          <div style={{ position: 'relative', marginRight: '1.5rem', display: 'inline-block' }}>
-            <button 
-              onClick={() => toggleDropdown('classroom')} 
-              style={{ color: 'white', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-            >
-              Classroom
-              <svg xmlns="http://www.w3.org/2000/svg" style={{ height: '1rem', width: '1rem', marginLeft: '0.25rem' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            {openDropdown === 'classroom' && (
-              <div style={{ position: 'absolute', zIndex: 10, marginTop: '0.5rem', width: '12rem', backgroundColor: 'white', borderRadius: '0.375rem', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', padding: '0.25rem 0', color: '#4b5563' }}>
-                <Link to="/classroom/dashboard" style={{ display: 'block', padding: '0.5rem 1rem', color: '#4b5563', textDecoration: 'none' }}>Dashboard</Link>
-                <Link to="/classroom/materials" style={{ display: 'block', padding: '0.5rem 1rem', color: '#4b5563', textDecoration: 'none' }}>Course Materials</Link>
-                <Link to="/classroom/chat" style={{ display: 'block', padding: '0.5rem 1rem', color: '#4b5563', textDecoration: 'none' }}>Chat Feature</Link>
-                <Link to="/classroom/recordings" style={{ display: 'block', padding: '0.5rem 1rem', color: '#4b5563', textDecoration: 'none' }}>Session Recordings</Link>
-              </div>
-            )}
-          </div>
-          
-          {/* Progress Dropdown */}
-          <div style={{ position: 'relative', display: 'inline-block' }}>
-            <button 
-              onClick={() => toggleDropdown('progress')} 
-              style={{ color: 'white', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-            >
-              Progress
-              <svg xmlns="http://www.w3.org/2000/svg" style={{ height: '1rem', width: '1rem', marginLeft: '0.25rem' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            {openDropdown === 'progress' && (
-              <div style={{ position: 'absolute', zIndex: 10, marginTop: '0.5rem', width: '12rem', backgroundColor: 'white', borderRadius: '0.375rem', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', padding: '0.25rem 0', color: '#4b5563' }}>
-                <Link to="/progress/dashboard" style={{ display: 'block', padding: '0.5rem 1rem', color: '#4b5563', textDecoration: 'none' }}>Dashboard</Link>
-                <Link to="/progress/reports" style={{ display: 'block', padding: '0.5rem 1rem', color: '#4b5563', textDecoration: 'none' }}>Performance Reports</Link>
-                <Link to="/progress/activity" style={{ display: 'block', padding: '0.5rem 1rem', color: '#4b5563', textDecoration: 'none' }}>Activity Logs</Link>
-                <Link to="/progress/recommendations" style={{ display: 'block', padding: '0.5rem 1rem', color: '#4b5563', textDecoration: 'none' }}>Personalized Recommendations</Link>
-              </div>
-            )}
-          </div>
-        </div>
-        
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <button style={{ backgroundColor: 'white', color: '#3b82f6', padding: '0.5rem 1rem', borderRadius: '0.375rem', fontWeight: '500', marginRight: '1rem', border: 'none' }}>
-            Sign In
-          </button>
-          <button 
-            onClick={toggleMobileMenu}
-            className="mobile-menu-button"
-            style={{ background: 'none', border: 'none', cursor: 'pointer' }}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" style={{ height: '1.5rem', width: '1.5rem', color: 'white' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              {mobileMenuOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          {/* Desktop Menu */}
+          <div className="hidden md:flex items-center space-x-8">
+            <Link to="/" className="text-white hover:text-blue-100">Home</Link>
+            <Link to="/dashboard" className="text-white hover:text-blue-100">Dashboard</Link>
+            
+            {/* Quiz Dropdown */}
+            <div className="relative">
+              <button 
+                onClick={() => toggleDropdown('quiz')} 
+                className="text-white hover:text-blue-100 flex items-center"
+              >
+                Quiz
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {openDropdown === 'quiz' && (
+                <div className="absolute z-10 mt-2 w-48 bg-white rounded-md shadow-lg py-1">
+                  <Link to="/quiz/dashboard" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Dashboard</Link>
+                  <Link to="/quiz/badges" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Badges</Link>
+                  <Link to="/quiz/achievements" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Achievements</Link>
+                  <Link to="/quiz/leaderboard" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Leaderboard</Link>
+                </div>
               )}
-            </svg>
-          </button>
+            </div>
+            
+            {/* Classroom Dropdown */}
+            <div className="relative">
+              <button 
+                onClick={() => toggleDropdown('classroom')} 
+                className="text-white hover:text-blue-100 flex items-center"
+              >
+                Classroom
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {openDropdown === 'classroom' && (
+                <div className="absolute z-10 mt-2 w-48 bg-white rounded-md shadow-lg py-1">
+                  <Link to="/classroom/dashboard" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Dashboard</Link>
+                  <Link to="/classroom/materials" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Course Materials</Link>
+                  <Link to="/classroom/chat" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Chat Feature</Link>
+                  <Link to="/classroom/recordings" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Session Recordings</Link>
+                </div>
+              )}
+            </div>
+            
+            {/* Progress Dropdown */}
+            <div className="relative">
+              <button 
+                onClick={() => toggleDropdown('progress')} 
+                className="text-white hover:text-blue-100 flex items-center"
+              >
+                Progress
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {openDropdown === 'progress' && (
+                <div className="absolute z-10 mt-2 w-48 bg-white rounded-md shadow-lg py-1">
+                  <Link to="/progress/dashboard" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Dashboard</Link>
+                  <Link to="/progress/reports" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Performance Reports</Link>
+                  <Link to="/progress/activity" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Activity Logs</Link>
+                  <Link to="/progress/recommendations" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Personalized Recommendations</Link>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <div className="flex items-center">
+            <Link to="/login" className="bg-white text-blue-600 px-4 py-2 rounded-md font-medium hover:bg-blue-50 mr-4">
+              Sign In
+            </Link>
+            <button 
+              onClick={toggleMobileMenu}
+              className="md:hidden text-white"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                {mobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
       
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div style={{ backgroundColor: '#3b82f6', padding: '1rem' }}>
-          <Link to="/" style={{ display: 'block', color: 'white', padding: '0.5rem 0', textDecoration: 'none', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Home</Link>
-          <Link to="/dashboard" style={{ display: 'block', color: 'white', padding: '0.5rem 0', textDecoration: 'none', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Dashboard</Link>
-          
-          {/* Mobile Quiz Dropdown */}
-          <div>
+        <div className="md:hidden bg-blue-600 border-t border-blue-500">
+          <div className="px-2 pt-2 pb-3 space-y-1">
+            <Link to="/" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Home</Link>
+            <Link to="/dashboard" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Dashboard</Link>
+            
+            {/* Mobile Quiz Menu */}
             <button 
               onClick={() => toggleDropdown('mobile-quiz')} 
-              style={{ width: '100%', textAlign: 'left', color: 'white', background: 'none', border: 'none', padding: '0.5rem 0', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)' }}
+              className="w-full text-left px-3 py-2 text-white hover:bg-blue-700 rounded-md flex justify-between items-center"
             >
               Quiz
-              <svg xmlns="http://www.w3.org/2000/svg" style={{ height: '1rem', width: '1rem' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 transform ${openDropdown === 'mobile-quiz' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </button>
             {openDropdown === 'mobile-quiz' && (
-              <div style={{ paddingLeft: '1rem', backgroundColor: 'rgba(255,255,255,0.1)' }}>
-                <Link to="/quiz/dashboard" style={{ display: 'block', padding: '0.5rem 0', color: 'white', textDecoration: 'none' }}>Dashboard</Link>
-                <Link to="/quiz/badges" style={{ display: 'block', padding: '0.5rem 0', color: 'white', textDecoration: 'none' }}>Badges</Link>
-                <Link to="/quiz/achievements" style={{ display: 'block', padding: '0.5rem 0', color: 'white', textDecoration: 'none' }}>Achievements</Link>
-                <Link to="/quiz/leaderboard" style={{ display: 'block', padding: '0.5rem 0', color: 'white', textDecoration: 'none' }}>Leaderboard</Link>
+              <div className="pl-4">
+                <Link to="/quiz/dashboard" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Dashboard</Link>
+                <Link to="/quiz/badges" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Badges</Link>
+                <Link to="/quiz/achievements" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Achievements</Link>
+                <Link to="/quiz/leaderboard" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Leaderboard</Link>
               </div>
             )}
-          </div>
-          
-          {/* Mobile Classroom Dropdown */}
-          <div>
+            
+            {/* Mobile Classroom Menu */}
             <button 
               onClick={() => toggleDropdown('mobile-classroom')} 
-              style={{ width: '100%', textAlign: 'left', color: 'white', background: 'none', border: 'none', padding: '0.5rem 0', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)' }}
+              className="w-full text-left px-3 py-2 text-white hover:bg-blue-700 rounded-md flex justify-between items-center"
             >
               Classroom
-              <svg xmlns="http://www.w3.org/2000/svg" style={{ height: '1rem', width: '1rem' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 transform ${openDropdown === 'mobile-classroom' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </button>
             {openDropdown === 'mobile-classroom' && (
-              <div style={{ paddingLeft: '1rem', backgroundColor: 'rgba(255,255,255,0.1)' }}>
-                <Link to="/classroom/dashboard" style={{ display: 'block', padding: '0.5rem 0', color: 'white', textDecoration: 'none' }}>Dashboard</Link>
-                <Link to="/classroom/materials" style={{ display: 'block', padding: '0.5rem 0', color: 'white', textDecoration: 'none' }}>Course Materials</Link>
-                <Link to="/classroom/chat" style={{ display: 'block', padding: '0.5rem 0', color: 'white', textDecoration: 'none' }}>Chat Feature</Link>
-                <Link to="/classroom/recordings" style={{ display: 'block', padding: '0.5rem 0', color: 'white', textDecoration: 'none' }}>Session Recordings</Link>
+              <div className="pl-4">
+                <Link to="/classroom/dashboard" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Dashboard</Link>
+                <Link to="/classroom/materials" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Course Materials</Link>
+                <Link to="/classroom/chat" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Chat Feature</Link>
+                <Link to="/classroom/recordings" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Session Recordings</Link>
               </div>
             )}
-          </div>
-          
-          {/* Mobile Progress Dropdown */}
-          <div>
+            
+            {/* Mobile Progress Menu */}
             <button 
               onClick={() => toggleDropdown('mobile-progress')} 
-              style={{ width: '100%', textAlign: 'left', color: 'white', background: 'none', border: 'none', padding: '0.5rem 0', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)' }}
+              className="w-full text-left px-3 py-2 text-white hover:bg-blue-700 rounded-md flex justify-between items-center"
             >
               Progress
-              <svg xmlns="http://www.w3.org/2000/svg" style={{ height: '1rem', width: '1rem' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 transform ${openDropdown === 'mobile-progress' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </button>
             {openDropdown === 'mobile-progress' && (
-              <div style={{ paddingLeft: '1rem', backgroundColor: 'rgba(255,255,255,0.1)' }}>
-                <Link to="/progress/dashboard" style={{ display: 'block', padding: '0.5rem 0', color: 'white', textDecoration: 'none' }}>Dashboard</Link>
-                <Link to="/progress/reports" style={{ display: 'block', padding: '0.5rem 0', color: 'white', textDecoration: 'none' }}>Performance Reports</Link>
-                <Link to="/progress/activity" style={{ display: 'block', padding: '0.5rem 0', color: 'white', textDecoration: 'none' }}>Activity Logs</Link>
-                <Link to="/progress/recommendations" style={{ display: 'block', padding: '0.5rem 0', color: 'white', textDecoration: 'none' }}>Personalized Recommendations</Link>
+              <div className="pl-4">
+                <Link to="/progress/dashboard" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Dashboard</Link>
+                <Link to="/progress/reports" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Performance Reports</Link>
+                <Link to="/progress/activity" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Activity Logs</Link>
+                <Link to="/progress/recommendations" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Personalized Recommendations</Link>
               </div>
             )}
           </div>
         </div>
       )}
-      
-      {/* CSS for responsive design */}
-      <style jsx>{`
-        @media (min-width: 768px) {
-          .desktop-menu {
-            display: flex !important;
-          }
-          .mobile-menu-button {
-            display: none !important;
-          }
-        }
-      `}</style>
     </nav>
   );
 };

@@ -23,18 +23,14 @@ function Header() {
     <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
       isScrolled ? 'bg-blue-700 shadow-md' : isHomePage ? 'bg-transparent' : 'bg-blue-600'
     }`}>
-      <div className="container mx-auto">
-        <Navbar />
-      </div>
+      <Navbar />
       
       {/* Announcement banner - can be conditionally shown */}
       {false && (
         <div className="bg-yellow-500 text-white text-center py-2 px-4">
-          <div className="container mx-auto">
-            <p className="text-sm font-medium">
-              🎉 New courses available! <a href="#" className="underline font-bold">Check them out</a>
-            </p>
-          </div>
+          <p className="text-sm font-medium">
+            🎉 New courses available! <a href="#" className="underline font-bold">Check them out</a>
+          </p>
         </div>
       )}
     </header>
