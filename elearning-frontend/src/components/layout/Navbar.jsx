@@ -26,6 +26,28 @@ const Navbar = () => {
             <Link to="/" className="text-white hover:text-blue-100">Home</Link>
             <Link to="/dashboard" className="text-white hover:text-blue-100">Dashboard</Link>
             
+            {/* Courses Dropdown */}
+            <div className="relative">
+              <button 
+                onClick={() => toggleDropdown('courses')} 
+                className="text-white hover:text-blue-100 flex items-center"
+              >
+                Courses
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {openDropdown === 'courses' && (
+                <div className="absolute z-10 mt-2 w-48 bg-white rounded-md shadow-lg py-1">
+                  <Link to="/courses/dashboard" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Dashboard</Link>
+                  <Link to="/courses/available" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Available Courses</Link>
+                  <Link to="/courses/enrolled" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 pl-8">Enrolled Courses</Link>
+                  <Link to="/courses/materials" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Course Materials</Link>
+                  <Link to="/courses/discussion" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Discussion</Link>
+                </div>
+              )}
+            </div>
+            
             {/* Quiz Dropdown */}
             <div className="relative">
               <button 
@@ -64,6 +86,7 @@ const Navbar = () => {
                   <Link to="/classroom/materials" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Course Materials</Link>
                   <Link to="/classroom/chat" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Chat Feature</Link>
                   <Link to="/classroom/recordings" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Session Recordings</Link>
+                  <Link to="/classroom/schedule" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Schedule</Link>
                 </div>
               )}
             </div>
@@ -116,6 +139,26 @@ const Navbar = () => {
           <div className="px-2 pt-2 pb-3 space-y-1">
             <Link to="/" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Home</Link>
             <Link to="/dashboard" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Dashboard</Link>
+            
+            {/* Mobile Courses Menu */}
+            <button 
+              onClick={() => toggleDropdown('mobile-courses')} 
+              className="w-full text-left px-3 py-2 text-white hover:bg-blue-700 rounded-md flex justify-between items-center"
+            >
+              Courses
+              <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 transform ${openDropdown === 'mobile-courses' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {openDropdown === 'mobile-courses' && (
+              <div className="pl-4">
+                <Link to="/courses/dashboard" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Dashboard</Link>
+                <Link to="/courses/available" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Available Courses</Link>
+                <Link to="/courses/enrolled" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md pl-8">Enrolled Courses</Link>
+                <Link to="/courses/materials" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Course Materials</Link>
+                <Link to="/courses/discussion" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Discussion</Link>
+              </div>
+            )}
             
             {/* Mobile Quiz Menu */}
             <button 
