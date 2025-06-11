@@ -12,6 +12,8 @@ function Register() {
   });
 
   const [errors, setErrors] = useState({});
+  const [apiMessage, setApiMessage] = useState(null);
+  const [apiSuccess, setApiSuccess] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -41,21 +43,49 @@ function Register() {
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const formErrors = validateForm();
     
     if (Object.keys(formErrors).length > 0) {
       setErrors(formErrors);
+      setApiMessage(null);
       return;
     }
     
-    // Clear any existing errors
     setErrors({});
-    
-    // Here you would typically handle registration
-    console.log('Registration with:', formData);
-    // For demo purposes, we'll just log the data
+    setApiMessage(null);
+    setApiSuccess(false);
+
+    // Combine firstName and lastName into name
+    const payload = {
+      name: formData.firstName + ' ' + formData.lastName,
+      email: formData.email,
+      password: formData.password,
+      role: 'Student', // or allow user to select role if needed
+    };
+
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setApiMessage('Registration successful!');
+        setApiSuccess(true);
+        // Optionally redirect to login page
+      } else {
+        setApiMessage(data.message || 'Registration failed');
+        setApiSuccess(false);
+      }
+    } catch (err) {
+      setApiMessage('Network error');
+      setApiSuccess(false);
+    }
   };
 
   return (
@@ -184,6 +214,10 @@ function Register() {
             </button>
           </div>
         </form>
+        {/* Show API message */}
+        {apiMessage && (
+          <div className={`mt-2 text-center text-sm ${apiSuccess ? 'text-green-600' : 'text-red-600'}`}>{apiMessage}</div>
+        )}
       </div>
     </div>
   );

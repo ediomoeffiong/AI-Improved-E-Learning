@@ -7,6 +7,8 @@ function Login() {
     password: '',
     rememberMe: false
   });
+  const [apiMessage, setApiMessage] = useState(null);
+  const [apiSuccess, setApiSuccess] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -16,11 +18,35 @@ function Login() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Here you would typically handle authentication
-    console.log('Login attempt with:', formData);
-    // For demo purposes, we'll just log the data
+    setApiMessage(null);
+    setApiSuccess(false);
+
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setApiMessage('Login successful!');
+        setApiSuccess(true);
+        // Optionally save token and redirect
+      } else {
+        setApiMessage(data.message || 'Login failed');
+        setApiSuccess(false);
+      }
+    } catch (err) {
+      setApiMessage('Network error');
+      setApiSuccess(false);
+    }
   };
 
   return (
@@ -104,6 +130,10 @@ function Login() {
             </button>
           </div>
         </form>
+        {/* Show API message */}
+        {apiMessage && (
+          <div className={`mt-2 text-center text-sm ${apiSuccess ? 'text-green-600' : 'text-red-600'}`}>{apiMessage}</div>
+        )}
       </div>
     </div>
   );
