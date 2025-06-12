@@ -6,6 +6,9 @@ import './styles/global.css';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import Chatbot from './components/chatbot/Chatbot';
+import ScrollToTop from './components/common/ScrollToTop';
+import ScrollToTopButton from './components/common/ScrollToTopButton';
+import { AuthProvider } from './contexts/AuthContext';
 
 // Main pages
 import Home from './pages/home/Home';
@@ -14,6 +17,12 @@ import Register from './pages/auth/Register';
 
 // Dashboard
 import Dashboard from './pages/dashboard/Dashboard';
+import CoursesDashboard from './pages/courses/CoursesDashboard';
+import Available from './pages/courses/Available';
+import CourseDetails from './pages/courses/CourseDetails';
+import MyCourses from './pages/courses/MyCourses';
+import CourseMaterials from './pages/courses/CourseMaterials';
+import Discussion from './pages/courses/Discussion';
 
 // Quiz pages
 import QuizDashboard from './pages/quiz/QuizDashboard';
@@ -34,8 +43,10 @@ import PersonalizedRecommendations from './pages/progress/PersonalizedRecommenda
 
 function App() {
   return (
-    <Router>
-      <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
+    <AuthProvider>
+      <Router>
+        <ScrollToTop />
+        <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
         <Header />
         <main className="flex-grow pt-16 px-4 sm:px-6 lg:px-8">
           <div className="container mx-auto py-6">
@@ -47,6 +58,13 @@ function App() {
               
               {/* Dashboard */}
               <Route path="/dashboard" element={<Dashboard />} />
+              {/* Courses Routes */}
+              <Route path="/courses/dashboard" element={<CoursesDashboard />} />
+              <Route path="/courses/available" element={<Available />} />
+              <Route path="/courses/my-courses" element={<MyCourses />} />
+              <Route path="/courses/materials" element={<CourseMaterials />} />
+              <Route path="/courses/discussion" element={<Discussion />} />
+              <Route path="/courses/:id" element={<CourseDetails />} />
               
               {/* Quiz Routes */}
               <Route path="/quiz/dashboard" element={<QuizDashboard />} />
@@ -70,8 +88,10 @@ function App() {
         </main>
         <Chatbot />
         <Footer />
-      </div>
-    </Router>
+        <ScrollToTopButton />
+        </div>
+      </Router>
+    </AuthProvider>
   );
 }
 
