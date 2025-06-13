@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PWA Icon Generator</title>
+</head>
+<body>
+    <h1>PWA Icon Generator</h1>
+    <p>This page generates placeholder PWA icons. Open browser console to see the generated icons.</p>
+    
+    <script>
+        // Function to generate a simple icon
+        function generateIcon(size, text = '🎓') {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            
+            // Background gradient
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#3b82f6');
+            gradient.addColorStop(1, '#1d4ed8');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, size, size);
+            
+            // Add border radius effect
+            ctx.globalCompositeOperation = 'destination-in';
+            ctx.beginPath();
+            ctx.roundRect(0, 0, size, size, size * 0.2);
+            ctx.fill();
+            ctx.globalCompositeOperation = 'source-over';
+            
+            // Add icon/text
+            ctx.fillStyle = 'white';
+            ctx.font = `${size * 0.5}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, size / 2, size / 2);
+            
+            return canvas.toDataURL('image/png');
+        }
+        
+        // Generate icons for different sizes
+        const sizes = [16, 32, 72, 96, 128, 144, 152, 192, 384, 512];
+        
+        sizes.forEach(size => {
+            const dataUrl = generateIcon(size);
+            
+            // Create download link
+            const link = document.createElement('a');
+            link.download = `icon-${size}x${size}.png`;
+            link.href = dataUrl;
+            link.textContent = `Download ${size}x${size} icon`;
+            link.style.display = 'block';
+            link.style.margin = '10px 0';
+            
+            document.body.appendChild(link);
+            
+            console.log(`Generated icon-${size}x${size}.png`);
+        });
+        
+        // Generate shortcut icons
+        const shortcuts = [
+            { name: 'courses', icon: '📚' },
+            { name: 'dashboard', icon: '📊' },
+            { name: 'quiz', icon: '❓' }
+        ];
+        
+        shortcuts.forEach(shortcut => {
+            const dataUrl = generateIcon(96, shortcut.icon);
+            
+            const link = document.createElement('a');
+            link.download = `shortcut-${shortcut.name}.png`;
+            link.href = dataUrl;
+            link.textContent = `Download shortcut-${shortcut.name}.png`;
+            link.style.display = 'block';
+            link.style.margin = '10px 0';
+            
+            document.body.appendChild(link);
+        });
+        
+        console.log('All icons generated! Click the links above to download them.');
+    </script>
+</body>
+</html>

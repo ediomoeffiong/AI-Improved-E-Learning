@@ -8,12 +8,16 @@ import Footer from './components/layout/Footer';
 import Chatbot from './components/chatbot/Chatbot';
 import ScrollToTop from './components/common/ScrollToTop';
 import ScrollToTopButton from './components/common/ScrollToTopButton';
+import DevModeIndicator from './components/common/DevModeIndicator';
+import PWAPrompt from './components/pwa/PWAPrompt';
 import { AuthProvider } from './contexts/AuthContext';
+import ProtectedRoute from './components/auth/ProtectedRoute';
 
 // Main pages
 import Home from './pages/home/Home';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
+import Offline from './pages/Offline';
 
 // Dashboard
 import Dashboard from './pages/dashboard/Dashboard';
@@ -46,6 +50,7 @@ function App() {
     <AuthProvider>
       <Router>
         <ScrollToTop />
+        <PWAPrompt />
         <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
         <Header />
         <main className="flex-grow pt-16 px-4 sm:px-6 lg:px-8">
@@ -55,40 +60,45 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/offline" element={<Offline />} />
               
-              {/* Dashboard */}
-              <Route path="/dashboard" element={<Dashboard />} />
-              {/* Courses Routes */}
-              <Route path="/courses/dashboard" element={<CoursesDashboard />} />
+              {/* Public Course Routes */}
               <Route path="/courses/available" element={<Available />} />
-              <Route path="/courses/my-courses" element={<MyCourses />} />
-              <Route path="/courses/materials" element={<CourseMaterials />} />
-              <Route path="/courses/discussion" element={<Discussion />} />
-              <Route path="/courses/:id" element={<CourseDetails />} />
+
+              {/* Protected Dashboard Routes */}
+              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+
+              {/* Protected Courses Routes */}
+              <Route path="/courses/dashboard" element={<ProtectedRoute><CoursesDashboard /></ProtectedRoute>} />
+              <Route path="/courses/my-courses" element={<ProtectedRoute><MyCourses /></ProtectedRoute>} />
+              <Route path="/courses/materials" element={<ProtectedRoute><CourseMaterials /></ProtectedRoute>} />
+              <Route path="/courses/discussion" element={<ProtectedRoute><Discussion /></ProtectedRoute>} />
+              <Route path="/courses/:id" element={<ProtectedRoute><CourseDetails /></ProtectedRoute>} />
               
-              {/* Quiz Routes */}
-              <Route path="/quiz/dashboard" element={<QuizDashboard />} />
-              <Route path="/quiz/badges" element={<Badges />} />
-              <Route path="/quiz/achievements" element={<Achievements />} />
-              <Route path="/quiz/leaderboard" element={<Leaderboard />} />
+              {/* Protected Quiz Routes */}
+              <Route path="/quiz/dashboard" element={<ProtectedRoute><QuizDashboard /></ProtectedRoute>} />
+              <Route path="/quiz/badges" element={<ProtectedRoute><Badges /></ProtectedRoute>} />
+              <Route path="/quiz/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
+              <Route path="/quiz/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
               
-              {/* Classroom Routes */}
-              <Route path="/classroom/dashboard" element={<ClassroomDashboard />} />
+              {/* Protected Classroom Routes */}
+              <Route path="/classroom/dashboard" element={<ProtectedRoute><ClassroomDashboard /></ProtectedRoute>} />
               {/* <Route path="/classroom/materials" element={<CourseMaterials />} /> */}
-              <Route path="/classroom/chat" element={<ChatFeature />} />
-              <Route path="/classroom/recordings" element={<SessionRecordings />} />
+              <Route path="/classroom/chat" element={<ProtectedRoute><ChatFeature /></ProtectedRoute>} />
+              <Route path="/classroom/recordings" element={<ProtectedRoute><SessionRecordings /></ProtectedRoute>} />
               
-              {/* Progress Routes */}
-              <Route path="/progress/dashboard" element={<ProgressDashboard />} />
-              <Route path="/progress/reports" element={<PerformanceReports />} />
-              <Route path="/progress/activity" element={<ActivityLogs />} />
-              <Route path="/progress/recommendations" element={<PersonalizedRecommendations />} />
+              {/* Protected Progress Routes */}
+              <Route path="/progress/dashboard" element={<ProtectedRoute><ProgressDashboard /></ProtectedRoute>} />
+              <Route path="/progress/reports" element={<ProtectedRoute><PerformanceReports /></ProtectedRoute>} />
+              <Route path="/progress/activity" element={<ProtectedRoute><ActivityLogs /></ProtectedRoute>} />
+              <Route path="/progress/recommendations" element={<ProtectedRoute><PersonalizedRecommendations /></ProtectedRoute>} />
             </Routes>
           </div>
         </main>
         <Chatbot />
         <Footer />
         <ScrollToTopButton />
+        <DevModeIndicator />
         </div>
       </Router>
     </AuthProvider>

@@ -77,6 +77,14 @@ export const AuthProvider = ({ children }) => {
     return user?.email || null;
   };
 
+  const hasRole = (requiredRole) => {
+    return user?.role === requiredRole;
+  };
+
+  const hasAnyRole = (allowedRoles) => {
+    return allowedRoles.includes(user?.role);
+  };
+
   const value = {
     user,
     token,
@@ -86,7 +94,9 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated,
     getUserRole,
     getUserName,
-    getUserEmail
+    getUserEmail,
+    hasRole,
+    hasAnyRole
   };
 
   return (

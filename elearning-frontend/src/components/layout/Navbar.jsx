@@ -104,13 +104,17 @@ const Navbar = () => {
             >
               Home
             </Link>
-            <Link
-              to="/dashboard"
-              onClick={handleLinkClick}
-              className="text-white hover:text-blue-100 transition-colors duration-200 px-3 py-2 rounded-md hover:bg-white/10"
-            >
-              Dashboard
-            </Link>
+
+            {/* Dashboard - Only show to authenticated users */}
+            {isAuthenticated() && (
+              <Link
+                to="/dashboard"
+                onClick={handleLinkClick}
+                className="text-white hover:text-blue-100 transition-colors duration-200 px-3 py-2 rounded-md hover:bg-white/10"
+              >
+                Dashboard
+              </Link>
+            )}
             
             {/* Courses Dropdown */}
             <div className="relative">
@@ -135,19 +139,27 @@ const Navbar = () => {
               </button>
               {openDropdown === 'courses' && (
                 <div className="absolute z-50 mt-2 w-64 bg-white rounded-xl shadow-2xl py-2 border border-gray-100 animate-in slide-in-from-top-2 duration-200">
-                  <Link
-                    to="/courses/dashboard"
-                    onClick={handleLinkClick}
-                    className="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150 group"
-                  >
-                    <svg className="w-4 h-4 mr-3 text-blue-500 group-hover:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                    <div>
-                      <div className="font-medium">Dashboard</div>
-                      <div className="text-xs text-gray-500">Course overview</div>
-                    </div>
-                  </Link>
+                  {/* Protected content - Dashboard first for authenticated users */}
+                  {isAuthenticated() ? (
+                    <>
+                      <Link
+                        to="/courses/dashboard"
+                        onClick={handleLinkClick}
+                        className="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150 group"
+                      >
+                        <svg className="w-4 h-4 mr-3 text-blue-500 group-hover:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                        <div>
+                          <div className="font-medium">Dashboard</div>
+                          <div className="text-xs text-gray-500">Course overview</div>
+                        </div>
+                      </Link>
+                      <div className="border-t border-gray-100 my-2"></div>
+                    </>
+                  ) : null}
+
+                  {/* Always show Browse Courses */}
                   <Link
                     to="/courses/available"
                     onClick={handleLinkClick}
@@ -162,20 +174,32 @@ const Navbar = () => {
                     </div>
                     <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-0.5 rounded-full">New</span>
                   </Link>
-                  <Link
-                    to="/courses/my-courses"
-                    onClick={handleLinkClick}
-                    className="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150 group"
-                  >
-                    <svg className="w-4 h-4 mr-3 text-purple-500 group-hover:text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <div className="flex-1">
-                      <div className="font-medium">My Courses</div>
-                      <div className="text-xs text-gray-500">Enrolled courses</div>
+
+                  {/* Additional protected content - only show to authenticated users */}
+                  {isAuthenticated() ? (
+                    <>
+                      <Link
+                        to="/courses/my-courses"
+                        onClick={handleLinkClick}
+                        className="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150 group"
+                      >
+                        <svg className="w-4 h-4 mr-3 text-purple-500 group-hover:text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div className="flex-1">
+                          <div className="font-medium">My Courses</div>
+                          <div className="text-xs text-gray-500">Enrolled courses</div>
+                        </div>
+                        <span className="bg-purple-100 text-purple-800 text-xs font-medium px-2 py-0.5 rounded-full">New</span>
+                      </Link>
+                    </>
+                  ) : (
+                    <div className="px-4 py-3 text-gray-500 text-sm border-t border-gray-100 mt-2">
+                      <Link to="/login" className="text-blue-600 hover:text-blue-700 font-medium">
+                        Sign in
+                      </Link> to access your courses and dashboard
                     </div>
-                    <span className="bg-purple-100 text-purple-800 text-xs font-medium px-2 py-0.5 rounded-full">New</span>
-                  </Link>
+                  )}
                   <div className="border-t border-gray-100 my-2"></div>
                   <Link
                     to="/courses/materials"
@@ -207,17 +231,20 @@ const Navbar = () => {
               )}
             </div>
             
-            {/* Quiz Direct Link */}
-            <Link
-              to="/quiz/dashboard"
-              onClick={handleLinkClick}
-              className="text-white hover:text-blue-100 transition-colors duration-200 px-3 py-2 rounded-md hover:bg-white/10"
-            >
-              Quiz
-            </Link>
-            
-            {/* Classroom Dropdown */}
-            <div className="relative">
+            {/* Quiz Direct Link - Only show to authenticated users */}
+            {isAuthenticated() && (
+              <Link
+                to="/quiz/dashboard"
+                onClick={handleLinkClick}
+                className="text-white hover:text-blue-100 transition-colors duration-200 px-3 py-2 rounded-md hover:bg-white/10"
+              >
+                Quiz
+              </Link>
+            )}
+
+            {/* Classroom Dropdown - Only show to authenticated users */}
+            {isAuthenticated() && (
+              <div className="relative">
               <button
                 onClick={() => toggleDropdown('classroom')}
                 className={`text-white hover:text-blue-100 flex items-center transition-all duration-200 px-3 py-2 rounded-md hover:bg-white/10 ${
@@ -306,10 +333,12 @@ const Navbar = () => {
                   </Link>
                 </div>
               )}
-            </div>
-            
-            {/* Progress Dropdown */}
-            <div className="relative">
+              </div>
+            )}
+
+            {/* Progress Dropdown - Only show to authenticated users */}
+            {isAuthenticated() && (
+              <div className="relative">
               <button
                 onClick={() => toggleDropdown('progress')}
                 className={`text-white hover:text-blue-100 flex items-center transition-all duration-200 px-3 py-2 rounded-md hover:bg-white/10 ${
@@ -385,7 +414,8 @@ const Navbar = () => {
                   </Link>
                 </div>
               )}
-            </div>
+              </div>
+            )}
           </div>
           
           <div className="flex items-center">
@@ -452,13 +482,17 @@ const Navbar = () => {
             >
               🏠 Home
             </Link>
-            <Link
-              to="/dashboard"
-              onClick={handleLinkClick}
-              className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md transition-colors duration-150"
-            >
-              📊 Dashboard
-            </Link>
+
+            {/* Dashboard - Only show to authenticated users */}
+            {isAuthenticated() && (
+              <Link
+                to="/dashboard"
+                onClick={handleLinkClick}
+                className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md transition-colors duration-150"
+              >
+                📊 Dashboard
+              </Link>
+            )}
             
             {/* Mobile Courses Menu */}
             <button 
@@ -472,13 +506,20 @@ const Navbar = () => {
             </button>
             {openDropdown === 'mobile-courses' && (
               <div className="pl-4 space-y-1 bg-blue-700/30 rounded-md mx-2 py-2">
-                <Link
-                  to="/courses/dashboard"
-                  onClick={handleLinkClick}
-                  className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md transition-colors duration-150"
-                >
-                  📊 Dashboard
-                </Link>
+                {/* Protected content - Dashboard first for authenticated users */}
+                {isAuthenticated() ? (
+                  <>
+                    <Link
+                      to="/courses/dashboard"
+                      onClick={handleLinkClick}
+                      className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md transition-colors duration-150"
+                    >
+                      📊 Dashboard
+                    </Link>
+                  </>
+                ) : null}
+
+                {/* Always show Browse Courses */}
                 <Link
                   to="/courses/available"
                   onClick={handleLinkClick}
@@ -487,50 +528,66 @@ const Navbar = () => {
                   <span>📚 Browse Courses</span>
                   <span className="text-xs bg-green-500 px-2 py-0.5 rounded-full">New</span>
                 </Link>
-                <Link
-                  to="/courses/my-courses"
-                  onClick={handleLinkClick}
-                  className="flex items-center justify-between px-3 py-2 text-white hover:bg-blue-700 rounded-md transition-colors duration-150"
-                >
-                  <span>✅ My Courses</span>
-                  <span className="text-xs bg-purple-500 px-2 py-0.5 rounded-full">New</span>
-                </Link>
-                <Link
-                  to="/courses/materials"
-                  onClick={handleLinkClick}
-                  className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md transition-colors duration-150"
-                >
-                  📄 Course Materials
-                </Link>
-                <Link
-                  to="/courses/discussion"
-                  onClick={handleLinkClick}
-                  className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md transition-colors duration-150"
-                >
-                  💬 Discussions
-                </Link>
+
+                {/* Additional protected content - only show to authenticated users */}
+                {isAuthenticated() ? (
+                  <>
+                    <Link
+                      to="/courses/my-courses"
+                      onClick={handleLinkClick}
+                      className="flex items-center justify-between px-3 py-2 text-white hover:bg-blue-700 rounded-md transition-colors duration-150"
+                    >
+                      <span>✅ My Courses</span>
+                      <span className="text-xs bg-purple-500 px-2 py-0.5 rounded-full">New</span>
+                    </Link>
+                    <Link
+                      to="/courses/materials"
+                      onClick={handleLinkClick}
+                      className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md transition-colors duration-150"
+                    >
+                      📄 Course Materials
+                    </Link>
+                    <Link
+                      to="/courses/discussion"
+                      onClick={handleLinkClick}
+                      className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md transition-colors duration-150"
+                    >
+                      💬 Discussions
+                    </Link>
+                  </>
+                ) : (
+                  <div className="px-3 py-2 text-blue-200 text-sm">
+                    <Link to="/login" className="text-white hover:text-blue-100 font-medium">
+                      🔐 Sign in
+                    </Link> to access your courses
+                  </div>
+                )}
               </div>
             )}
             
-            {/* Mobile Quiz Direct Link */}
-            <Link
-              to="/quiz/dashboard"
-              className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md transition-colors"
-            >
-              📝 Quiz
-            </Link>
-            
-            {/* Mobile Classroom Menu */}
-            <button 
-              onClick={() => toggleDropdown('mobile-classroom')} 
-              className="w-full text-left px-3 py-2 text-white hover:bg-blue-700 rounded-md flex justify-between items-center"
-            >
-              Classroom
-              <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 transform ${openDropdown === 'mobile-classroom' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            {openDropdown === 'mobile-classroom' && (
+            {/* Mobile Quiz Direct Link - Only show to authenticated users */}
+            {isAuthenticated() && (
+              <Link
+                to="/quiz/dashboard"
+                className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md transition-colors"
+              >
+                📝 Quiz
+              </Link>
+            )}
+
+            {/* Mobile Classroom Menu - Only show to authenticated users */}
+            {isAuthenticated() && (
+              <button
+                onClick={() => toggleDropdown('mobile-classroom')}
+                className="w-full text-left px-3 py-2 text-white hover:bg-blue-700 rounded-md flex justify-between items-center"
+              >
+                Classroom
+                <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 transform ${openDropdown === 'mobile-classroom' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+            )}
+            {isAuthenticated() && openDropdown === 'mobile-classroom' && (
               <div className="pl-4">
                 <Link to="/classroom/dashboard" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Dashboard</Link>
                 <Link to="/classroom/materials" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Course Materials</Link>
@@ -538,18 +595,20 @@ const Navbar = () => {
                 <Link to="/classroom/recordings" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Session Recordings</Link>
               </div>
             )}
-            
-            {/* Mobile Progress Menu */}
-            <button 
-              onClick={() => toggleDropdown('mobile-progress')} 
-              className="w-full text-left px-3 py-2 text-white hover:bg-blue-700 rounded-md flex justify-between items-center"
-            >
-              Progress
-              <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 transform ${openDropdown === 'mobile-progress' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            {openDropdown === 'mobile-progress' && (
+
+            {/* Mobile Progress Menu - Only show to authenticated users */}
+            {isAuthenticated() && (
+              <button
+                onClick={() => toggleDropdown('mobile-progress')}
+                className="w-full text-left px-3 py-2 text-white hover:bg-blue-700 rounded-md flex justify-between items-center"
+              >
+                Progress
+                <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 transform ${openDropdown === 'mobile-progress' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+            )}
+            {isAuthenticated() && openDropdown === 'mobile-progress' && (
               <div className="pl-4">
                 <Link to="/progress/dashboard" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Dashboard</Link>
                 <Link to="/progress/reports" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Performance Reports</Link>

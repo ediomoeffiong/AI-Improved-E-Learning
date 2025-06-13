@@ -1,18 +1,40 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-// Check if backend is available
+// Check if backend is available - reset on page load
 let backendAvailable = true;
+let lastBackendCheck = 0;
+const BACKEND_CHECK_INTERVAL = 30000; // 30 seconds
+
+// PWA offline support
+import { cacheOfflineData, getCachedOfflineData } from '../utils/pwa.js';
 
 // Helper function to get auth token
 const getAuthToken = () => {
   return localStorage.getItem('token');
 };
 
-// Helper function to make API requests
+// Helper function to make API requests with offline support
 const apiRequest = async (endpoint, options = {}) => {
-  // If backend is not available, throw error immediately
-  if (!backendAvailable) {
-    throw new Error('Backend service is not available. Using mock data.');
+  // In development mode, always assume backend is available
+  const isDev = import.meta.env.DEV;
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+  if (isDev || isLocalhost) {
+    // Force backend availability in development/localhost
+    backendAvailable = true;
+  } else {
+    // Check if we should retry backend connection in production
+    const now = Date.now();
+    if (!backendAvailable && (now - lastBackendCheck) > BACKEND_CHECK_INTERVAL) {
+      console.log('Retrying backend connection...');
+      backendAvailable = true; // Reset and try again
+      lastBackendCheck = now;
+    }
+
+    // If backend is not available and we recently checked, use fallback
+    if (!backendAvailable) {
+      throw new Error('Backend service is not available. Using mock data.');
+    }
   }
 
   const url = `${API_BASE_URL}${endpoint}`;
@@ -35,13 +57,43 @@ const apiRequest = async (endpoint, options = {}) => {
       throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
     }
 
-    return await response.json();
+    const data = await response.json();
+
+    // Cache successful GET requests for offline use
+    if (options.method === 'GET' || !options.method) {
+      await cacheOfflineData(data, `api_${endpoint.replace(/[^a-zA-Z0-9]/g, '_')}`);
+    }
+
+    return data;
   } catch (error) {
-    // If it's a network error, mark backend as unavailable
+    // In development/localhost, don't mark backend as unavailable for network errors
+    const isDev = import.meta.env.DEV;
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+    // If it's a network error, handle differently based on environment
     if (error.message.includes('fetch') || error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
-      backendAvailable = false;
-      console.warn('Backend is not available, switching to mock data mode');
-      throw new Error('Backend service is not available. Using mock data.');
+
+      if (isDev || isLocalhost) {
+        // In development, just throw the original error without marking backend unavailable
+        console.error(`API request failed in development: ${endpoint}`, error);
+        throw error;
+      } else {
+        // In production, mark backend as unavailable temporarily
+        backendAvailable = false;
+        lastBackendCheck = Date.now();
+        console.warn('Backend is temporarily unavailable, will retry in 30 seconds');
+
+        // Try to get cached data for GET requests
+        if (options.method === 'GET' || !options.method) {
+          const cachedData = getCachedOfflineData(`api_${endpoint.replace(/[^a-zA-Z0-9]/g, '_')}`);
+          if (cachedData) {
+            console.log('Using cached data for:', endpoint);
+            return cachedData;
+          }
+        }
+
+        throw new Error('Backend service is not available. Using mock data.');
+      }
     }
     console.error(`API request failed: ${endpoint}`, error);
     throw error;

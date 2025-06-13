@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { authAPI } from '../../services/api';
+import { ROLE_OPTIONS, DEFAULT_ROLE, ROLE_ICONS } from '../../constants/roles';
 
 function Register() {
   const navigate = useNavigate();
@@ -9,6 +11,7 @@ function Register() {
     email: '',
     password: '',
     confirmPassword: '',
+    role: DEFAULT_ROLE,
     agreeTerms: false
   });
 
@@ -41,7 +44,9 @@ function Register() {
     }
     
     if (!formData.agreeTerms) newErrors.agreeTerms = 'You must agree to the terms and conditions';
-    
+
+    if (!formData.role) newErrors.role = 'Please select an account type';
+
     return newErrors;
   };
 
@@ -65,34 +70,34 @@ function Register() {
       name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
       email: formData.email.trim(),
       password: formData.password,
-      role: 'Student',
+      role: formData.role,
     };
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+      const data = await authAPI.register(payload);
 
-      const data = await response.json();
+      setApiMessage('Registration successful! Redirecting to login...');
+      setApiSuccess(true);
 
-      if (response.ok) {
-        setApiMessage('Registration successful! Redirecting to login...');
+      // Redirect to login page after a short delay
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
+    } catch (err) {
+      console.error('Registration error:', err);
+
+      // Handle different types of errors
+      if (err.message.includes('Backend service is not available')) {
+        setApiMessage('Demo mode - Registration successful! Redirecting to login...');
         setApiSuccess(true);
 
-        // Redirect to login page after a short delay
         setTimeout(() => {
           navigate('/login');
         }, 2000);
       } else {
-        setApiMessage(data.message || 'Registration failed');
+        setApiMessage(err.message || 'Registration failed');
         setApiSuccess(false);
       }
-    } catch (err) {
-      console.error('Registration error:', err);
-      setApiMessage('Network error - Please make sure the backend server is running');
-      setApiSuccess(false);
     } finally {
       setIsLoading(false);
     }
@@ -162,6 +167,30 @@ function Register() {
                 onChange={handleChange}
               />
               {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
+            </div>
+
+            <div>
+              <label htmlFor="role" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Account Type
+              </label>
+              <select
+                id="role"
+                name="role"
+                required
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                value={formData.role}
+                onChange={handleChange}
+              >
+                {ROLE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {ROLE_ICONS[option.value]} {option.label}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                {ROLE_OPTIONS.find(option => option.value === formData.role)?.description}
+              </p>
+              {errors.role && <p className="mt-1 text-sm text-red-600">{errors.role}</p>}
             </div>
             
             <div>

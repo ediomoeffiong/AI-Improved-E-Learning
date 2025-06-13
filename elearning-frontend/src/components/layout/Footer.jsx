@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
 
 function Footer() {
   const currentYear = new Date().getFullYear();
   const [email, setEmail] = useState('');
+  const { isAuthenticated } = useAuth();
 
   const handleNewsletterSubmit = (e) => {
     e.preventDefault();
@@ -133,38 +135,43 @@ function Footer() {
                     Browse Courses
                   </Link>
                 </li>
-                <li>
-                  <Link to="/courses/dashboard" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center group">
-                    <svg className="w-4 h-4 mr-2 text-blue-400 group-hover:text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                    Course Dashboard
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/courses/materials" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center group">
-                    <svg className="w-4 h-4 mr-2 text-blue-400 group-hover:text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                    Course Materials
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/quiz/dashboard" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center group">
-                    <svg className="w-4 h-4 mr-2 text-blue-400 group-hover:text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                    Quiz Dashboard
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/courses/discussion" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center group">
-                    <svg className="w-4 h-4 mr-2 text-blue-400 group-hover:text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                    Discussions
-                  </Link>
-                </li>
+                {/* Protected links - only show to authenticated users */}
+                {isAuthenticated() && (
+                  <>
+                    <li>
+                      <Link to="/courses/dashboard" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center group">
+                        <svg className="w-4 h-4 mr-2 text-blue-400 group-hover:text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                        Course Dashboard
+                      </Link>
+                    </li>
+                    <li>
+                      <Link to="/courses/materials" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center group">
+                        <svg className="w-4 h-4 mr-2 text-blue-400 group-hover:text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                        Course Materials
+                      </Link>
+                    </li>
+                    <li>
+                      <Link to="/quiz/dashboard" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center group">
+                        <svg className="w-4 h-4 mr-2 text-blue-400 group-hover:text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                        Quiz Dashboard
+                      </Link>
+                    </li>
+                    <li>
+                      <Link to="/courses/discussion" className="text-gray-300 hover:text-blue-400 transition-colors flex items-center group">
+                        <svg className="w-4 h-4 mr-2 text-blue-400 group-hover:text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                        Discussions
+                      </Link>
+                    </li>
+                  </>
+                )}
               </ul>
             </div>
 
