@@ -1,18 +1,48 @@
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 
 function Footer() {
   const currentYear = new Date().getFullYear();
   const [email, setEmail] = useState('');
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showBackToTop, setShowBackToTop] = useState(false);
   const { isAuthenticated } = useAuth();
 
-  const handleNewsletterSubmit = (e) => {
+  // Handle scroll to show/hide back to top button
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowBackToTop(window.scrollY > 300);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+
+  const handleNewsletterSubmit = async (e) => {
     e.preventDefault();
-    // Handle newsletter subscription
-    console.log('Newsletter subscription:', email);
-    setEmail('');
-    // Show success message (could be implemented with toast)
+    setIsLoading(true);
+
+    // Simulate API call
+    setTimeout(() => {
+      console.log('Newsletter subscription:', email);
+      setIsSubscribed(true);
+      setEmail('');
+      setIsLoading(false);
+
+      // Reset success message after 3 seconds
+      setTimeout(() => {
+        setIsSubscribed(false);
+      }, 3000);
+    }, 1000);
   };
 
   return (
@@ -31,29 +61,112 @@ function Footer() {
 
       <div className="relative z-10">
         {/* Newsletter Section */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 py-12">
-          <div className="container mx-auto px-4 max-w-7xl">
+        <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 py-16 relative overflow-hidden">
+          {/* Animated Background Elements */}
+          <div className="absolute inset-0 opacity-20">
+            <div className="absolute top-10 left-10 w-20 h-20 bg-white rounded-full animate-pulse"></div>
+            <div className="absolute top-32 right-20 w-16 h-16 bg-white rounded-full animate-pulse delay-1000"></div>
+            <div className="absolute bottom-20 left-1/4 w-12 h-12 bg-white rounded-full animate-pulse delay-2000"></div>
+            <div className="absolute bottom-32 right-1/3 w-8 h-8 bg-white rounded-full animate-pulse delay-3000"></div>
+          </div>
+
+          <div className="container mx-auto px-4 max-w-7xl relative z-10">
             <div className="text-center">
-              <h2 className="text-3xl font-bold mb-4">Stay Updated with Our Latest Courses</h2>
-              <p className="text-blue-100 mb-8 max-w-2xl mx-auto">
-                Get notified about new courses, learning tips, and exclusive offers. Join thousands of learners advancing their careers.
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-full mb-6 backdrop-blur-sm">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+              </div>
+
+              <h2 className="text-4xl font-bold mb-4 text-white">
+                🚀 Stay Ahead of the Curve
+              </h2>
+              <p className="text-blue-100 mb-8 max-w-3xl mx-auto text-lg leading-relaxed">
+                Join <span className="font-bold text-white">25,000+</span> learners who receive exclusive updates about new AI-powered courses,
+                cutting-edge learning techniques, and career advancement opportunities delivered straight to their inbox.
               </p>
-              <form onSubmit={handleNewsletterSubmit} className="max-w-md mx-auto flex gap-4">
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email address"
-                  className="flex-1 px-4 py-3 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-white"
-                  required
-                />
-                <button
-                  type="submit"
-                  className="bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
-                >
-                  Subscribe
-                </button>
-              </form>
+
+              {!isSubscribed ? (
+                <form onSubmit={handleNewsletterSubmit} className="max-w-lg mx-auto">
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="flex-1 relative">
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="Enter your email address"
+                        className="w-full px-6 py-4 rounded-xl text-gray-900 bg-white/95 backdrop-blur-sm focus:outline-none focus:ring-4 focus:ring-white/50 focus:bg-white transition-all duration-200 placeholder-gray-500"
+                        required
+                        disabled={isLoading}
+                      />
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-4">
+                        <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                        </svg>
+                      </div>
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="bg-white text-blue-600 px-8 py-4 rounded-xl font-bold hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-white/50 transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[140px]"
+                    >
+                      {isLoading ? (
+                        <div className="flex items-center">
+                          <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Subscribing...
+                        </div>
+                      ) : (
+                        <div className="flex items-center">
+                          <span>Subscribe Now</span>
+                          <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                          </svg>
+                        </div>
+                      )}
+                    </button>
+                  </div>
+
+                  <div className="mt-4 flex items-center justify-center space-x-6 text-sm text-blue-100">
+                    <div className="flex items-center">
+                      <svg className="w-4 h-4 mr-2 text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      No spam, ever
+                    </div>
+                    <div className="flex items-center">
+                      <svg className="w-4 h-4 mr-2 text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Unsubscribe anytime
+                    </div>
+                    <div className="flex items-center">
+                      <svg className="w-4 h-4 mr-2 text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Weekly updates
+                    </div>
+                  </div>
+                </form>
+              ) : (
+                <div className="max-w-lg mx-auto">
+                  <div className="bg-white/20 backdrop-blur-sm rounded-xl p-6 border border-white/30">
+                    <div className="flex items-center justify-center mb-4">
+                      <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center">
+                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    </div>
+                    <h3 className="text-2xl font-bold text-white mb-2">🎉 Welcome to the Community!</h3>
+                    <p className="text-blue-100">
+                      Thank you for subscribing! Check your inbox for a welcome email with exclusive learning resources.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -282,85 +395,130 @@ function Footer() {
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Bottom Section */}
-        <div className="border-t border-gray-700 mt-12 pt-8">
-          <div className="flex flex-col lg:flex-row justify-between items-center space-y-4 lg:space-y-0">
-            {/* Copyright */}
-            <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
-              <p className="text-gray-300 text-sm">
+          {/* Platform Features */}
+          <div className="mt-8 pt-6 border-t border-gray-700">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="flex flex-col items-center text-center p-3 rounded-lg bg-gray-800/30 hover:bg-gray-800/50 transition-colors duration-200">
+                <div className="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center mb-2">
+                  <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                </div>
+                <span className="text-sm text-gray-300 font-medium">SSL Secured</span>
+                <span className="text-xs text-gray-500 mt-1">Bank-level security</span>
+              </div>
+
+              <div className="flex flex-col items-center text-center p-3 rounded-lg bg-gray-800/30 hover:bg-gray-800/50 transition-colors duration-200">
+                <div className="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center mb-2">
+                  <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+                  </svg>
+                </div>
+                <span className="text-sm text-gray-300 font-medium">Cloud-Based</span>
+                <span className="text-xs text-gray-500 mt-1">Learn anywhere</span>
+              </div>
+
+              <div className="flex flex-col items-center text-center p-3 rounded-lg bg-gray-800/30 hover:bg-gray-800/50 transition-colors duration-200">
+                <div className="w-10 h-10 bg-purple-500/20 rounded-full flex items-center justify-center mb-2">
+                  <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                  </svg>
+                </div>
+                <span className="text-sm text-gray-300 font-medium">AI-Powered</span>
+                <span className="text-xs text-gray-500 mt-1">Smart learning</span>
+              </div>
+
+              <div className="flex flex-col items-center text-center p-3 rounded-lg bg-gray-800/30 hover:bg-gray-800/50 transition-colors duration-200">
+                <div className="w-10 h-10 bg-yellow-500/20 rounded-full flex items-center justify-center mb-2">
+                  <svg className="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <span className="text-sm text-gray-300 font-medium">24/7 Available</span>
+                <span className="text-xs text-gray-500 mt-1">Always accessible</span>
+              </div>
+            </div>
+
+            {/* Platform Description */}
+            <div className="text-center bg-gradient-to-r from-gray-800/50 to-gray-700/50 rounded-lg p-4">
+              <p className="text-sm text-gray-300 leading-relaxed">
+                🚀 <span className="font-semibold">Cutting-edge AI technology</span> powers personalized learning experiences tailored to your unique needs.
+                Our platform continuously evolves with <span className="font-semibold">industry best practices</span> and emerging trends to keep you ahead.
+              </p>
+              <div className="flex items-center justify-center mt-3 space-x-4 text-xs text-gray-400">
+                <div className="flex items-center space-x-1">
+                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                  <span>99.9% Uptime</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                  <span>Global CDN</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
+                  <span>Real-time Updates</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Section */}
+          <div className="border-t border-gray-700 mt-12 pt-8">
+          {/* Legal Links */}
+          <div className="flex flex-wrap justify-center gap-6 mb-8">
+            <Link to="/privacy" className="text-gray-300 hover:text-white text-sm transition-colors duration-200 hover:underline">
+              Privacy Policy
+            </Link>
+            <Link to="/terms" className="text-gray-300 hover:text-white text-sm transition-colors duration-200 hover:underline">
+              Terms of Service
+            </Link>
+            <Link to="/cookies" className="text-gray-300 hover:text-white text-sm transition-colors duration-200 hover:underline">
+              Cookie Policy
+            </Link>
+            <Link to="/accessibility" className="text-gray-300 hover:text-white text-sm transition-colors duration-200 hover:underline">
+              Accessibility
+            </Link>
+            <Link to="/sitemap" className="text-gray-300 hover:text-white text-sm transition-colors duration-200 hover:underline">
+              Sitemap
+            </Link>
+          </div>
+
+          {/* Copyright Section */}
+          <div className="text-center border-t border-gray-800 pt-6">
+            <div className="flex flex-col items-center space-y-3">
+              {/* Main Copyright */}
+              <p className="text-gray-300 text-sm font-medium">
                 &copy; {currentYear} AI-Enhanced E-Learning Platform. All rights reserved.
               </p>
+
+              {/* Made with Love */}
               <div className="flex items-center space-x-2 text-sm text-gray-400">
                 <span>Made with</span>
-                <svg className="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-red-500 animate-pulse" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                 </svg>
                 <span>for learners worldwide</span>
               </div>
             </div>
-
-            {/* Legal Links */}
-            <div className="flex flex-wrap justify-center lg:justify-end gap-6">
-              <Link to="/privacy" className="text-gray-300 hover:text-white text-sm transition-colors">
-                Privacy Policy
-              </Link>
-              <Link to="/terms" className="text-gray-300 hover:text-white text-sm transition-colors">
-                Terms of Service
-              </Link>
-              <Link to="/cookies" className="text-gray-300 hover:text-white text-sm transition-colors">
-                Cookie Policy
-              </Link>
-              <Link to="/accessibility" className="text-gray-300 hover:text-white text-sm transition-colors">
-                Accessibility
-              </Link>
-              <Link to="/sitemap" className="text-gray-300 hover:text-white text-sm transition-colors">
-                Sitemap
-              </Link>
-            </div>
-          </div>
-
-          {/* Additional Info */}
-          <div className="mt-6 pt-6 border-t border-gray-800 text-center">
-            <div className="flex flex-col sm:flex-row justify-center items-center space-y-2 sm:space-y-0 sm:space-x-8 text-sm text-gray-400">
-              <div className="flex items-center space-x-2">
-                <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-                <span>SSL Secured</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
-                </svg>
-                <span>Cloud-Based Learning</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <svg className="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                </svg>
-                <span>AI-Powered</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <svg className="w-4 h-4 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>24/7 Available</span>
-              </div>
-            </div>
-
-            <p className="mt-4 text-xs text-gray-500">
-              This platform uses cutting-edge AI technology to provide personalized learning experiences.
-              All course content is regularly updated to reflect industry best practices and emerging trends.
-            </p>
           </div>
         </div>
       </div>
+
+      {/* Back to Top Button */}
+      {showBackToTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-8 right-8 z-50 bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4 rounded-full shadow-2xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-110 active:scale-95 group"
+          aria-label="Back to top"
+        >
+          <svg className="w-6 h-6 transform group-hover:-translate-y-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+          </svg>
+        </button>
+      )}
     </footer>
   );
 }
 
 export default Footer;
-
-

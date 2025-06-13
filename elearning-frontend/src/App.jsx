@@ -11,6 +11,7 @@ import ScrollToTopButton from './components/common/ScrollToTopButton';
 import DevModeIndicator from './components/common/DevModeIndicator';
 import PWAPrompt from './components/pwa/PWAPrompt';
 import { AuthProvider } from './contexts/AuthContext';
+import { GamificationProvider } from './contexts/GamificationContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
 // Main pages
@@ -45,10 +46,15 @@ import PerformanceReports from './pages/progress/PerformanceReports';
 import ActivityLogs from './pages/progress/ActivityLogs';
 import PersonalizedRecommendations from './pages/progress/PersonalizedRecommendations';
 
+// User pages
+import Profile from './pages/user/Profile';
+import Settings from './pages/user/Settings';
+
 function App() {
   return (
     <AuthProvider>
-      <Router>
+      <GamificationProvider>
+        <Router>
         <ScrollToTop />
         <PWAPrompt />
         <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -92,6 +98,10 @@ function App() {
               <Route path="/progress/reports" element={<ProtectedRoute><PerformanceReports /></ProtectedRoute>} />
               <Route path="/progress/activity" element={<ProtectedRoute><ActivityLogs /></ProtectedRoute>} />
               <Route path="/progress/recommendations" element={<ProtectedRoute><PersonalizedRecommendations /></ProtectedRoute>} />
+
+              {/* Protected User Routes */}
+              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             </Routes>
           </div>
         </main>
@@ -101,6 +111,7 @@ function App() {
         <DevModeIndicator />
         </div>
       </Router>
+      </GamificationProvider>
     </AuthProvider>
   );
 }
