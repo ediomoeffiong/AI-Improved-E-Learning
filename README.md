@@ -45,8 +45,8 @@ This is an advanced e-learning platform designed to enhance digital learning exp
 - **Tailwind CSS**: For styling.
 
 ### Backend
-- **FastAPI**: For building a scalable REST API.
-- **PostgreSQL**: For storing user data and progress.
+- **Node.js & Express**: For building a scalable REST API.
+- **MongoDB**: For storing user data and progress.
 
 ### AI Features
 - **TensorFlow / PyTorch**: For implementing machine learning models.
@@ -54,7 +54,8 @@ This is an advanced e-learning platform designed to enhance digital learning exp
 
 ### Hosting
 - **Vercel**: Frontend deployment.
-- **Heroku / AWS**: Backend deployment.
+- **Railway / Render / Heroku**: Backend deployment.
+- **MongoDB Atlas**: Database hosting.
 
 ---
 
@@ -89,34 +90,49 @@ E-Learning-System/
 ## 🚧 Installation & Setup
 
 ### Prerequisites
-- Python 3.10+
-- Node.js 16+
+- Node.js 18+
+- MongoDB (local) or MongoDB Atlas (cloud)
 
 ### Backend Setup
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/e-learning-system.git
-cd e-learning-system
-
-# Set up virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
+git clone https://github.com/ediomoeffiong/AI-Improved-E-Learning.git
+cd AI-Improved-E-Learning/elearning-backend
 
 # Install dependencies
-pip install fastapi uvicorn
+npm install
+
+# Create environment file
+cp .env.example .env
+# Edit .env with your MongoDB URI and JWT secret
+
+# Start the development server
+npm run dev
 ```
 
 ### Frontend Setup
 ```bash
 # Navigate to the frontend
-tcd frontend
+cd ../elearning-frontend
 
 # Install dependencies
 npm install
 
+# Create environment file
+cp .env.example .env
+# Edit .env with your backend API URL
+
 # Start the development server
-npm start
+npm run dev
 ```
+
+## 🚀 Deployment
+
+For production deployment, see the detailed [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) which covers:
+- Backend deployment to Railway, Render, or Heroku
+- MongoDB Atlas setup
+- Frontend environment configuration
+- Troubleshooting common issues
 
 ---
 

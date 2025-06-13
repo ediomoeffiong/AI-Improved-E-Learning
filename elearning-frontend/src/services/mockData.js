@@ -385,5 +385,56 @@ export const mockAPI = {
       nextClass: enrollment.status !== 'completed' ? 'Tomorrow, 10:00 AM' : null
     }));
     return Promise.resolve(transformedEnrollments);
+  },
+
+  // Mock authentication functions
+  login: (credentials) => {
+    // Simple mock login - accepts any email/password combination
+    const mockUser = {
+      id: '1',
+      name: 'Demo User',
+      email: credentials.email,
+      role: 'student',
+      avatar: 'https://via.placeholder.com/40'
+    };
+
+    const mockToken = 'mock-jwt-token-' + Date.now();
+
+    return Promise.resolve({
+      token: mockToken,
+      user: mockUser,
+      message: 'Login successful (using mock data)'
+    });
+  },
+
+  register: (userData) => {
+    // Simple mock registration
+    const mockUser = {
+      id: '1',
+      name: userData.name,
+      email: userData.email,
+      role: 'student',
+      avatar: 'https://via.placeholder.com/40'
+    };
+
+    const mockToken = 'mock-jwt-token-' + Date.now();
+
+    return Promise.resolve({
+      token: mockToken,
+      user: mockUser,
+      message: 'Registration successful (using mock data)'
+    });
+  },
+
+  getCurrentUser: () => {
+    const mockUser = {
+      id: '1',
+      name: 'Demo User',
+      email: 'demo@example.com',
+      role: 'student',
+      avatar: 'https://via.placeholder.com/40'
+    };
+
+    return Promise.resolve(mockUser);
   }
 };

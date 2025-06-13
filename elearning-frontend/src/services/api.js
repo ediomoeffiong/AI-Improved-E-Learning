@@ -224,23 +224,47 @@ export const enrollmentAPI = {
 export const authAPI = {
   // Login
   login: async (credentials) => {
-    return apiRequest('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify(credentials),
-    });
+    try {
+      return await apiRequest('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify(credentials),
+      });
+    } catch (error) {
+      if (error.message.includes('Backend service is not available')) {
+        console.log('Using mock data for login');
+        return await mockAPI.login(credentials);
+      }
+      throw error;
+    }
   },
 
   // Register
   register: async (userData) => {
-    return apiRequest('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify(userData),
-    });
+    try {
+      return await apiRequest('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify(userData),
+      });
+    } catch (error) {
+      if (error.message.includes('Backend service is not available')) {
+        console.log('Using mock data for registration');
+        return await mockAPI.register(userData);
+      }
+      throw error;
+    }
   },
 
   // Get current user
   getCurrentUser: async () => {
-    return apiRequest('/auth/me');
+    try {
+      return await apiRequest('/auth/me');
+    } catch (error) {
+      if (error.message.includes('Backend service is not available')) {
+        console.log('Using mock data for current user');
+        return await mockAPI.getCurrentUser();
+      }
+      throw error;
+    }
   },
 
   // Refresh token

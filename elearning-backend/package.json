@@ -5,7 +5,12 @@
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
-    "dev": "nodemon app.js"
+    "dev": "nodemon app.js",
+    "build": "echo 'No build step required for Node.js'"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
   },
   "keywords": ["elearning", "backend", "express", "mongodb"],
   "author": "",
@@ -21,4 +26,4 @@
   "devDependencies": {
     "nodemon": "^2.0.22"
   }
-} 
+}
