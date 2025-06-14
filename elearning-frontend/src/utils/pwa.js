@@ -301,9 +301,9 @@ export const isOnline = async () => {
     return false;
   }
 
-  // In development, just return navigator.onLine
+  // In development, return navigator.onLine to allow testing offline mode
   if (import.meta.env.DEV) {
-    return true;
+    return navigator.onLine;
   }
 
   // Additional verification by trying to fetch a small resource

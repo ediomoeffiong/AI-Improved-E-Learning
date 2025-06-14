@@ -43,6 +43,35 @@ function Settings() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
 
+  // Keyboard navigation for tabs
+  const handleKeyDown = (e, tabId) => {
+    const currentIndex = tabs.findIndex(tab => tab.id === activeTab);
+    let newIndex = currentIndex;
+
+    switch (e.key) {
+      case 'ArrowLeft':
+        e.preventDefault();
+        newIndex = currentIndex > 0 ? currentIndex - 1 : tabs.length - 1;
+        break;
+      case 'ArrowRight':
+        e.preventDefault();
+        newIndex = currentIndex < tabs.length - 1 ? currentIndex + 1 : 0;
+        break;
+      case 'Home':
+        e.preventDefault();
+        newIndex = 0;
+        break;
+      case 'End':
+        e.preventDefault();
+        newIndex = tabs.length - 1;
+        break;
+      default:
+        return;
+    }
+
+    setActiveTab(tabs[newIndex].id);
+  };
+
   const handleSettingChange = (key, value) => {
     setSettings(prev => ({
       ...prev,
@@ -149,22 +178,61 @@ function Settings() {
       <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden">
         {/* Tab Navigation */}
         <div className="border-b border-gray-200 dark:border-gray-700">
-          <nav className="flex space-x-8 px-6" aria-label="Tabs">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
-                  activeTab === tab.id
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-                }`}
-              >
-                <span className="mr-2">{tab.icon}</span>
-                {tab.name}
-              </button>
-            ))}
-          </nav>
+          <div className="overflow-x-auto scrollbar-hide touch-scroll">
+            <nav className="flex space-x-8 px-6 min-w-max mobile-tab-nav" role="tablist" aria-label="Settings navigation tabs">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  onKeyDown={(e) => handleKeyDown(e, tab.id)}
+                  role="tab"
+                  aria-selected={activeTab === tab.id}
+                  aria-controls={`${tab.id}-panel`}
+                  tabIndex={activeTab === tab.id ? 0 : -1}
+                  className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 whitespace-nowrap flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                    activeTab === tab.id
+                      ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                  }`}
+                >
+                  <span className="mr-2">{tab.icon}</span>
+                  {tab.name}
+                </button>
+              ))}
+            </nav>
+          </div>
+
+          {/* Mobile scroll indicator and tab dots */}
+          <div className="sm:hidden py-3 bg-gray-50 dark:bg-gray-700">
+            {/* Tab indicator dots */}
+            <div className="flex justify-center space-x-2 mb-2">
+              {tabs.map((tab, index) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`w-2 h-2 rounded-full transition-colors duration-200 ${
+                    activeTab === tab.id
+                      ? 'bg-blue-500'
+                      : 'bg-gray-300 dark:bg-gray-600'
+                  }`}
+                  aria-label={`Go to ${tab.name} tab`}
+                />
+              ))}
+            </div>
+
+            {/* Scroll instruction */}
+            <div className="flex items-center justify-center space-x-2">
+              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16l-4-4m0 0l4-4m-4 4h18" />
+              </svg>
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                Swipe tabs or tap dots • {tabs.findIndex(tab => tab.id === activeTab) + 1} of {tabs.length}
+              </span>
+              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+            </div>
+          </div>
         </div>
 
         {/* Tab Content */}

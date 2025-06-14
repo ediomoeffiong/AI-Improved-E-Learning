@@ -217,6 +217,31 @@ html {
   background: #9ca3af;
 }
 
+/* Hide scrollbar utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Safari and Chrome */
+}
+
+/* Touch-friendly horizontal scrolling */
+.touch-scroll {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Mobile tab navigation improvements */
+.mobile-tab-nav {
+  scroll-snap-type: x mandatory;
+}
+
+.mobile-tab-nav > * {
+  scroll-snap-align: start;
+}
+
 /* Print styles */
 @media print {
   .no-print {
@@ -295,6 +320,17 @@ html {
   }
 }
 
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .animate-fade-in {
   animation: fadeIn 0.3s ease-out;
 }
@@ -317,6 +353,10 @@ html {
 
 .animate-scale-in {
   animation: scaleIn 0.3s ease-out;
+}
+
+.animate-slide-down {
+  animation: slideDown 0.4s ease-out;
 }
 
 /* Scroll reveal animations */

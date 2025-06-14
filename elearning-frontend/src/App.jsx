@@ -10,6 +10,7 @@ import ScrollToTop from './components/common/ScrollToTop';
 
 import DevModeIndicator from './components/common/DevModeIndicator';
 import CacheRefreshIndicator from './components/common/CacheRefreshIndicator';
+import OfflineIndicator from './components/common/OfflineIndicator';
 import PWAPrompt from './components/pwa/PWAPrompt';
 import { AuthProvider } from './contexts/AuthContext';
 import { GamificationProvider } from './contexts/GamificationContext';
@@ -108,6 +109,7 @@ function App() {
         </main>
         <Chatbot />
         <Footer />
+        <OfflineIndicator />
         <CacheRefreshIndicator />
         <DevModeIndicator />
         </div>
