@@ -30,6 +30,7 @@ import CourseDetails from './pages/courses/CourseDetails';
 import MyCourses from './pages/courses/MyCourses';
 import CourseMaterials from './pages/courses/CourseMaterials';
 import Discussion from './pages/courses/Discussion';
+import ThreadDetail from './pages/courses/ThreadDetail';
 
 // Quiz pages
 import QuizDashboard from './pages/quiz/QuizDashboard';
@@ -66,8 +67,8 @@ function App() {
             <Routes>
               {/* Home and Auth Routes */}
               <Route path="/" element={<Home />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
+              <Route path="/login" element={<ProtectedRoute requireAuth={false}><Login /></ProtectedRoute>} />
+              <Route path="/register" element={<ProtectedRoute requireAuth={false}><Register /></ProtectedRoute>} />
               <Route path="/offline" element={<Offline />} />
               
               {/* Public Course Routes */}
@@ -81,6 +82,7 @@ function App() {
               <Route path="/courses/my-courses" element={<ProtectedRoute><MyCourses /></ProtectedRoute>} />
               <Route path="/courses/materials" element={<ProtectedRoute><CourseMaterials /></ProtectedRoute>} />
               <Route path="/courses/discussion" element={<ProtectedRoute><Discussion /></ProtectedRoute>} />
+              <Route path="/courses/discussion/:threadId" element={<ProtectedRoute><ThreadDetail /></ProtectedRoute>} />
               <Route path="/courses/:id" element={<ProtectedRoute><CourseDetails /></ProtectedRoute>} />
               
               {/* Protected Quiz Routes */}

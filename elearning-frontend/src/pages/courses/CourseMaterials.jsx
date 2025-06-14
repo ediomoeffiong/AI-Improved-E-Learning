@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { enrollmentAPI, handleAPIError } from '../../services/api';
+import VideoPlayer from '../../components/materials/VideoPlayer';
+import DocumentViewer from '../../components/materials/DocumentViewer';
 
 // Mock data for course materials
 const mockMaterials = {
@@ -13,16 +15,133 @@ const mockMaterials = {
       progress: 75,
       materials: {
         videos: [
-          { id: 1, title: 'Introduction to Data Science', duration: '15:30', watched: true, url: '#' },
-          { id: 2, title: 'Python Basics for Data Science', duration: '22:45', watched: true, url: '#' },
-          { id: 3, title: 'Data Visualization Techniques', duration: '18:20', watched: false, url: '#' },
-          { id: 4, title: 'Statistical Analysis Methods', duration: '25:10', watched: false, url: '#' }
+          {
+            id: 1,
+            title: 'Introduction to Data Science',
+            duration: '15:30',
+            watched: true,
+            progress: 100,
+            url: '#',
+            description: 'Learn the fundamentals of data science and its applications in modern business.',
+            thumbnail: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=400&q=80',
+            uploadDate: '2024-01-15',
+            quality: '1080p',
+            size: '245 MB',
+            transcript: true,
+            captions: true
+          },
+          {
+            id: 2,
+            title: 'Python Basics for Data Science',
+            duration: '22:45',
+            watched: true,
+            progress: 100,
+            url: '#',
+            description: 'Master Python programming fundamentals essential for data science.',
+            thumbnail: 'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?auto=format&fit=crop&w=400&q=80',
+            uploadDate: '2024-01-18',
+            quality: '1080p',
+            size: '387 MB',
+            transcript: true,
+            captions: true
+          },
+          {
+            id: 3,
+            title: 'Data Visualization Techniques',
+            duration: '18:20',
+            watched: false,
+            progress: 45,
+            url: '#',
+            description: 'Create compelling visualizations to communicate data insights effectively.',
+            thumbnail: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=400&q=80',
+            uploadDate: '2024-01-22',
+            quality: '1080p',
+            size: '298 MB',
+            transcript: true,
+            captions: true
+          },
+          {
+            id: 4,
+            title: 'Statistical Analysis Methods',
+            duration: '25:10',
+            watched: false,
+            progress: 0,
+            url: '#',
+            description: 'Explore statistical methods for analyzing and interpreting data.',
+            thumbnail: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=400&q=80',
+            uploadDate: '2024-01-25',
+            quality: '1080p',
+            size: '425 MB',
+            transcript: true,
+            captions: false
+          }
         ],
         documents: [
-          { id: 1, title: 'Course Syllabus', type: 'PDF', size: '2.3 MB', downloadUrl: '#' },
-          { id: 2, title: 'Python Cheat Sheet', type: 'PDF', size: '1.8 MB', downloadUrl: '#' },
-          { id: 3, title: 'Dataset Collection', type: 'ZIP', size: '15.2 MB', downloadUrl: '#' },
-          { id: 4, title: 'Reading List', type: 'PDF', size: '0.8 MB', downloadUrl: '#' }
+          {
+            id: 1,
+            title: 'Course Syllabus',
+            type: 'PDF',
+            size: '2.3 MB',
+            downloadUrl: '#',
+            description: 'Complete course outline, objectives, and assessment criteria.',
+            uploadDate: '2024-01-10',
+            pages: 12,
+            downloadCount: 156,
+            category: 'syllabus',
+            tags: ['course-info', 'requirements', 'schedule']
+          },
+          {
+            id: 2,
+            title: 'Python Cheat Sheet',
+            type: 'PDF',
+            size: '1.8 MB',
+            downloadUrl: '#',
+            description: 'Quick reference guide for Python syntax and common functions.',
+            uploadDate: '2024-01-12',
+            pages: 4,
+            downloadCount: 289,
+            category: 'reference',
+            tags: ['python', 'reference', 'syntax']
+          },
+          {
+            id: 3,
+            title: 'Dataset Collection',
+            type: 'ZIP',
+            size: '15.2 MB',
+            downloadUrl: '#',
+            description: 'Sample datasets for hands-on practice and assignments.',
+            uploadDate: '2024-01-15',
+            files: 8,
+            downloadCount: 203,
+            category: 'datasets',
+            tags: ['data', 'practice', 'assignments']
+          },
+          {
+            id: 4,
+            title: 'Reading List',
+            type: 'PDF',
+            size: '0.8 MB',
+            downloadUrl: '#',
+            description: 'Recommended books and articles for further learning.',
+            uploadDate: '2024-01-08',
+            pages: 3,
+            downloadCount: 98,
+            category: 'reference',
+            tags: ['books', 'articles', 'reading']
+          },
+          {
+            id: 5,
+            title: 'Lab Exercise Templates',
+            type: 'DOCX',
+            size: '3.4 MB',
+            downloadUrl: '#',
+            description: 'Templates for completing lab exercises and reports.',
+            uploadDate: '2024-01-20',
+            pages: 15,
+            downloadCount: 167,
+            category: 'templates',
+            tags: ['lab', 'exercises', 'templates']
+          }
         ],
         assignments: [
           { id: 1, title: 'Data Analysis Project', dueDate: '2024-02-15', status: 'submitted', grade: 'A-' },
@@ -75,6 +194,16 @@ function CourseMaterials() {
   const [materials, setMaterials] = useState(mockMaterials);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [viewMode, setViewMode] = useState('grid'); // grid or list
+  const [sortBy, setSortBy] = useState('recent'); // recent, name, size, type
+  const [filterBy, setFilterBy] = useState('all'); // all, watched, unwatched, etc.
+  const [selectedVideo, setSelectedVideo] = useState(null);
+  const [showVideoPlayer, setShowVideoPlayer] = useState(false);
+  const [showDocumentViewer, setShowDocumentViewer] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState(null);
+  const [bookmarks, setBookmarks] = useState([]);
+  const [notes, setNotes] = useState({});
+  const [downloadQueue, setDownloadQueue] = useState([]);
 
   // Fetch user's enrolled courses and their materials
   useEffect(() => {
@@ -134,6 +263,13 @@ function CourseMaterials() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
           </svg>
         );
+      case 'docx':
+      case 'doc':
+        return (
+          <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        );
       default:
         return (
           <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -141,6 +277,53 @@ function CourseMaterials() {
           </svg>
         );
     }
+  };
+
+  const handleVideoPlay = (video) => {
+    setSelectedVideo(video);
+    setShowVideoPlayer(true);
+  };
+
+  const handleDocumentView = (document) => {
+    setSelectedDocument(document);
+    setShowDocumentViewer(true);
+  };
+
+  const handleBookmark = (item, type) => {
+    const bookmark = { ...item, type, courseId: selectedCourse.id, timestamp: new Date().toISOString() };
+    setBookmarks(prev => {
+      const exists = prev.find(b => b.id === item.id && b.type === type);
+      if (exists) {
+        return prev.filter(b => !(b.id === item.id && b.type === type));
+      }
+      return [...prev, bookmark];
+    });
+  };
+
+  const isBookmarked = (item, type) => {
+    return bookmarks.some(b => b.id === item.id && b.type === type);
+  };
+
+  const handleDownload = (item) => {
+    setDownloadQueue(prev => [...prev, { ...item, progress: 0, status: 'pending' }]);
+    // Simulate download progress
+    setTimeout(() => {
+      setDownloadQueue(prev => prev.map(d =>
+        d.id === item.id ? { ...d, progress: 100, status: 'completed' } : d
+      ));
+    }, 3000);
+  };
+
+  const formatDuration = (duration) => {
+    const [minutes, seconds] = duration.split(':').map(Number);
+    return `${minutes}m ${seconds}s`;
+  };
+
+  const getProgressColor = (progress) => {
+    if (progress === 0) return 'bg-gray-200 dark:bg-gray-700';
+    if (progress < 50) return 'bg-yellow-400';
+    if (progress < 100) return 'bg-blue-500';
+    return 'bg-green-500';
   };
 
   if (loading) {
@@ -180,8 +363,23 @@ function CourseMaterials() {
             <div>
               <h1 className="text-4xl font-bold text-gray-800 dark:text-white mb-2">Course Materials</h1>
               <p className="text-gray-600 dark:text-gray-400">Access all your learning resources in one place</p>
+              {selectedCourse && (
+                <div className="mt-2 flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+                  <span>📚 {selectedCourse.materials.videos.length + selectedCourse.materials.documents.length} items</span>
+                  <span>⏱️ {selectedCourse.materials.videos.reduce((acc, v) => acc + parseInt(v.duration.split(':')[0]), 0)}+ minutes</span>
+                  <span>📈 {selectedCourse.progress}% complete</span>
+                </div>
+              )}
             </div>
             <div className="flex flex-wrap gap-3">
+              {downloadQueue.length > 0 && (
+                <button className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center">
+                  <svg className="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  {downloadQueue.filter(d => d.status === 'pending').length} downloading
+                </button>
+              )}
               <Link
                 to="/courses/my-courses"
                 className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center"
@@ -312,19 +510,75 @@ function CourseMaterials() {
 
                   {/* Tab Content */}
                   <div className="p-6">
-                    {/* Search Bar */}
-                    <div className="mb-6">
-                      <div className="relative">
-                        <input
-                          type="text"
-                          placeholder={`Search ${activeTab}...`}
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
-                        <svg className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
+                    {/* Enhanced Search and Filters */}
+                    <div className="mb-6 space-y-4">
+                      <div className="flex flex-col sm:flex-row gap-4">
+                        <div className="flex-1 relative">
+                          <input
+                            type="text"
+                            placeholder={`Search ${activeTab}...`}
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                          <svg className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                          </svg>
+                        </div>
+
+                        <div className="flex gap-2">
+                          <select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          >
+                            <option value="recent">Most Recent</option>
+                            <option value="name">Name A-Z</option>
+                            <option value="size">File Size</option>
+                            <option value="type">File Type</option>
+                          </select>
+
+                          <select
+                            value={filterBy}
+                            onChange={(e) => setFilterBy(e.target.value)}
+                            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          >
+                            <option value="all">All Items</option>
+                            {activeTab === 'videos' && (
+                              <>
+                                <option value="watched">Watched</option>
+                                <option value="unwatched">Unwatched</option>
+                                <option value="in_progress">In Progress</option>
+                              </>
+                            )}
+                            {activeTab === 'documents' && (
+                              <>
+                                <option value="pdf">PDF Files</option>
+                                <option value="zip">ZIP Files</option>
+                                <option value="docx">Word Documents</option>
+                              </>
+                            )}
+                          </select>
+
+                          <div className="flex border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+                            <button
+                              onClick={() => setViewMode('grid')}
+                              className={`p-2 ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300'} transition-colors`}
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => setViewMode('list')}
+                              className={`p-2 ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300'} transition-colors`}
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
@@ -343,55 +597,208 @@ function CourseMaterials() {
                               </svg>
                               Create Playlist
                             </button>
+                            <button className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center">
+                              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                              Download All
+                            </button>
                           </div>
                         </div>
-                        {selectedCourse.materials.videos
-                          .filter(video => video.title.toLowerCase().includes(searchTerm.toLowerCase()))
-                          .map((video) => (
-                          <div key={video.id} className="group flex items-center space-x-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-all duration-200 hover:shadow-md">
-                            <div className="flex-shrink-0">
-                              <div className="relative w-16 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center overflow-hidden">
-                                <div className="absolute inset-0 bg-black/20"></div>
-                                {video.watched ? (
-                                  <svg className="w-6 h-6 text-white z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                  </svg>
-                                ) : (
-                                  <svg className="w-6 h-6 text-white z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h1m4 0h1m6-6V7a2 2 0 00-2-2H5a2 2 0 00-2 2v3m2 4h10a2 2 0 002-2v-3a2 2 0 00-2-2H5a2 2 0 00-2 2v3z" />
-                                  </svg>
-                                )}
-                                <div className="absolute bottom-1 right-1 bg-black/70 text-white text-xs px-1 rounded">
-                                  {video.duration}
-                                </div>
-                              </div>
+                        <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-4'}>
+                          {selectedCourse.materials.videos
+                            .filter(video => {
+                              const matchesSearch = video.title.toLowerCase().includes(searchTerm.toLowerCase());
+                              const matchesFilter = filterBy === 'all' ||
+                                                   (filterBy === 'watched' && video.watched) ||
+                                                   (filterBy === 'unwatched' && !video.watched) ||
+                                                   (filterBy === 'in_progress' && video.progress > 0 && video.progress < 100);
+                              return matchesSearch && matchesFilter;
+                            })
+                            .map((video) => (
+                            <div key={video.id} className={`group bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 overflow-hidden border border-transparent hover:border-blue-200 dark:hover:border-blue-700 ${viewMode === 'list' ? 'flex items-center space-x-4 p-4' : ''}`}>
+                              {viewMode === 'grid' ? (
+                                <>
+                                  {/* Video Thumbnail */}
+                                  <div className="relative aspect-video bg-gradient-to-br from-blue-500 to-purple-600 overflow-hidden">
+                                    <img
+                                      src={video.thumbnail}
+                                      alt={video.title}
+                                      className="w-full h-full object-cover"
+                                    />
+                                    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors"></div>
+
+                                    {/* Play Button Overlay */}
+                                    <button
+                                      onClick={() => handleVideoPlay(video)}
+                                      className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                      <div className="bg-white/90 rounded-full p-4 transform scale-75 group-hover:scale-100 transition-transform">
+                                        <svg className="w-8 h-8 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                                          <path d="M8 5v14l11-7z"/>
+                                        </svg>
+                                      </div>
+                                    </button>
+
+                                    {/* Duration Badge */}
+                                    <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                                      {video.duration}
+                                    </div>
+
+                                    {/* Progress Bar */}
+                                    {video.progress > 0 && (
+                                      <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/30">
+                                        <div
+                                          className={`h-full ${getProgressColor(video.progress)}`}
+                                          style={{ width: `${video.progress}%` }}
+                                        />
+                                      </div>
+                                    )}
+
+                                    {/* Status Indicators */}
+                                    <div className="absolute top-2 left-2 flex space-x-1">
+                                      {video.watched && (
+                                        <div className="bg-green-500 text-white p-1 rounded-full">
+                                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                          </svg>
+                                        </div>
+                                      )}
+                                      {isBookmarked(video, 'video') && (
+                                        <div className="bg-yellow-500 text-white p-1 rounded-full">
+                                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+                                          </svg>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Video Info */}
+                                  <div className="p-4">
+                                    <h4 className="text-lg font-semibold text-gray-800 dark:text-white mb-2 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                      {video.title}
+                                    </h4>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
+                                      {video.description}
+                                    </p>
+
+                                    <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-3">
+                                      <span>{formatDuration(video.duration)}</span>
+                                      <span>{video.quality}</span>
+                                      <span>{video.size}</span>
+                                    </div>
+
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center space-x-2">
+                                        <button
+                                          onClick={() => handleBookmark(video, 'video')}
+                                          className={`p-2 rounded-lg transition-colors ${
+                                            isBookmarked(video, 'video')
+                                              ? 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400'
+                                              : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                          }`}
+                                          title="Bookmark"
+                                        >
+                                          <svg className="w-4 h-4" fill={isBookmarked(video, 'video') ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                                          </svg>
+                                        </button>
+
+                                        <button
+                                          onClick={() => handleDownload(video)}
+                                          className="p-2 bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
+                                          title="Download"
+                                        >
+                                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                          </svg>
+                                        </button>
+                                      </div>
+
+                                      <button
+                                        onClick={() => handleVideoPlay(video)}
+                                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center"
+                                      >
+                                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h1m4 0h1m6-6V7a2 2 0 00-2-2H5a2 2 0 00-2 2v3m2 4h10a2 2 0 002-2v-3a2 2 0 00-2-2H5a2 2 0 00-2 2v3z" />
+                                        </svg>
+                                        {video.watched ? 'Rewatch' : 'Watch'}
+                                      </button>
+                                    </div>
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  {/* List View */}
+                                  <div className="flex-shrink-0">
+                                    <div className="relative w-24 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg overflow-hidden">
+                                      <img
+                                        src={video.thumbnail}
+                                        alt={video.title}
+                                        className="w-full h-full object-cover"
+                                      />
+                                      <div className="absolute bottom-1 right-1 bg-black/70 text-white text-xs px-1 rounded">
+                                        {video.duration}
+                                      </div>
+                                      {video.progress > 0 && (
+                                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black/30">
+                                          <div
+                                            className={`h-full ${getProgressColor(video.progress)}`}
+                                            style={{ width: `${video.progress}%` }}
+                                          />
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  <div className="flex-1 min-w-0">
+                                    <h4 className="text-lg font-semibold text-gray-800 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                      {video.title}
+                                    </h4>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-1">
+                                      {video.description}
+                                    </p>
+                                    <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500 dark:text-gray-400">
+                                      <span>{formatDuration(video.duration)}</span>
+                                      <span>{video.quality}</span>
+                                      {video.watched && (
+                                        <span className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 px-2 py-1 rounded-full font-medium">
+                                          ✓ Completed
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  <div className="flex items-center space-x-2">
+                                    <button
+                                      onClick={() => handleBookmark(video, 'video')}
+                                      className={`p-2 rounded-lg transition-colors ${
+                                        isBookmarked(video, 'video')
+                                          ? 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400'
+                                          : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                      }`}
+                                    >
+                                      <svg className="w-4 h-4" fill={isBookmarked(video, 'video') ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                                      </svg>
+                                    </button>
+
+                                    <button
+                                      onClick={() => handleVideoPlay(video)}
+                                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center"
+                                    >
+                                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h1m4 0h1m6-6V7a2 2 0 00-2-2H5a2 2 0 00-2 2v3m2 4h10a2 2 0 002-2v-3a2 2 0 00-2-2H5a2 2 0 00-2 2v3z" />
+                                      </svg>
+                                      {video.watched ? 'Rewatch' : 'Watch'}
+                                    </button>
+                                  </div>
+                                </>
+                              )}
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <h4 className="text-lg font-semibold text-gray-800 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{video.title}</h4>
-                              <div className="flex items-center space-x-4 mt-1">
-                                <p className="text-sm text-gray-600 dark:text-gray-400">Duration: {video.duration}</p>
-                                {video.watched && (
-                                  <span className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 px-2 py-1 rounded-full text-xs font-medium">
-                                    ✓ Completed
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <button className="bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 p-2 rounded-lg transition-colors" title="Add to playlist">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                </svg>
-                              </button>
-                              <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center">
-                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h1m4 0h1m6-6V7a2 2 0 00-2-2H5a2 2 0 00-2 2v3m2 4h10a2 2 0 002-2v-3a2 2 0 00-2-2H5a2 2 0 00-2 2v3z" />
-                                </svg>
-                                {video.watched ? 'Rewatch' : 'Watch'}
-                              </button>
-                            </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
                     )}
 
@@ -400,45 +807,232 @@ function CourseMaterials() {
                       <div className="space-y-4">
                         <div className="flex items-center justify-between mb-6">
                           <h3 className="text-xl font-bold text-gray-800 dark:text-white">Course Documents</h3>
-                          <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center">
-                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                            Download All
-                          </button>
+                          <div className="flex items-center space-x-3">
+                            <div className="text-sm text-gray-600 dark:text-gray-400">
+                              {selectedCourse.materials.documents.length} documents • {selectedCourse.materials.documents.reduce((acc, doc) => acc + parseFloat(doc.size), 0).toFixed(1)} MB total
+                            </div>
+                            <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center">
+                              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                              Download All
+                            </button>
+                            <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center">
+                              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                              </svg>
+                              Upload Document
+                            </button>
+                          </div>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-4'}>
                           {selectedCourse.materials.documents
-                            .filter(doc => doc.title.toLowerCase().includes(searchTerm.toLowerCase()))
+                            .filter(doc => {
+                              const matchesSearch = doc.title.toLowerCase().includes(searchTerm.toLowerCase());
+                              const matchesFilter = filterBy === 'all' || doc.type.toLowerCase() === filterBy.toLowerCase();
+                              return matchesSearch && matchesFilter;
+                            })
                             .map((doc) => (
-                            <div key={doc.id} className="group flex items-center space-x-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-all duration-200 hover:shadow-md border border-transparent hover:border-blue-200 dark:hover:border-blue-700">
-                              <div className="flex-shrink-0">
-                                <div className="p-2 bg-white dark:bg-gray-600 rounded-lg shadow-sm">
-                                  {getFileIcon(doc.type)}
-                                </div>
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <h4 className="text-lg font-semibold text-gray-800 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{doc.title}</h4>
-                                <div className="flex items-center space-x-2 mt-1">
-                                  <span className="text-sm text-gray-600 dark:text-gray-400">{doc.type}</span>
-                                  <span className="text-gray-400">•</span>
-                                  <span className="text-sm text-gray-600 dark:text-gray-400">{doc.size}</span>
-                                </div>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <button className="bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 p-2 rounded-lg transition-colors" title="Preview">
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                  </svg>
-                                </button>
-                                <button className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center">
-                                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                  </svg>
-                                  Download
-                                </button>
-                              </div>
+                            <div key={doc.id} className={`group bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 overflow-hidden border border-transparent hover:border-blue-200 dark:hover:border-blue-700 ${viewMode === 'list' ? 'flex items-center space-x-4 p-4' : ''}`}>
+                              {viewMode === 'grid' ? (
+                                <>
+                                  {/* Document Preview */}
+                                  <div className="relative h-48 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center overflow-hidden">
+                                    <div className="text-center">
+                                      <div className="p-4 bg-white dark:bg-gray-600 rounded-lg shadow-lg mb-3 mx-auto w-fit">
+                                        {getFileIcon(doc.type)}
+                                      </div>
+                                      <div className="text-2xl font-bold text-gray-400 dark:text-gray-500">
+                                        {doc.type}
+                                      </div>
+                                    </div>
+
+                                    {/* Overlay Actions */}
+                                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                      <div className="flex space-x-2">
+                                        <button
+                                          onClick={() => handleDocumentView(doc)}
+                                          className="bg-white/90 hover:bg-white text-gray-800 p-3 rounded-full transition-colors"
+                                          title="Preview"
+                                        >
+                                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                          </svg>
+                                        </button>
+                                        <button
+                                          onClick={() => handleDownload(doc)}
+                                          className="bg-white/90 hover:bg-white text-gray-800 p-3 rounded-full transition-colors"
+                                          title="Download"
+                                        >
+                                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                          </svg>
+                                        </button>
+                                      </div>
+                                    </div>
+
+                                    {/* Status Indicators */}
+                                    <div className="absolute top-2 right-2">
+                                      {isBookmarked(doc, 'document') && (
+                                        <div className="bg-yellow-500 text-white p-1 rounded-full">
+                                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+                                          </svg>
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {/* Category Badge */}
+                                    <div className="absolute top-2 left-2">
+                                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                        doc.category === 'syllabus' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400' :
+                                        doc.category === 'reference' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400' :
+                                        doc.category === 'datasets' ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400' :
+                                        doc.category === 'templates' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400' :
+                                        'bg-gray-100 text-gray-700 dark:bg-gray-900/20 dark:text-gray-400'
+                                      }`}>
+                                        {doc.category}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  {/* Document Info */}
+                                  <div className="p-4">
+                                    <h4 className="text-lg font-semibold text-gray-800 dark:text-white mb-2 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                      {doc.title}
+                                    </h4>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
+                                      {doc.description}
+                                    </p>
+
+                                    <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-3">
+                                      <span>{doc.pages ? `${doc.pages} pages` : `${doc.files} files`}</span>
+                                      <span>{doc.size}</span>
+                                      <span>{doc.downloadCount} downloads</span>
+                                    </div>
+
+                                    {/* Tags */}
+                                    <div className="flex flex-wrap gap-1 mb-4">
+                                      {doc.tags?.slice(0, 3).map((tag, index) => (
+                                        <span key={index} className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-1 rounded-full text-xs">
+                                          #{tag}
+                                        </span>
+                                      ))}
+                                      {doc.tags?.length > 3 && (
+                                        <span className="text-gray-500 dark:text-gray-400 text-xs">+{doc.tags.length - 3}</span>
+                                      )}
+                                    </div>
+
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center space-x-2">
+                                        <button
+                                          onClick={() => handleBookmark(doc, 'document')}
+                                          className={`p-2 rounded-lg transition-colors ${
+                                            isBookmarked(doc, 'document')
+                                              ? 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400'
+                                              : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                          }`}
+                                          title="Bookmark"
+                                        >
+                                          <svg className="w-4 h-4" fill={isBookmarked(doc, 'document') ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                                          </svg>
+                                        </button>
+
+                                        <button
+                                          onClick={() => handleDocumentView(doc)}
+                                          className="p-2 bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
+                                          title="Preview"
+                                        >
+                                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                          </svg>
+                                        </button>
+                                      </div>
+
+                                      <button
+                                        onClick={() => handleDownload(doc)}
+                                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center"
+                                      >
+                                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        Download
+                                      </button>
+                                    </div>
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  {/* List View */}
+                                  <div className="flex-shrink-0">
+                                    <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                                      {getFileIcon(doc.type)}
+                                    </div>
+                                  </div>
+
+                                  <div className="flex-1 min-w-0">
+                                    <h4 className="text-lg font-semibold text-gray-800 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                      {doc.title}
+                                    </h4>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-1">
+                                      {doc.description}
+                                    </p>
+                                    <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500 dark:text-gray-400">
+                                      <span>{doc.type}</span>
+                                      <span>{doc.size}</span>
+                                      <span>{doc.downloadCount} downloads</span>
+                                      <span className={`px-2 py-1 rounded-full font-medium ${
+                                        doc.category === 'syllabus' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400' :
+                                        doc.category === 'reference' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400' :
+                                        doc.category === 'datasets' ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400' :
+                                        doc.category === 'templates' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400' :
+                                        'bg-gray-100 text-gray-700 dark:bg-gray-900/20 dark:text-gray-400'
+                                      }`}>
+                                        {doc.category}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex items-center space-x-2">
+                                    <button
+                                      onClick={() => handleBookmark(doc, 'document')}
+                                      className={`p-2 rounded-lg transition-colors ${
+                                        isBookmarked(doc, 'document')
+                                          ? 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400'
+                                          : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                      }`}
+                                    >
+                                      <svg className="w-4 h-4" fill={isBookmarked(doc, 'document') ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                                      </svg>
+                                    </button>
+
+                                    <button
+                                      onClick={() => handleDocumentView(doc)}
+                                      className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center"
+                                    >
+                                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                      </svg>
+                                      Preview
+                                    </button>
+
+                                    <button
+                                      onClick={() => handleDownload(doc)}
+                                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center"
+                                    >
+                                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                      </svg>
+                                      Download
+                                    </button>
+                                  </div>
+                                </>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -613,6 +1207,50 @@ function CourseMaterials() {
           </div>
         </div>
       </div>
+
+      {/* Video Player Modal */}
+      {showVideoPlayer && selectedVideo && (
+        <VideoPlayer
+          video={selectedVideo}
+          onClose={() => {
+            setShowVideoPlayer(false);
+            setSelectedVideo(null);
+          }}
+          onProgress={(progress) => {
+            // Update video progress in the materials state
+            setMaterials(prev => ({
+              ...prev,
+              courses: prev.courses.map(course =>
+                course.id === selectedCourse.id
+                  ? {
+                      ...course,
+                      materials: {
+                        ...course.materials,
+                        videos: course.materials.videos.map(video =>
+                          video.id === selectedVideo.id
+                            ? { ...video, progress, watched: progress >= 95 }
+                            : video
+                        )
+                      }
+                    }
+                  : course
+              )
+            }));
+          }}
+        />
+      )}
+
+      {/* Document Viewer Modal */}
+      {showDocumentViewer && selectedDocument && (
+        <DocumentViewer
+          document={selectedDocument}
+          onClose={() => {
+            setShowDocumentViewer(false);
+            setSelectedDocument(null);
+          }}
+          onDownload={handleDownload}
+        />
+      )}
     </div>
   );
 }

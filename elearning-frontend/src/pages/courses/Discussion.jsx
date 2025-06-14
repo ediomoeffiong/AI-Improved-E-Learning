@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { enrollmentAPI, handleAPIError } from '../../services/api';
+import RichTextEditor from '../../components/discussion/RichTextEditor';
 
 // Mock data for discussions
 const mockDiscussions = {
@@ -133,6 +134,7 @@ const mockDiscussions = {
 };
 
 function Discussion() {
+  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('recent');
@@ -140,6 +142,18 @@ function Discussion() {
   const [discussions, setDiscussions] = useState(mockDiscussions);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [newThread, setNewThread] = useState({
+    title: '',
+    category: '',
+    content: '',
+    tags: ''
+  });
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    status: 'all', // all, solved, unsolved
+    timeRange: 'all', // all, today, week, month
+    author: 'all' // all, instructors, students
+  });
 
   // Fetch discussions data
   useEffect(() => {
@@ -169,7 +183,33 @@ function Discussion() {
       const matchesSearch = thread.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            thread.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            thread.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
-      return matchesCategory && matchesSearch;
+
+      // Status filter
+      const matchesStatus = filters.status === 'all' ||
+                           (filters.status === 'solved' && thread.isSolved) ||
+                           (filters.status === 'unsolved' && !thread.isSolved);
+
+      // Author filter
+      const matchesAuthor = filters.author === 'all' ||
+                           (filters.author === 'instructors' && thread.author.role === 'Instructor') ||
+                           (filters.author === 'students' && thread.author.role === 'Student');
+
+      // Time range filter
+      const now = new Date();
+      const threadDate = new Date(thread.createdAt);
+      let matchesTimeRange = true;
+
+      if (filters.timeRange === 'today') {
+        matchesTimeRange = now.toDateString() === threadDate.toDateString();
+      } else if (filters.timeRange === 'week') {
+        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        matchesTimeRange = threadDate >= weekAgo;
+      } else if (filters.timeRange === 'month') {
+        const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        matchesTimeRange = threadDate >= monthAgo;
+      }
+
+      return matchesCategory && matchesSearch && matchesStatus && matchesAuthor && matchesTimeRange;
     })
     .sort((a, b) => {
       switch (sortBy) {
@@ -224,6 +264,65 @@ function Discussion() {
       default:
         return 'text-gray-600 bg-gray-100 dark:bg-gray-900/20 dark:text-gray-400';
     }
+  };
+
+  const handleThreadClick = (threadId) => {
+    navigate(`/courses/discussion/${threadId}`);
+  };
+
+  const handleLikeThread = (threadId) => {
+    setDiscussions(prev => ({
+      ...prev,
+      threads: prev.threads.map(thread =>
+        thread.id === threadId
+          ? {
+              ...thread,
+              isLiked: !thread.isLiked,
+              likes: thread.isLiked ? thread.likes - 1 : thread.likes + 1
+            }
+          : thread
+      )
+    }));
+  };
+
+  const handleNewThreadSubmit = (e) => {
+    e.preventDefault();
+
+    if (!newThread.title.trim() || !newThread.content.trim() || !newThread.category) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    const thread = {
+      id: Date.now(),
+      title: newThread.title,
+      content: newThread.content,
+      author: {
+        name: 'Current User', // This would come from auth context
+        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&q=80',
+        role: 'Student',
+        level: 'Intermediate'
+      },
+      course: 'Current Course', // This would come from context
+      category: newThread.category,
+      replies: 0,
+      views: 0,
+      likes: 0,
+      isLiked: false,
+      isPinned: false,
+      isSolved: false,
+      createdAt: new Date().toISOString(),
+      lastActivity: new Date().toISOString(),
+      tags: newThread.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
+    };
+
+    setDiscussions(prev => ({
+      ...prev,
+      threads: [thread, ...prev.threads]
+    }));
+
+    setNewThread({ title: '', category: '', content: '', tags: '' });
+    setShowNewThreadModal(false);
   };
 
   if (loading) {
@@ -353,33 +452,117 @@ function Discussion() {
           <div className="lg:col-span-3">
             {/* Search and Filters */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-6">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex-1">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Search discussions..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                    <svg className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="flex-1">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Search discussions..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                      <svg className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value)}
+                      className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="recent">Most Recent</option>
+                      <option value="popular">Most Popular</option>
+                      <option value="replies">Most Replies</option>
+                      <option value="views">Most Views</option>
+                    </select>
+                    <button
+                      onClick={() => setShowFilters(!showFilters)}
+                      className={`px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors flex items-center space-x-2 ${
+                        showFilters
+                          ? 'bg-blue-50 border-blue-300 text-blue-700 dark:bg-blue-900/20 dark:border-blue-600 dark:text-blue-400'
+                          : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                      </svg>
+                      <span>Filters</span>
+                    </button>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="recent">Most Recent</option>
-                    <option value="popular">Most Popular</option>
-                    <option value="replies">Most Replies</option>
-                    <option value="views">Most Views</option>
-                  </select>
-                </div>
+
+                {/* Advanced Filters */}
+                {showFilters && (
+                  <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Status
+                        </label>
+                        <select
+                          value={filters.status}
+                          onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                          <option value="all">All Threads</option>
+                          <option value="solved">Solved</option>
+                          <option value="unsolved">Unsolved</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Time Range
+                        </label>
+                        <select
+                          value={filters.timeRange}
+                          onChange={(e) => setFilters(prev => ({ ...prev, timeRange: e.target.value }))}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                          <option value="all">All Time</option>
+                          <option value="today">Today</option>
+                          <option value="week">This Week</option>
+                          <option value="month">This Month</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Author Type
+                        </label>
+                        <select
+                          value={filters.author}
+                          onChange={(e) => setFilters(prev => ({ ...prev, author: e.target.value }))}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                          <option value="all">All Authors</option>
+                          <option value="instructors">Instructors</option>
+                          <option value="students">Students</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between mt-4">
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                        {filteredThreads.length} thread{filteredThreads.length !== 1 ? 's' : ''} found
+                      </div>
+                      <button
+                        onClick={() => {
+                          setFilters({ status: 'all', timeRange: 'all', author: 'all' });
+                          setSearchTerm('');
+                          setSelectedCategory('all');
+                        }}
+                        className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+                      >
+                        Clear All Filters
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -403,31 +586,59 @@ function Discussion() {
                 </div>
               ) : (
                 filteredThreads.map((thread) => (
-                  <div key={thread.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 overflow-hidden">
+                  <div key={thread.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 overflow-hidden border-l-4 border-transparent hover:border-blue-500">
                     <div className="p-6">
                       {/* Thread Header */}
                       <div className="flex items-start space-x-4">
-                        <img
-                          src={thread.author.avatar}
-                          alt={thread.author.name}
-                          className="w-12 h-12 rounded-full object-cover"
-                        />
+                        <div className="relative">
+                          <img
+                            src={thread.author.avatar}
+                            alt={thread.author.name}
+                            className="w-12 h-12 rounded-full object-cover"
+                          />
+                          {thread.author.role === 'Instructor' && (
+                            <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-purple-500 rounded-full flex items-center justify-center">
+                              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C20.168 18.477 18.582 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                              </svg>
+                            </div>
+                          )}
+                        </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center space-x-2 mb-2">
                             {thread.isPinned && (
-                              <svg className="w-4 h-4 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                              </svg>
+                              <div className="flex items-center space-x-1 bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 px-2 py-1 rounded-full text-xs font-medium">
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                                </svg>
+                                <span>Pinned</span>
+                              </div>
                             )}
                             {thread.isSolved && (
-                              <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
+                              <div className="flex items-center space-x-1 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 px-2 py-1 rounded-full text-xs font-medium">
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span>Solved</span>
+                              </div>
                             )}
-                            <h3 className="text-xl font-semibold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer">
-                              {thread.title}
-                            </h3>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              thread.category === 'announcements' ? 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400' :
+                              thread.category === 'technical' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400' :
+                              thread.category === 'assignments' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400' :
+                              thread.category === 'projects' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400' :
+                              'bg-gray-100 text-gray-700 dark:bg-gray-900/20 dark:text-gray-400'
+                            }`}>
+                              {discussions.categories.find(cat => cat.id === thread.category)?.name || thread.category}
+                            </span>
                           </div>
+
+                          <h3
+                            className="text-xl font-semibold text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer mb-2"
+                            onClick={() => handleThreadClick(thread.id)}
+                          >
+                            {thread.title}
+                          </h3>
 
                           <div className="flex items-center space-x-3 mb-3">
                             <span className="font-medium text-gray-800 dark:text-white">{thread.author.name}</span>
@@ -473,17 +684,23 @@ function Discussion() {
                             </div>
 
                             <div className="flex items-center space-x-2">
-                              <button className={`flex items-center space-x-1 px-3 py-1 rounded-lg transition-colors ${
-                                thread.isLiked
-                                  ? 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400'
-                                  : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                              }`}>
+                              <button
+                                onClick={() => handleLikeThread(thread.id)}
+                                className={`flex items-center space-x-1 px-3 py-1 rounded-lg transition-colors ${
+                                  thread.isLiked
+                                    ? 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400'
+                                    : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                }`}
+                              >
                                 <svg className="w-4 h-4" fill={thread.isLiked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                                 </svg>
                                 <span>{thread.likes}</span>
                               </button>
-                              <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                              <button
+                                onClick={() => handleThreadClick(thread.id)}
+                                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                              >
                                 Reply
                               </button>
                             </div>
@@ -515,23 +732,31 @@ function Discussion() {
                   </button>
                 </div>
 
-                <form className="space-y-6">
+                <form onSubmit={handleNewThreadSubmit} className="space-y-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Title
+                      Title *
                     </label>
                     <input
                       type="text"
+                      value={newThread.title}
+                      onChange={(e) => setNewThread(prev => ({ ...prev, title: e.target.value }))}
                       placeholder="Enter discussion title..."
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Category
+                      Category *
                     </label>
-                    <select className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <select
+                      value={newThread.category}
+                      onChange={(e) => setNewThread(prev => ({ ...prev, category: e.target.value }))}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    >
                       <option value="">Select a category</option>
                       {discussions.categories.filter(cat => cat.id !== 'all').map((category) => (
                         <option key={category.id} value={category.id}>{category.name}</option>
@@ -541,13 +766,14 @@ function Discussion() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Content
+                      Content *
                     </label>
-                    <textarea
-                      rows={6}
+                    <RichTextEditor
+                      value={newThread.content}
+                      onChange={(content) => setNewThread(prev => ({ ...prev, content }))}
                       placeholder="Write your discussion content..."
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                    ></textarea>
+                      minHeight="150px"
+                    />
                   </div>
 
                   <div>
@@ -556,6 +782,8 @@ function Discussion() {
                     </label>
                     <input
                       type="text"
+                      value={newThread.tags}
+                      onChange={(e) => setNewThread(prev => ({ ...prev, tags: e.target.value }))}
                       placeholder="Enter tags separated by commas..."
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
@@ -564,7 +792,10 @@ function Discussion() {
                   <div className="flex items-center justify-end space-x-4 pt-4">
                     <button
                       type="button"
-                      onClick={() => setShowNewThreadModal(false)}
+                      onClick={() => {
+                        setShowNewThreadModal(false);
+                        setNewThread({ title: '', category: '', content: '', tags: '' });
+                      }}
                       className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                     >
                       Cancel

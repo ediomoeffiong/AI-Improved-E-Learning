@@ -139,26 +139,15 @@ const allAvailableCourses = [
   },
 ];
 
-const categories = [
-  'All',
-  ...Array.from(new Set(allAvailableCourses.map((c) => c.category)))
-];
-
-const levels = [
-  'All',
-  ...Array.from(new Set(allAvailableCourses.map((c) => c.level)))
-];
-
-const instructors = [
-  'All',
-  ...Array.from(new Set(allAvailableCourses.map((c) => c.instructor)))
-];
+const categories = Array.from(new Set(allAvailableCourses.map((c) => c.category)));
+const levels = Array.from(new Set(allAvailableCourses.map((c) => c.level)));
+const instructors = Array.from(new Set(allAvailableCourses.map((c) => c.instructor)));
 
 function Available() {
   const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('All');
-  const [level, setLevel] = useState('All');
-  const [instructor, setInstructor] = useState('All');
+  const [category, setCategory] = useState('');
+  const [level, setLevel] = useState('');
+  const [instructor, setInstructor] = useState('');
   const [priceRange, setPriceRange] = useState('All');
   const [sortBy, setSortBy] = useState('popularity');
   const [showFreeOnly, setShowFreeOnly] = useState(false);
@@ -205,9 +194,9 @@ function Available() {
         setLoading(true);
         const filters = {
           search: search || undefined,
-          category: category !== 'All' ? category : undefined,
-          level: level !== 'All' ? level : undefined,
-          instructor: instructor !== 'All' ? instructor : undefined,
+          category: category || undefined,
+          level: level || undefined,
+          instructor: instructor || undefined,
           priceRange: priceRange !== 'All' ? priceRange : undefined,
           sortBy,
           showFreeOnly: showFreeOnly || undefined

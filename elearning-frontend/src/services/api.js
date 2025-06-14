@@ -272,6 +272,285 @@ export const enrollmentAPI = {
   },
 };
 
+// Discussion API functions
+export const discussionAPI = {
+  // Get all discussions with filters
+  getDiscussions: async (filters = {}) => {
+    try {
+      const queryParams = new URLSearchParams();
+
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          queryParams.append(key, value);
+        }
+      });
+
+      const endpoint = `/discussions${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+      return await apiRequest(endpoint);
+    } catch (error) {
+      if (error.message.includes('Backend service is not available')) {
+        console.log('Using mock data for discussions');
+        return await mockAPI.getDiscussions(filters);
+      }
+      throw error;
+    }
+  },
+
+  // Get a specific discussion thread
+  getThread: async (threadId) => {
+    try {
+      return await apiRequest(`/discussions/${threadId}`);
+    } catch (error) {
+      if (error.message.includes('Backend service is not available')) {
+        console.log('Using mock data for thread');
+        return await mockAPI.getThread(threadId);
+      }
+      throw error;
+    }
+  },
+
+  // Create a new discussion thread
+  createThread: async (threadData) => {
+    try {
+      return await apiRequest('/discussions', {
+        method: 'POST',
+        body: JSON.stringify(threadData),
+      });
+    } catch (error) {
+      if (error.message.includes('Backend service is not available')) {
+        console.log('Using mock data for creating thread');
+        return await mockAPI.createThread(threadData);
+      }
+      throw error;
+    }
+  },
+
+  // Add a reply to a thread
+  addReply: async (threadId, replyData) => {
+    try {
+      return await apiRequest(`/discussions/${threadId}/replies`, {
+        method: 'POST',
+        body: JSON.stringify(replyData),
+      });
+    } catch (error) {
+      if (error.message.includes('Backend service is not available')) {
+        console.log('Using mock data for adding reply');
+        return await mockAPI.addReply(threadId, replyData);
+      }
+      throw error;
+    }
+  },
+
+  // Like/unlike a thread or reply
+  toggleLike: async (threadId, replyId = null) => {
+    try {
+      const endpoint = replyId
+        ? `/discussions/${threadId}/replies/${replyId}/like`
+        : `/discussions/${threadId}/like`;
+      return await apiRequest(endpoint, {
+        method: 'POST',
+      });
+    } catch (error) {
+      if (error.message.includes('Backend service is not available')) {
+        console.log('Using mock data for toggling like');
+        return await mockAPI.toggleLike(threadId, replyId);
+      }
+      throw error;
+    }
+  },
+
+  // Mark thread as solved
+  markAsSolved: async (threadId, replyId = null) => {
+    try {
+      return await apiRequest(`/discussions/${threadId}/solve`, {
+        method: 'POST',
+        body: JSON.stringify({ replyId }),
+      });
+    } catch (error) {
+      if (error.message.includes('Backend service is not available')) {
+        console.log('Using mock data for marking as solved');
+        return await mockAPI.markAsSolved(threadId, replyId);
+      }
+      throw error;
+    }
+  },
+
+  // Get discussion statistics
+  getStats: async () => {
+    try {
+      return await apiRequest('/discussions/stats');
+    } catch (error) {
+      if (error.message.includes('Backend service is not available')) {
+        console.log('Using mock data for discussion stats');
+        return await mockAPI.getDiscussionStats();
+      }
+      throw error;
+    }
+  }
+};
+
+// Materials API functions
+export const materialsAPI = {
+  // Get course materials
+  getMaterials: async (courseId, filters = {}) => {
+    try {
+      const queryParams = new URLSearchParams();
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          queryParams.append(key, value);
+        }
+      });
+
+      const endpoint = `/courses/${courseId}/materials${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+      return await apiRequest(endpoint);
+    } catch (error) {
+      if (error.message.includes('Backend service is not available')) {
+        console.log('Using mock data for materials');
+        return await mockAPI.getMaterials(courseId, filters);
+      }
+      throw error;
+    }
+  },
+
+  // Get video details
+  getVideo: async (courseId, videoId) => {
+    try {
+      return await apiRequest(`/courses/${courseId}/videos/${videoId}`);
+    } catch (error) {
+      if (error.message.includes('Backend service is not available')) {
+        console.log('Using mock data for video');
+        return await mockAPI.getVideo(courseId, videoId);
+      }
+      throw error;
+    }
+  },
+
+  // Update video progress
+  updateVideoProgress: async (courseId, videoId, progress) => {
+    try {
+      return await apiRequest(`/courses/${courseId}/videos/${videoId}/progress`, {
+        method: 'PUT',
+        body: JSON.stringify({ progress }),
+      });
+    } catch (error) {
+      if (error.message.includes('Backend service is not available')) {
+        console.log('Using mock data for video progress update');
+        return await mockAPI.updateVideoProgress(courseId, videoId, progress);
+      }
+      throw error;
+    }
+  },
+
+  // Download material
+  downloadMaterial: async (courseId, materialId, materialType) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/courses/${courseId}/materials/${materialId}/download`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Download failed');
+      }
+
+      return response.blob();
+    } catch (error) {
+      if (error.message.includes('Backend service is not available')) {
+        console.log('Using mock data for download');
+        return await mockAPI.downloadMaterial(courseId, materialId, materialType);
+      }
+      throw error;
+    }
+  },
+
+  // Upload material
+  uploadMaterial: async (courseId, formData) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/courses/${courseId}/materials/upload`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      return await response.json();
+    } catch (error) {
+      if (error.message.includes('Backend service is not available')) {
+        console.log('Using mock data for upload');
+        return await mockAPI.uploadMaterial(courseId, formData);
+      }
+      throw error;
+    }
+  },
+
+  // Add bookmark
+  addBookmark: async (courseId, materialId, materialType) => {
+    try {
+      return await apiRequest(`/courses/${courseId}/bookmarks`, {
+        method: 'POST',
+        body: JSON.stringify({ materialId, materialType }),
+      });
+    } catch (error) {
+      if (error.message.includes('Backend service is not available')) {
+        console.log('Using mock data for bookmark');
+        return await mockAPI.addBookmark(courseId, materialId, materialType);
+      }
+      throw error;
+    }
+  },
+
+  // Remove bookmark
+  removeBookmark: async (courseId, materialId, materialType) => {
+    try {
+      return await apiRequest(`/courses/${courseId}/bookmarks/${materialId}`, {
+        method: 'DELETE',
+      });
+    } catch (error) {
+      if (error.message.includes('Backend service is not available')) {
+        console.log('Using mock data for bookmark removal');
+        return await mockAPI.removeBookmark(courseId, materialId, materialType);
+      }
+      throw error;
+    }
+  },
+
+  // Save notes
+  saveNotes: async (courseId, materialId, materialType, notes) => {
+    try {
+      return await apiRequest(`/courses/${courseId}/materials/${materialId}/notes`, {
+        method: 'PUT',
+        body: JSON.stringify({ notes, materialType }),
+      });
+    } catch (error) {
+      if (error.message.includes('Backend service is not available')) {
+        console.log('Using mock data for notes');
+        return await mockAPI.saveNotes(courseId, materialId, materialType, notes);
+      }
+      throw error;
+    }
+  },
+
+  // Get learning analytics
+  getAnalytics: async (courseId) => {
+    try {
+      return await apiRequest(`/courses/${courseId}/analytics`);
+    } catch (error) {
+      if (error.message.includes('Backend service is not available')) {
+        console.log('Using mock data for analytics');
+        return await mockAPI.getAnalytics(courseId);
+      }
+      throw error;
+    }
+  }
+};
+
 // Auth API functions
 export const authAPI = {
   // Login
