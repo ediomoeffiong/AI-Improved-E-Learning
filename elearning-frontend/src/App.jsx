@@ -7,7 +7,7 @@ import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import Chatbot from './components/chatbot/Chatbot';
 import ScrollToTop from './components/common/ScrollToTop';
-import ScrollToTopButton from './components/common/ScrollToTopButton';
+
 import DevModeIndicator from './components/common/DevModeIndicator';
 import PWAPrompt from './components/pwa/PWAPrompt';
 import { AuthProvider } from './contexts/AuthContext';
@@ -107,7 +107,6 @@ function App() {
         </main>
         <Chatbot />
         <Footer />
-        <ScrollToTopButton />
         <DevModeIndicator />
         </div>
       </Router>

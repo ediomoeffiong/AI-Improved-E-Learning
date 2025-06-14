@@ -36,7 +36,7 @@ const ScrollToTopButton = () => {
     <button
       onClick={handleScrollToTop}
       className={`
-        fixed bottom-8 right-8 z-50
+        fixed bottom-24 right-4 sm:right-8 z-50
         bg-gradient-to-r from-blue-600 to-purple-600
         hover:from-blue-700 hover:to-purple-700
         text-white p-3 rounded-full shadow-lg
