@@ -9,7 +9,7 @@ const Navbar = ({ isScrolled = false }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navRef = useRef(null);
   const { scrollToTop } = useScrollToTop();
-  const { isAuthenticated, logout, getUserName, getUserEmail } = useAuth();
+  const { isAuthenticated, logout, getUserName, getUserEmail, hasInstitutionFunctions } = useAuth();
 
   // Mock notifications data
   const [notifications, setNotifications] = useState([
@@ -356,8 +356,8 @@ const Navbar = ({ isScrolled = false }) => {
               </Link>
             )}
 
-            {/* Classroom Dropdown - Only show to authenticated users */}
-            {isAuthenticated() && (
+            {/* Classroom Dropdown - Only show to authenticated users with institution functions */}
+            {isAuthenticated() && hasInstitutionFunctions() && (
               <div className="relative">
               <button
                 onClick={() => toggleDropdown('classroom')}
@@ -393,56 +393,60 @@ const Navbar = ({ isScrolled = false }) => {
                       <div className="text-xs text-gray-500">Virtual classroom</div>
                     </div>
                   </Link>
+                  <div className="border-t border-gray-100 my-2"></div>
+                  <div className="px-4 py-2">
+                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">CBT System</div>
+                  </div>
                   <Link
-                    to="/classroom/materials"
+                    to="/cbt/dashboard"
+                    onClick={handleLinkClick}
+                    className="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150 group"
+                  >
+                    <svg className="w-4 h-4 mr-3 text-blue-500 group-hover:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    <div>
+                      <div className="font-medium">Dashboard</div>
+                      <div className="text-xs text-gray-500">CBT overview</div>
+                    </div>
+                  </Link>
+                  <Link
+                    to="/cbt/practice"
                     onClick={handleLinkClick}
                     className="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150 group"
                   >
                     <svg className="w-4 h-4 mr-3 text-green-500 group-hover:text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                     </svg>
                     <div>
-                      <div className="font-medium">Materials</div>
-                      <div className="text-xs text-gray-500">Shared resources</div>
+                      <div className="font-medium">Practice</div>
+                      <div className="text-xs text-gray-500">Practice tests</div>
                     </div>
                   </Link>
                   <Link
-                    to="/classroom/chat"
-                    onClick={handleLinkClick}
-                    className="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150 group"
-                  >
-                    <svg className="w-4 h-4 mr-3 text-purple-500 group-hover:text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                    </svg>
-                    <div>
-                      <div className="font-medium">Live Chat</div>
-                      <div className="text-xs text-gray-500">Real-time messaging</div>
-                    </div>
-                  </Link>
-                  <Link
-                    to="/classroom/recordings"
-                    onClick={handleLinkClick}
-                    className="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150 group"
-                  >
-                    <svg className="w-4 h-4 mr-3 text-red-500 group-hover:text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                    </svg>
-                    <div>
-                      <div className="font-medium">Recordings</div>
-                      <div className="text-xs text-gray-500">Session replays</div>
-                    </div>
-                  </Link>
-                  <Link
-                    to="/classroom/schedule"
+                    to="/cbt/take-assessment"
                     onClick={handleLinkClick}
                     className="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150 group"
                   >
                     <svg className="w-4 h-4 mr-3 text-orange-500 group-hover:text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 0h6m-6 0l-1 12a2 2 0 002 2h6a2 2 0 002-2L15 7" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <div>
-                      <div className="font-medium">Schedule</div>
-                      <div className="text-xs text-gray-500">Class timetable</div>
+                      <div className="font-medium">Take Assessment</div>
+                      <div className="text-xs text-gray-500">Official exams</div>
+                    </div>
+                  </Link>
+                  <Link
+                    to="/cbt/view-results"
+                    onClick={handleLinkClick}
+                    className="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150 group"
+                  >
+                    <svg className="w-4 h-4 mr-3 text-purple-500 group-hover:text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    <div>
+                      <div className="font-medium">View Results</div>
+                      <div className="text-xs text-gray-500">Test scores</div>
                     </div>
                   </Link>
                 </div>
@@ -902,8 +906,8 @@ const Navbar = ({ isScrolled = false }) => {
               </Link>
             )}
 
-            {/* Mobile Classroom Menu - Only show to authenticated users */}
-            {isAuthenticated() && (
+            {/* Mobile Classroom Menu - Only show to authenticated users with institution functions */}
+            {isAuthenticated() && hasInstitutionFunctions() && (
               <button
                 onClick={() => toggleDropdown('mobile-classroom')}
                 className="w-full text-left px-3 py-2 text-white hover:bg-blue-700 rounded-md flex justify-between items-center"
@@ -914,12 +918,14 @@ const Navbar = ({ isScrolled = false }) => {
                 </svg>
               </button>
             )}
-            {isAuthenticated() && openDropdown === 'mobile-classroom' && (
-              <div className="pl-4">
-                <Link to="/classroom/dashboard" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Dashboard</Link>
-                <Link to="/classroom/materials" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Course Materials</Link>
-                <Link to="/classroom/chat" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Chat Feature</Link>
-                <Link to="/classroom/recordings" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Session Recordings</Link>
+            {isAuthenticated() && hasInstitutionFunctions() && openDropdown === 'mobile-classroom' && (
+              <div className="pl-4 space-y-1 bg-blue-700/30 rounded-md mx-2 py-2">
+                <Link to="/classroom/dashboard" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">🏫 Dashboard</Link>
+                <div className="px-3 py-1 text-xs text-blue-200 font-semibold uppercase tracking-wide">CBT System</div>
+                <Link to="/cbt/dashboard" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">📊 Dashboard</Link>
+                <Link to="/cbt/practice" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">📚 Practice</Link>
+                <Link to="/cbt/take-assessment" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">✅ Take Assessment</Link>
+                <Link to="/cbt/view-results" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">📈 View Results</Link>
               </div>
             )}
 

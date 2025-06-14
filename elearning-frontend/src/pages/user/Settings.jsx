@@ -15,21 +15,30 @@ function Settings() {
     pushNotifications: false,
     courseReminders: true,
     weeklyDigest: true,
-    
+
     // Privacy Settings
     profileVisibility: 'public',
     showProgress: true,
     showAchievements: true,
-    
+
     // Learning Preferences
     language: 'en',
     timezone: 'UTC',
     theme: 'light',
     autoplay: false,
-    
+
     // Security Settings
     twoFactorAuth: false,
-    sessionTimeout: '30'
+    sessionTimeout: '30',
+
+    // Institution Settings
+    institutionFunctionsEnabled: false,
+    institutionName: '',
+    studentId: '',
+    department: '',
+    academicYear: '',
+    enrollmentDate: '',
+    studentLevel: 'undergraduate'
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -42,6 +51,22 @@ function Settings() {
   const [cacheStatus, setCacheStatus] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
+
+  // Load settings from localStorage on component mount
+  useEffect(() => {
+    try {
+      const savedSettings = localStorage.getItem('userSettings');
+      if (savedSettings) {
+        const parsedSettings = JSON.parse(savedSettings);
+        setSettings(prev => ({
+          ...prev,
+          ...parsedSettings
+        }));
+      }
+    } catch (error) {
+      console.error('Error loading settings:', error);
+    }
+  }, []);
 
   // Keyboard navigation for tabs
   const handleKeyDown = (e, tabId) => {
@@ -88,9 +113,25 @@ function Settings() {
   };
 
   const handleSaveSettings = () => {
-    // TODO: Implement settings save API call
-    console.log('Saving settings:', settings);
-    alert('Settings saved successfully!');
+    try {
+      // Save settings to localStorage
+      localStorage.setItem('userSettings', JSON.stringify(settings));
+
+      // TODO: Implement settings save API call
+      console.log('Saving settings:', settings);
+      alert('Settings saved successfully!');
+
+      // If institution functions were just enabled/disabled, suggest page refresh
+      if (settings.institutionFunctionsEnabled) {
+        const shouldRefresh = confirm('Institution functions have been enabled! Would you like to refresh the page to see the new features?');
+        if (shouldRefresh) {
+          window.location.reload();
+        }
+      }
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      alert('Error saving settings. Please try again.');
+    }
   };
 
   const handlePasswordUpdate = (e) => {
@@ -162,6 +203,7 @@ function Settings() {
     { id: 'privacy', name: 'Privacy', icon: '🔒' },
     { id: 'preferences', name: 'Preferences', icon: '⚙️' },
     { id: 'security', name: 'Security', icon: '🛡️' },
+    { id: 'institution', name: 'Institution', icon: '🏫' },
     { id: 'cache', name: 'Cache & Storage', icon: '💾' }
   ];
 
@@ -506,6 +548,179 @@ function Settings() {
                   </button>
                 </form>
               </div>
+            </div>
+          )}
+
+          {/* Institution Tab */}
+          {activeTab === 'institution' && (
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Institution Functions</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Enable institution-specific features like classroom management, CBT (Computer Based Testing), and academic tools.
+              </p>
+
+              {/* Enable Institution Functions Toggle */}
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h4 className="text-md font-medium text-gray-900 dark:text-white">Enable Institution Functions</h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                      Unlock classroom features, CBT assessments, and academic management tools
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={settings.institutionFunctionsEnabled}
+                    onChange={(e) => handleSettingChange('institutionFunctionsEnabled', e.target.checked)}
+                    className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                </div>
+
+                {settings.institutionFunctionsEnabled && (
+                  <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
+                    <div className="flex items-center">
+                      <svg className="w-5 h-5 text-green-600 dark:text-green-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="text-sm font-medium text-green-800 dark:text-green-200">
+                        Institution functions enabled! Classroom and CBT features are now available.
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Institution Details Form */}
+              {settings.institutionFunctionsEnabled && (
+                <div className="space-y-6">
+                  <h4 className="text-md font-medium text-gray-900 dark:text-white">Institution Details</h4>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Institution Name *
+                      </label>
+                      <input
+                        type="text"
+                        value={settings.institutionName}
+                        onChange={(e) => handleSettingChange('institutionName', e.target.value)}
+                        placeholder="e.g., University of Technology"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Student ID *
+                      </label>
+                      <input
+                        type="text"
+                        value={settings.studentId}
+                        onChange={(e) => handleSettingChange('studentId', e.target.value)}
+                        placeholder="e.g., STU2024001"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Department/Faculty
+                      </label>
+                      <input
+                        type="text"
+                        value={settings.department}
+                        onChange={(e) => handleSettingChange('department', e.target.value)}
+                        placeholder="e.g., Computer Science"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Academic Year
+                      </label>
+                      <input
+                        type="text"
+                        value={settings.academicYear}
+                        onChange={(e) => handleSettingChange('academicYear', e.target.value)}
+                        placeholder="e.g., 2024/2025"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Student Level
+                      </label>
+                      <select
+                        value={settings.studentLevel}
+                        onChange={(e) => handleSettingChange('studentLevel', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      >
+                        <option value="undergraduate">Undergraduate</option>
+                        <option value="graduate">Graduate</option>
+                        <option value="postgraduate">Postgraduate</option>
+                        <option value="phd">PhD</option>
+                        <option value="certificate">Certificate</option>
+                        <option value="diploma">Diploma</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Enrollment Date
+                      </label>
+                      <input
+                        type="date"
+                        value={settings.enrollmentDate}
+                        onChange={(e) => handleSettingChange('enrollmentDate', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Features Preview */}
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
+                    <h5 className="text-md font-medium text-gray-900 dark:text-white mb-4">Available Features</h5>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="bg-blue-100 dark:bg-blue-900 p-2 rounded-full">
+                          <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                          </svg>
+                        </div>
+                        <span className="text-sm text-gray-700 dark:text-gray-300">Classroom Management</span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="bg-green-100 dark:bg-green-900 p-2 rounded-full">
+                          <svg className="w-4 h-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                        <span className="text-sm text-gray-700 dark:text-gray-300">CBT Assessments</span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="bg-purple-100 dark:bg-purple-900 p-2 rounded-full">
+                          <svg className="w-4 h-4 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                          </svg>
+                        </div>
+                        <span className="text-sm text-gray-700 dark:text-gray-300">Performance Analytics</span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="bg-orange-100 dark:bg-orange-900 p-2 rounded-full">
+                          <svg className="w-4 h-4 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                          </svg>
+                        </div>
+                        <span className="text-sm text-gray-700 dark:text-gray-300">Academic Resources</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

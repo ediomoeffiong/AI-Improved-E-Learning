@@ -85,6 +85,42 @@ export const AuthProvider = ({ children }) => {
     return allowedRoles.includes(user?.role);
   };
 
+  const hasInstitutionFunctions = () => {
+    // Check if user has institution functions enabled
+    // This would typically come from user settings stored in the backend
+    // For now, we'll check localStorage for the setting
+    try {
+      const settings = localStorage.getItem('userSettings');
+      if (settings) {
+        const parsedSettings = JSON.parse(settings);
+        return parsedSettings.institutionFunctionsEnabled === true;
+      }
+    } catch (error) {
+      console.error('Error checking institution functions:', error);
+    }
+    return false;
+  };
+
+  const getInstitutionData = () => {
+    try {
+      const settings = localStorage.getItem('userSettings');
+      if (settings) {
+        const parsedSettings = JSON.parse(settings);
+        return {
+          institutionName: parsedSettings.institutionName || '',
+          studentId: parsedSettings.studentId || '',
+          department: parsedSettings.department || '',
+          academicYear: parsedSettings.academicYear || '',
+          enrollmentDate: parsedSettings.enrollmentDate || '',
+          studentLevel: parsedSettings.studentLevel || 'undergraduate'
+        };
+      }
+    } catch (error) {
+      console.error('Error getting institution data:', error);
+    }
+    return null;
+  };
+
   const value = {
     user,
     token,
@@ -96,7 +132,9 @@ export const AuthProvider = ({ children }) => {
     getUserName,
     getUserEmail,
     hasRole,
-    hasAnyRole
+    hasAnyRole,
+    hasInstitutionFunctions,
+    getInstitutionData
   };
 
   return (

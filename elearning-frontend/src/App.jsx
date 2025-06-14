@@ -15,6 +15,7 @@ import PWAPrompt from './components/pwa/PWAPrompt';
 import { AuthProvider } from './contexts/AuthContext';
 import { GamificationProvider } from './contexts/GamificationContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import InstitutionProtectedRoute from './components/auth/InstitutionProtectedRoute';
 
 // Main pages
 import Home from './pages/home/Home';
@@ -42,6 +43,12 @@ import Leaderboard from './pages/quiz/Leaderboard';
 import ClassroomDashboard from './pages/classroom/ClassroomDashboard';
 import ChatFeature from './pages/classroom/ChatFeature';
 import SessionRecordings from './pages/classroom/SessionRecordings';
+
+// CBT pages
+import CBTDashboard from './pages/cbt/CBTDashboard';
+import Practice from './pages/cbt/Practice';
+import TakeAssessment from './pages/cbt/TakeAssessment';
+import ViewResults from './pages/cbt/ViewResults';
 
 // Progress pages
 import ProgressDashboard from './pages/progress/ProgressDashboard';
@@ -91,11 +98,16 @@ function App() {
               <Route path="/quiz/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
               <Route path="/quiz/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
               
-              {/* Protected Classroom Routes */}
-              <Route path="/classroom/dashboard" element={<ProtectedRoute><ClassroomDashboard /></ProtectedRoute>} />
-              {/* <Route path="/classroom/materials" element={<CourseMaterials />} /> */}
-              <Route path="/classroom/chat" element={<ProtectedRoute><ChatFeature /></ProtectedRoute>} />
-              <Route path="/classroom/recordings" element={<ProtectedRoute><SessionRecordings /></ProtectedRoute>} />
+              {/* Protected Classroom Routes - Require Institution Functions */}
+              <Route path="/classroom/dashboard" element={<InstitutionProtectedRoute><ClassroomDashboard /></InstitutionProtectedRoute>} />
+              <Route path="/classroom/chat" element={<InstitutionProtectedRoute><ChatFeature /></InstitutionProtectedRoute>} />
+              <Route path="/classroom/recordings" element={<InstitutionProtectedRoute><SessionRecordings /></InstitutionProtectedRoute>} />
+
+              {/* Protected CBT Routes - Require Institution Functions */}
+              <Route path="/cbt/dashboard" element={<InstitutionProtectedRoute><CBTDashboard /></InstitutionProtectedRoute>} />
+              <Route path="/cbt/practice" element={<InstitutionProtectedRoute><Practice /></InstitutionProtectedRoute>} />
+              <Route path="/cbt/take-assessment" element={<InstitutionProtectedRoute><TakeAssessment /></InstitutionProtectedRoute>} />
+              <Route path="/cbt/view-results" element={<InstitutionProtectedRoute><ViewResults /></InstitutionProtectedRoute>} />
               
               {/* Protected Progress Routes */}
               <Route path="/progress/dashboard" element={<ProtectedRoute><ProgressDashboard /></ProtectedRoute>} />
