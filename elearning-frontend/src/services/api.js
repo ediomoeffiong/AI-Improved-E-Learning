@@ -6,7 +6,7 @@ let lastBackendCheck = 0;
 const BACKEND_CHECK_INTERVAL = 30000; // 30 seconds
 
 // PWA offline support
-import { cacheOfflineData, getCachedOfflineData } from '../utils/pwa.js';
+import { cacheOfflineData, getCachedOfflineData, isOnline } from '../utils/pwa.js';
 
 // Helper function to get auth token
 const getAuthToken = () => {
@@ -402,6 +402,69 @@ export const storage = {
   },
 };
 
+// Cache refresh utilities
+export const cacheAPI = {
+  // Refresh critical data when coming back online
+  refreshCriticalData: async () => {
+    try {
+      console.log('Refreshing critical API data...');
+
+      // Clear old cached data
+      const keys = Object.keys(localStorage);
+      const apiKeys = keys.filter(key => key.startsWith('offline_api_'));
+      const oneHourAgo = Date.now() - (60 * 60 * 1000);
+
+      apiKeys.forEach(key => {
+        try {
+          const cached = localStorage.getItem(key);
+          if (cached) {
+            const { timestamp } = JSON.parse(cached);
+            if (timestamp < oneHourAgo) {
+              localStorage.removeItem(key);
+            }
+          }
+        } catch (error) {
+          localStorage.removeItem(key);
+        }
+      });
+
+      // Force refresh of critical endpoints
+      const criticalEndpoints = [
+        () => courseAPI.getCourses(),
+        () => courseAPI.getCategories(),
+        () => authAPI.getCurrentUser().catch(() => null), // Don't fail if not authenticated
+      ];
+
+      // Execute all critical refreshes
+      await Promise.allSettled(criticalEndpoints.map(fn => fn()));
+
+      console.log('Critical API data refreshed');
+      return true;
+    } catch (error) {
+      console.error('Error refreshing critical data:', error);
+      return false;
+    }
+  },
+
+  // Clear all API cache
+  clearAPICache: () => {
+    try {
+      const keys = Object.keys(localStorage);
+      const apiKeys = keys.filter(key => key.startsWith('offline_api_'));
+
+      apiKeys.forEach(key => {
+        localStorage.removeItem(key);
+      });
+
+      console.log(`Cleared ${apiKeys.length} API cache entries`);
+      return true;
+    } catch (error) {
+      console.error('Error clearing API cache:', error);
+      return false;
+    }
+  }
+};
+
 export default {
   courseAPI,
   enrollmentAPI,
@@ -409,4 +472,5 @@ export default {
   userAPI,
   handleAPIError,
   storage,
+  cacheAPI,
 };

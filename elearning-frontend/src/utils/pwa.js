@@ -295,30 +295,134 @@ export const showNotification = (title, options = {}) => {
 /**
  * Check online status with additional verification
  */
-export const isOnline = () => {
-  // In development, always return true to avoid issues
-  if (import.meta.env.DEV) {
-    return navigator.onLine;
+export const isOnline = async () => {
+  // Basic check first
+  if (!navigator.onLine) {
+    return false;
   }
 
-  // In production, just check navigator.onLine for now
-  // We can add more sophisticated checks later if needed
-  return navigator.onLine;
+  // In development, just return navigator.onLine
+  if (import.meta.env.DEV) {
+    return true;
+  }
+
+  // Additional verification by trying to fetch a small resource
+  try {
+    const response = await fetch('/manifest.json', {
+      method: 'HEAD',
+      cache: 'no-cache',
+      timeout: 5000
+    });
+    return response.ok;
+  } catch (error) {
+    console.log('Network verification failed:', error);
+    return false;
+  }
 };
 
 /**
- * Setup online/offline event listeners
+ * Setup online/offline event listeners with cache management
  */
 export const setupOnlineOfflineListeners = (onOnline, onOffline) => {
-  window.addEventListener('online', () => {
-    console.log('App is online');
-    if (onOnline) onOnline();
-  });
-  
+  let isCurrentlyOnline = navigator.onLine;
+  let onlineCheckTimeout = null;
+
+  const handleOnline = async () => {
+    // Verify we're actually online
+    const actuallyOnline = await isOnline();
+
+    if (actuallyOnline && !isCurrentlyOnline) {
+      console.log('App is back online - refreshing cache');
+      isCurrentlyOnline = true;
+
+      // Refresh cache when coming back online
+      await refreshCacheOnOnline();
+
+      if (onOnline) onOnline();
+    }
+  };
+
+  const handleOffline = () => {
+    if (isCurrentlyOnline) {
+      console.log('App is offline');
+      isCurrentlyOnline = false;
+
+      if (onOffline) onOffline();
+    }
+  };
+
+  // Periodic online check (every 30 seconds when offline)
+  const scheduleOnlineCheck = () => {
+    if (onlineCheckTimeout) {
+      clearTimeout(onlineCheckTimeout);
+    }
+
+    if (!isCurrentlyOnline) {
+      onlineCheckTimeout = setTimeout(async () => {
+        const actuallyOnline = await isOnline();
+        if (actuallyOnline) {
+          handleOnline();
+        } else {
+          scheduleOnlineCheck();
+        }
+      }, 30000);
+    }
+  };
+
+  window.addEventListener('online', handleOnline);
   window.addEventListener('offline', () => {
-    console.log('App is offline');
-    if (onOffline) onOffline();
+    handleOffline();
+    scheduleOnlineCheck();
   });
+
+  // Initial check
+  handleOnline();
+};
+
+/**
+ * Refresh cache when coming back online
+ */
+export const refreshCacheOnOnline = async () => {
+  try {
+    console.log('Starting cache refresh...');
+
+    // Clear stale offline data (older than 1 hour)
+    const keys = Object.keys(localStorage);
+    const offlineKeys = keys.filter(key => key.startsWith('offline_'));
+    const oneHourAgo = Date.now() - (60 * 60 * 1000);
+
+    offlineKeys.forEach(key => {
+      try {
+        const cached = localStorage.getItem(key);
+        if (cached) {
+          const { timestamp } = JSON.parse(cached);
+          if (timestamp < oneHourAgo) {
+            localStorage.removeItem(key);
+            console.log(`Removed stale cache: ${key}`);
+          }
+        }
+      } catch (error) {
+        // Remove corrupted cache entries
+        localStorage.removeItem(key);
+      }
+    });
+
+    // Update service worker
+    await refreshServiceWorker();
+
+    // Store last refresh time
+    localStorage.setItem('last_cache_refresh', Date.now().toString());
+
+    // Trigger a page refresh for critical updates (optional)
+    // Uncomment the next line if you want to force a page refresh
+    // window.location.reload();
+
+    console.log('Cache refresh completed');
+    return true;
+  } catch (error) {
+    console.error('Error refreshing cache:', error);
+    return false;
+  }
 };
 
 /**
@@ -344,18 +448,170 @@ export const getCachedOfflineData = (key, maxAge = 24 * 60 * 60 * 1000) => {
   try {
     const cached = localStorage.getItem(`offline_${key}`);
     if (!cached) return null;
-    
+
     const { data, timestamp } = JSON.parse(cached);
-    
+
     // Check if data is still fresh
     if (Date.now() - timestamp > maxAge) {
       localStorage.removeItem(`offline_${key}`);
       return null;
     }
-    
+
     return data;
   } catch (error) {
     console.error('Error getting cached offline data:', error);
+    return null;
+  }
+};
+
+/**
+ * Clear all cached offline data
+ */
+export const clearOfflineCache = () => {
+  try {
+    const keys = Object.keys(localStorage);
+    const offlineKeys = keys.filter(key => key.startsWith('offline_'));
+
+    offlineKeys.forEach(key => {
+      localStorage.removeItem(key);
+    });
+
+    console.log(`Cleared ${offlineKeys.length} offline cache entries`);
+    return true;
+  } catch (error) {
+    console.error('Error clearing offline cache:', error);
+    return false;
+  }
+};
+
+/**
+ * Clear service worker caches
+ */
+export const clearServiceWorkerCache = async () => {
+  if ('caches' in window) {
+    try {
+      const cacheNames = await caches.keys();
+      const deletePromises = cacheNames.map(cacheName => caches.delete(cacheName));
+      await Promise.all(deletePromises);
+
+      console.log(`Cleared ${cacheNames.length} service worker caches`);
+      return true;
+    } catch (error) {
+      console.error('Error clearing service worker cache:', error);
+      return false;
+    }
+  }
+  return false;
+};
+
+/**
+ * Clear all caches (localStorage + service worker)
+ */
+export const clearAllCaches = async () => {
+  const results = await Promise.allSettled([
+    clearOfflineCache(),
+    clearServiceWorkerCache()
+  ]);
+
+  const success = results.every(result => result.status === 'fulfilled' && result.value);
+
+  if (success) {
+    console.log('All caches cleared successfully');
+  } else {
+    console.warn('Some caches could not be cleared');
+  }
+
+  return success;
+};
+
+/**
+ * Force refresh of service worker
+ */
+export const refreshServiceWorker = async () => {
+  if ('serviceWorker' in navigator) {
+    try {
+      const registration = await navigator.serviceWorker.getRegistration();
+      if (registration) {
+        await registration.update();
+        console.log('Service worker updated');
+        return true;
+      }
+    } catch (error) {
+      console.error('Error refreshing service worker:', error);
+    }
+  }
+  return false;
+};
+
+/**
+ * Manual cache refresh - can be triggered by user
+ */
+export const manualCacheRefresh = async () => {
+  try {
+    console.log('Starting manual cache refresh...');
+
+    // Check if we're online first
+    const online = await isOnline();
+    if (!online) {
+      throw new Error('Cannot refresh cache while offline');
+    }
+
+    // Clear all caches
+    await clearAllCaches();
+
+    // Refresh service worker
+    await refreshServiceWorker();
+
+    // Import and refresh API data
+    const { cacheAPI } = await import('../services/api.js');
+    await cacheAPI.refreshCriticalData();
+
+    console.log('Manual cache refresh completed');
+    return true;
+  } catch (error) {
+    console.error('Manual cache refresh failed:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get cache status information
+ */
+export const getCacheStatus = async () => {
+  try {
+    const status = {
+      isOnline: await isOnline(),
+      serviceWorkerActive: false,
+      cacheSize: 0,
+      lastRefresh: null
+    };
+
+    // Check service worker status
+    if ('serviceWorker' in navigator) {
+      const registration = await navigator.serviceWorker.getRegistration();
+      status.serviceWorkerActive = !!registration?.active;
+    }
+
+    // Check cache size
+    if ('caches' in window) {
+      const cacheNames = await caches.keys();
+      status.cacheSize = cacheNames.length;
+    }
+
+    // Check localStorage cache
+    const keys = Object.keys(localStorage);
+    const offlineKeys = keys.filter(key => key.startsWith('offline_'));
+    status.localCacheEntries = offlineKeys.length;
+
+    // Get last refresh time
+    const lastRefresh = localStorage.getItem('last_cache_refresh');
+    if (lastRefresh) {
+      status.lastRefresh = new Date(parseInt(lastRefresh));
+    }
+
+    return status;
+  } catch (error) {
+    console.error('Error getting cache status:', error);
     return null;
   }
 };

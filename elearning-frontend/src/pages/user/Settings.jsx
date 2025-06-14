@@ -1,5 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import {
+  manualCacheRefresh,
+  clearAllCaches,
+  getCacheStatus,
+  isOnline
+} from '../../utils/pwa';
 
 function Settings() {
   const { getUserName, getUserEmail } = useAuth();
@@ -33,6 +39,9 @@ function Settings() {
   });
 
   const [activeTab, setActiveTab] = useState('notifications');
+  const [cacheStatus, setCacheStatus] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
 
   const handleSettingChange = (key, value) => {
     setSettings(prev => ({
@@ -71,11 +80,60 @@ function Settings() {
     });
   };
 
+  // Load cache status when cache tab is active
+  useEffect(() => {
+    if (activeTab === 'cache') {
+      loadCacheStatus();
+    }
+  }, [activeTab]);
+
+  const loadCacheStatus = async () => {
+    try {
+      const status = await getCacheStatus();
+      setCacheStatus(status);
+    } catch (error) {
+      console.error('Error loading cache status:', error);
+    }
+  };
+
+  const handleRefreshCache = async () => {
+    setIsRefreshing(true);
+    try {
+      await manualCacheRefresh();
+      await loadCacheStatus();
+      alert('Cache refreshed successfully!');
+    } catch (error) {
+      console.error('Cache refresh failed:', error);
+      alert('Cache refresh failed. Please try again.');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const handleClearCache = async () => {
+    if (!confirm('Are you sure you want to clear all cached data? This will remove offline content and may slow down the app temporarily.')) {
+      return;
+    }
+
+    setIsClearing(true);
+    try {
+      await clearAllCaches();
+      await loadCacheStatus();
+      alert('Cache cleared successfully!');
+    } catch (error) {
+      console.error('Cache clear failed:', error);
+      alert('Cache clear failed. Please try again.');
+    } finally {
+      setIsClearing(false);
+    }
+  };
+
   const tabs = [
     { id: 'notifications', name: 'Notifications', icon: '🔔' },
     { id: 'privacy', name: 'Privacy', icon: '🔒' },
     { id: 'preferences', name: 'Preferences', icon: '⚙️' },
-    { id: 'security', name: 'Security', icon: '🛡️' }
+    { id: 'security', name: 'Security', icon: '🛡️' },
+    { id: 'cache', name: 'Cache & Storage', icon: '💾' }
   ];
 
   return (
@@ -379,6 +437,120 @@ function Settings() {
                     Update Password
                   </button>
                 </form>
+              </div>
+            </div>
+          )}
+
+          {/* Cache & Storage Tab */}
+          {activeTab === 'cache' && (
+            <div className="space-y-8">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Cache & Storage Management</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                  Manage your app's cache and offline storage to ensure optimal performance and latest content.
+                </p>
+
+                {/* Cache Status */}
+                {cacheStatus && (
+                  <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6">
+                    <h4 className="text-md font-medium text-gray-900 dark:text-white mb-3">Cache Status</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 dark:text-gray-400">Connection Status:</span>
+                        <span className={`font-medium ${cacheStatus.isOnline ? 'text-green-600' : 'text-red-600'}`}>
+                          {cacheStatus.isOnline ? 'Online' : 'Offline'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 dark:text-gray-400">Service Worker:</span>
+                        <span className={`font-medium ${cacheStatus.serviceWorkerActive ? 'text-green-600' : 'text-red-600'}`}>
+                          {cacheStatus.serviceWorkerActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 dark:text-gray-400">Cache Entries:</span>
+                        <span className="font-medium text-gray-900 dark:text-white">
+                          {cacheStatus.cacheSize}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 dark:text-gray-400">Offline Data:</span>
+                        <span className="font-medium text-gray-900 dark:text-white">
+                          {cacheStatus.localCacheEntries} items
+                        </span>
+                      </div>
+                      {cacheStatus.lastRefresh && (
+                        <div className="flex justify-between md:col-span-2">
+                          <span className="text-gray-600 dark:text-gray-400">Last Refresh:</span>
+                          <span className="font-medium text-gray-900 dark:text-white">
+                            {cacheStatus.lastRefresh.toLocaleString()}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Cache Actions */}
+                <div className="space-y-4">
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <button
+                      onClick={handleRefreshCache}
+                      disabled={isRefreshing || !cacheStatus?.isOnline}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-3 rounded-md font-medium transition-colors duration-200 flex items-center justify-center space-x-2"
+                    >
+                      {isRefreshing ? (
+                        <>
+                          <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          <span>Refreshing...</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                          <span>Refresh Cache</span>
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      onClick={handleClearCache}
+                      disabled={isClearing}
+                      className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-3 rounded-md font-medium transition-colors duration-200 flex items-center justify-center space-x-2"
+                    >
+                      {isClearing ? (
+                        <>
+                          <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          <span>Clearing...</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                          <span>Clear Cache</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  <div className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
+                    <p><strong>Refresh Cache:</strong> Updates cached content with the latest data from the server. Use this when you want to ensure you have the most recent content.</p>
+                    <p><strong>Clear Cache:</strong> Removes all cached data and forces the app to download fresh content. This may temporarily slow down the app but ensures all content is up-to-date.</p>
+                    {!cacheStatus?.isOnline && (
+                      <p className="text-amber-600 dark:text-amber-400">
+                        <strong>Note:</strong> You are currently offline. Cache refresh is not available until you reconnect to the internet.
+                      </p>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           )}

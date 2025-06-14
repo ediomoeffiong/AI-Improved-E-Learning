@@ -1,5 +1,6 @@
-const CACHE_NAME = 'ai-elearning-v1';
+const CACHE_NAME = 'ai-elearning-v2';
 const OFFLINE_URL = '/offline.html';
+const CACHE_VERSION = '2.0.0';
 
 // Assets to cache on install
 const STATIC_CACHE_URLS = [
@@ -37,7 +38,7 @@ self.addEventListener('install', (event) => {
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
   console.log('Service Worker activating...');
-  
+
   event.waitUntil(
     caches.keys()
       .then((cacheNames) => {
@@ -53,6 +54,17 @@ self.addEventListener('activate', (event) => {
       .then(() => {
         // Take control of all clients immediately
         return self.clients.claim();
+      })
+      .then(() => {
+        // Notify clients about cache update
+        return self.clients.matchAll().then(clients => {
+          clients.forEach(client => {
+            client.postMessage({
+              type: 'CACHE_UPDATED',
+              version: CACHE_VERSION
+            });
+          });
+        });
       })
   );
 });
@@ -87,6 +99,54 @@ self.addEventListener('fetch', (event) => {
     cacheFirstWithNetworkFallback(request)
   );
 });
+
+// Message event - handle cache management commands
+self.addEventListener('message', (event) => {
+  const { type, data } = event.data || {};
+
+  switch (type) {
+    case 'CLEAR_CACHE':
+      event.waitUntil(clearAllCaches());
+      break;
+    case 'REFRESH_CACHE':
+      event.waitUntil(refreshCache());
+      break;
+    case 'SKIP_WAITING':
+      self.skipWaiting();
+      break;
+    default:
+      console.log('Unknown message type:', type);
+  }
+});
+
+// Clear all caches
+async function clearAllCaches() {
+  try {
+    const cacheNames = await caches.keys();
+    await Promise.all(cacheNames.map(name => caches.delete(name)));
+    console.log('All caches cleared');
+    return true;
+  } catch (error) {
+    console.error('Error clearing caches:', error);
+    return false;
+  }
+}
+
+// Refresh cache with latest content
+async function refreshCache() {
+  try {
+    const cache = await caches.open(CACHE_NAME);
+
+    // Re-cache static assets
+    await cache.addAll(STATIC_CACHE_URLS);
+
+    console.log('Cache refreshed');
+    return true;
+  } catch (error) {
+    console.error('Error refreshing cache:', error);
+    return false;
+  }
+}
 
 // Network first strategy (for API calls)
 async function networkFirstWithFallback(request) {
