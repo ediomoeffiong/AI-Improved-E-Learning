@@ -51,17 +51,33 @@ app.use('/api/user', require('./routes/user'));
 app.use('/api/courses', require('./routes/courses'));
 app.use('/api/enrollments', require('./routes/enrollments'));
 
-// Connect to MongoDB with fallback
+// Connect to MongoDB with enhanced error handling and fallback
 const connectDB = async () => {
   try {
     await mongoose.connect(process.env.MONGODB_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 10000,
+      connectTimeoutMS: 10000,
     });
-    console.log('MongoDB connected successfully');
+    console.log('✅ MongoDB connected successfully');
+    console.log(`📊 Connected to database: ${mongoose.connection.name}`);
   } catch (err) {
-    console.warn('MongoDB connection failed, running in development mode without database:', err.message);
-    console.log('Note: Authentication will work with in-memory storage for development');
+    console.error('❌ MongoDB connection failed:', err.message);
+
+    if (err.message.includes('authentication failed')) {
+      console.log('\n🔧 MongoDB Atlas Authentication Fix Required:');
+      console.log('1. Go to https://cloud.mongodb.com/');
+      console.log('2. Navigate to Database Access');
+      console.log('3. Verify user "ediomoemmaeffiong" exists');
+      console.log('4. If user doesn\'t exist, create it with password "Ed10m0Ed10m0"');
+      console.log('5. Ensure user has "Atlas admin" or "Read and write to any database" role');
+      console.log('6. Go to Network Access and add IP 0.0.0.0/0 (allow from anywhere)');
+      console.log('7. Wait 1-2 minutes for changes to propagate');
+    }
+
+    console.log('\n⚠️  Running in development mode without database');
+    console.log('📝 Note: Authentication will work with in-memory storage for development');
   }
 };
 
