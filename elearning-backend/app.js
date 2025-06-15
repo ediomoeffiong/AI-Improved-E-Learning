@@ -1,4 +1,24 @@
+// Load environment-specific configuration
+const path = require('path');
+
+// Determine environment
+const isProduction = process.env.NODE_ENV === 'production' ||
+                    process.env.VERCEL ||
+                    process.env.RENDER ||
+                    !process.env.NODE_ENV?.includes('dev');
+
+// Load appropriate .env file
+const envFile = isProduction ? '.env.production' : '.env.development';
+const envPath = path.join(__dirname, envFile);
+
+require('dotenv').config({ path: envPath });
+
+// Fallback to default .env if specific env file doesn't exist
 require('dotenv').config();
+
+console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+console.log(`Loading config from: ${envFile}`);
+console.log(`MongoDB URI: ${process.env.MONGODB_URI ? 'Configured' : 'Not configured'}`);
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -6,8 +26,12 @@ const cors = require('cors');
 const app = express();
 
 // CORS configuration
+const corsOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
+  : ['http://localhost:5173', 'http://localhost:3000'];
+
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN || ['http://localhost:5173', 'http://localhost:3000'],
+  origin: corsOrigins,
   credentials: true,
   optionsSuccessStatus: 200
 };

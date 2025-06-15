@@ -186,7 +186,7 @@ function RichTextEditor({ value, onChange, placeholder = "Write your content..."
       <div className="px-3 py-2 border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800">
         <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
           <div>
-            Supports **bold**, *italic*, `code`, [links](url), > quotes, ## headings, and - lists
+            Supports **bold**, *italic*, `code`, [links](url), &gt; quotes, ## headings, and - lists
           </div>
           <div>
             {value.length} characters

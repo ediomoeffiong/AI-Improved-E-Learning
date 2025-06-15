@@ -10,4 +10,10 @@ services:
         value: production
       - key: PORT
         value: 10000
+      - key: MONGODB_URI
+        value: mongodb+srv://ediomoemmaeffiong:Ed10m0Ed10m0@aielearning.cr977qp.mongodb.net/?retryWrites=true&w=majority&appName=AIELearning
+      - key: JWT_SECRET
+        value: your-production-jwt-secret-here
+      - key: CORS_ORIGIN
+        value: https://your-frontend-domain.vercel.app
     healthCheckPath: /
