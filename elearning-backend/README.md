@@ -31,11 +31,27 @@ This is the backend for the AI Improved E-Learning platform.
    npm run dev
    ```
 
-### Production Deployment
+### Available Scripts
+- `npm run dev` - Start development server (uses .env.development)
+- `npm run start` - Start production server (auto-detects environment)
+- `npm run dev:prod` - Start development server with production config
+- `npm run start:prod` - Force production mode
+- `npm run test:env` - Test environment detection
+
+### Environment Detection
 The application automatically detects the environment and loads the appropriate configuration:
 
-- **Development**: Uses `.env.development` or falls back to `.env`
-- **Production**: Uses `.env.production` or environment variables
+**Development Mode** (uses `.env.development`):
+- When NODE_ENV is not set
+- When NODE_ENV=development
+- When running locally without deployment platform variables
+
+**Production Mode** (uses `.env.production`):
+- When NODE_ENV=production
+- When deployed on Vercel (VERCEL env var present)
+- When deployed on Render (RENDER env var present)
+- When deployed on Railway (RAILWAY env var present)
+- When deployed on Heroku (HEROKU env var present)
 
 For production deployments (Vercel, Render, etc.), set these environment variables:
 ```env

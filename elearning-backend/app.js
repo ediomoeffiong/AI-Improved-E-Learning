@@ -5,7 +5,8 @@ const path = require('path');
 const isProduction = process.env.NODE_ENV === 'production' ||
                     process.env.VERCEL ||
                     process.env.RENDER ||
-                    !process.env.NODE_ENV?.includes('dev');
+                    process.env.RAILWAY ||
+                    process.env.HEROKU;
 
 // Load appropriate .env file
 const envFile = isProduction ? '.env.production' : '.env.development';
@@ -16,9 +17,13 @@ require('dotenv').config({ path: envPath });
 // Fallback to default .env if specific env file doesn't exist
 require('dotenv').config();
 
-console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+console.log('=== Environment Configuration ===');
+console.log(`NODE_ENV: ${process.env.NODE_ENV || 'undefined'}`);
+console.log(`Detected as: ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'}`);
 console.log(`Loading config from: ${envFile}`);
 console.log(`MongoDB URI: ${process.env.MONGODB_URI ? 'Configured' : 'Not configured'}`);
+console.log(`Port: ${process.env.PORT || 'Not configured'}`);
+console.log('================================');
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
