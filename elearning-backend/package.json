@@ -12,7 +12,12 @@
     "node": ">=18.0.0",
     "npm": ">=8.0.0"
   },
-  "keywords": ["elearning", "backend", "express", "mongodb"],
+  "keywords": [
+    "elearning",
+    "backend",
+    "express",
+    "mongodb"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -24,6 +29,6 @@
     "mongoose": "^7.0.3"
   },
   "devDependencies": {
-    "nodemon": "^2.0.22"
+    "nodemon": "^3.1.10"
   }
 }
