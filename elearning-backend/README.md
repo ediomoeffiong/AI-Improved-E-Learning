@@ -58,7 +58,7 @@ For production deployments (Vercel, Render, etc.), set these environment variabl
 NODE_ENV=production
 MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/database
 JWT_SECRET=your-production-secret
-CORS_ORIGIN=https://your-frontend-domain.com
+CORS_ORIGIN=https://ai-improved-e-learning.vercel.app
 ```
 
 ### Environment Files

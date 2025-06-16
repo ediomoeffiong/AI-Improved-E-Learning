@@ -3,6 +3,7 @@ services:
     name: elearning-backend
     env: node
     plan: free
+    rootDir: elearning-backend
     buildCommand: npm install
     startCommand: npm start
     envVars:
@@ -15,5 +16,5 @@ services:
       - key: JWT_SECRET
         value: your-production-jwt-secret-here
       - key: CORS_ORIGIN
-        value: https://your-frontend-domain.vercel.app
+        value: https://ai-improved-e-learning.vercel.app
     healthCheckPath: /
