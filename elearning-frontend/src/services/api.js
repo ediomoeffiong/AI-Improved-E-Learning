@@ -1,5 +1,8 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+// Import offline detection utility
+import { isOnline } from '../utils/pwa.js';
+
 // Check if backend is available - reset on page load
 let backendAvailable = true;
 let lastBackendCheck = 0;
@@ -28,9 +31,28 @@ const disableDemoMode = () => {
   window.dispatchEvent(new CustomEvent('demoModeChanged', { detail: { enabled: false } }));
 };
 
+// Reset backend error notification flag (called when user comes back online)
+const resetBackendErrorNotification = () => {
+  backendErrorNotificationShown = false;
+};
+
 // Show backend error notification with demo mode option
-const showBackendErrorNotification = (error) => {
+const showBackendErrorNotification = async (error) => {
   if (backendErrorNotificationShown || isDemoModeEnabled()) return;
+
+  // Check if user is simply offline - don't show demo mode popup for offline state
+  try {
+    const userIsOnline = await isOnline();
+    if (!userIsOnline) {
+      console.log('User is offline - not showing demo mode popup');
+      return;
+    }
+  } catch (e) {
+    // If we can't check online status, assume offline and don't show popup
+    console.log('Cannot determine online status - not showing demo mode popup');
+    return;
+  }
+
   backendErrorNotificationShown = true;
 
   window.dispatchEvent(new CustomEvent('backendError', {
@@ -45,6 +67,14 @@ const showBackendErrorNotification = (error) => {
 window.enableDemoMode = enableDemoMode;
 window.disableDemoMode = disableDemoMode;
 window.isDemoModeEnabled = isDemoModeEnabled;
+
+// Listen for online events to reset error notification flag
+if (typeof window !== 'undefined') {
+  window.addEventListener('online', () => {
+    console.log('User came back online - resetting backend error notification flag');
+    resetBackendErrorNotification();
+  });
+}
 
 // PWA offline support
 import { cacheOfflineData, getCachedOfflineData, isOnline } from '../utils/pwa.js';
@@ -125,8 +155,8 @@ const apiRequest = async (endpoint, options = {}) => {
         }
       }
 
-      // Show backend error notification
-      showBackendErrorNotification(error);
+      // Show backend error notification (only if not offline)
+      showBackendErrorNotification(error).catch(console.error);
       throw new Error('Backend service is not available. Using mock data.');
     }
 
