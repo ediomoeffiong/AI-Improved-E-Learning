@@ -72,9 +72,23 @@ function Login() {
     const newErrors = {};
 
     if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
+      newErrors.email = 'Email or username is required';
+    } else {
+      const input = formData.email.trim();
+      const isEmail = input.includes('@');
+      const isUsername = /^[a-zA-Z0-9_]+$/.test(input);
+
+      if (isEmail) {
+        // Validate as email
+        if (!/\S+@\S+\.\S+/.test(input)) {
+          newErrors.email = 'Please enter a valid email address';
+        }
+      } else if (!isUsername) {
+        // Validate as username
+        newErrors.email = 'Username can only contain letters, numbers, and underscores';
+      } else if (input.length < 3) {
+        newErrors.email = 'Username must be at least 3 characters';
+      }
     }
 
     if (!formData.password) {
@@ -218,8 +232,8 @@ function Login() {
                 <input
                   id="email-address"
                   name="email"
-                  type="email"
-                  autoComplete="email"
+                  type="text"
+                  autoComplete="username email"
                   className={`block w-full pl-10 pr-3 py-3 border rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 dark:bg-gray-700 dark:text-white dark:border-gray-600 ${
                     errors.email ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
                   } ${focusedField === 'email' ? 'ring-2 ring-blue-500 border-blue-500' : ''}`}
@@ -388,9 +402,9 @@ function Login() {
 
           <div className="grid grid-cols-1 gap-3">
             {[
-              { role: 'Student', email: 'demo@example.com', description: 'Access student features' },
-              { role: 'Instructor', email: 'instructor@example.com', description: 'Manage courses and students' },
-              { role: 'Admin', email: 'admin@example.com', description: 'Full system access' }
+              { role: 'Student', email: 'demo@example.com', username: 'demo', description: 'Access student features' },
+              { role: 'Instructor', email: 'instructor@example.com', username: 'instructor', description: 'Manage courses and students' },
+              { role: 'Admin', email: 'admin@example.com', username: 'admin', description: 'Full system access' }
             ].map((demo) => (
               <button
                 key={demo.role}
@@ -414,7 +428,7 @@ function Login() {
                     {demo.description}
                   </div>
                   <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                    {demo.email}
+                    {demo.email} or @{demo.username}
                   </div>
                 </div>
                 <svg className="w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
