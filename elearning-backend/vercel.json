@@ -16,6 +16,5 @@
     "app.js": {
       "maxDuration": 30
     }
-  },
-  "outputDirectory": false
+  }
 }
