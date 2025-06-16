@@ -35,6 +35,11 @@ const corsOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
   : ['http://localhost:5173', 'http://localhost:3000'];
 
+// Add debug logging for CORS
+console.log('🔧 CORS Configuration:');
+console.log('CORS_ORIGIN env var:', process.env.CORS_ORIGIN);
+console.log('Allowed origins:', corsOrigins);
+
 const corsOptions = {
   origin: corsOrigins,
   credentials: true,
