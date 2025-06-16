@@ -43,7 +43,13 @@ The MongoDB Atlas connection is failing with "bad auth: authentication failed". 
 - Ensure your cluster `aielearning` is running (not paused)
 - If paused, click "Resume"
 
-### 5. Get Fresh Connection String
+### 5. Verify Connection String
+Your current connection string should be:
+```
+mongodb+srv://ediomoemmaeffiong:Ed10m0Ed10m0@elearninggbackend.44far0a.mongodb.net/?retryWrites=true&w=majority&appName=ELearningGBackend
+```
+
+If you need a fresh connection string:
 - Click "Connect" on your cluster
 - Choose "Connect your application"
 - Select "Node.js" and version "4.1 or later"
