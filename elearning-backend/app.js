@@ -50,6 +50,16 @@ app.get('/', (req, res) => {
   res.send('Elearning Backend API');
 });
 
+// API health check
+app.get('/api', (req, res) => {
+  res.json({
+    message: 'Elearning Backend API is running',
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/user', require('./routes/user'));
