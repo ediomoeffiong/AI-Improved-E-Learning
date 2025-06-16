@@ -4,7 +4,7 @@
 
 ### 🌐 **Live URLs**
 - **Frontend:** https://ai-improved-e-learning.vercel.app/
-- **Backend:** https://ai-improved-e-learning-backend.vercel.app/
+- **Backend:** https://gailearning-backend.vercel.app/
 
 ### 🏗️ **Architecture**
 ```
@@ -19,7 +19,7 @@ Frontend (Vercel) ←→ Backend (Vercel) ←→ MongoDB Atlas
 - **Platform:** Vercel
 - **Repository:** AI-Improved-E-Learning
 - **Root Directory:** elearning-frontend
-- **API Endpoint:** https://ai-improved-e-learning-backend.vercel.app/api
+- **API Endpoint:** https://gailearning-backend.vercel.app/api
 
 ### **Backend Configuration**
 - **Platform:** Vercel (Serverless Functions)
@@ -72,7 +72,7 @@ Your e-learning platform is now:
 
 ## 🔗 **Quick Links**
 - **Live App:** https://ai-improved-e-learning.vercel.app/
-- **API Health:** https://ai-improved-e-learning-backend.vercel.app/api
+- **API Health:** https://gailearning-backend.vercel.app/api
 - **Frontend Dashboard:** https://vercel.com/dashboard
 - **Backend Dashboard:** https://vercel.com/dashboard
 
