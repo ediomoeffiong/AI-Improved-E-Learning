@@ -34,6 +34,7 @@ function Settings() {
 
     // Institution Settings
     institutionFunctionsEnabled: false,
+    phoneNumber: '',
     institutionName: '',
     studentId: '',
     department: '',
@@ -110,6 +111,18 @@ function Settings() {
     }));
   };
 
+  const handleInstitutionToggle = (enabled) => {
+    if (enabled) {
+      // Show warning about required fields
+      const message = "Enabling institution functions requires:\n\n• Phone number (for verification)\n• Institution name\n• Student ID\n\nYou can fill these details after enabling the feature.";
+      if (confirm(message)) {
+        handleSettingChange('institutionFunctionsEnabled', true);
+      }
+    } else {
+      handleSettingChange('institutionFunctionsEnabled', false);
+    }
+  };
+
   const handlePasswordChange = (e) => {
     const { name, value } = e.target;
     setPasswordData(prev => ({
@@ -120,6 +133,29 @@ function Settings() {
 
   const handleSaveSettings = () => {
     try {
+      // Validate institution settings if enabled
+      if (settings.institutionFunctionsEnabled) {
+        if (!settings.phoneNumber.trim()) {
+          alert('Phone number is required when enabling institution functions.');
+          return;
+        }
+        if (!settings.institutionName.trim()) {
+          alert('Institution name is required when enabling institution functions.');
+          return;
+        }
+        if (!settings.studentId.trim()) {
+          alert('Student ID is required when enabling institution functions.');
+          return;
+        }
+
+        // Validate phone number format
+        const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+        if (!phoneRegex.test(settings.phoneNumber.replace(/[\s\-\(\)]/g, ''))) {
+          alert('Please enter a valid phone number.');
+          return;
+        }
+      }
+
       // Save settings to localStorage
       localStorage.setItem('userSettings', JSON.stringify(settings));
 
@@ -711,7 +747,7 @@ function Settings() {
             <div className="space-y-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Institution Functions</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Enable institution-specific features like classroom management, CBT (Computer Based Testing), and academic tools.
+                Enable institution-specific features like classroom management, CBT (Computer Based Testing), and academic tools. Phone number and institution details are required for verification.
               </p>
 
               {/* Enable Institution Functions Toggle */}
@@ -726,7 +762,7 @@ function Settings() {
                   <input
                     type="checkbox"
                     checked={settings.institutionFunctionsEnabled}
-                    onChange={(e) => handleSettingChange('institutionFunctionsEnabled', e.target.checked)}
+                    onChange={(e) => handleInstitutionToggle(e.target.checked)}
                     className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
                 </div>
@@ -751,6 +787,23 @@ function Settings() {
                   <h4 className="text-md font-medium text-gray-900 dark:text-white">Institution Details</h4>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Phone Number *
+                      </label>
+                      <input
+                        type="tel"
+                        value={settings.phoneNumber}
+                        onChange={(e) => handleSettingChange('phoneNumber', e.target.value)}
+                        placeholder="e.g., +1 (555) 123-4567"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                        required
+                      />
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        Required for institution verification and emergency contact
+                      </p>
+                    </div>
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Institution Name *
