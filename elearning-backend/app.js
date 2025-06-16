@@ -103,13 +103,15 @@ const connectDB = async () => {
 
 connectDB();
 
-// For local development
+// For local development and Render deployment
 if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
   const PORT = process.env.PORT || 5000;
   app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`📍 Backend URL: ${process.env.NODE_ENV === 'production' ? 'https://ai-improved-e-learning.onrender.com' : `http://localhost:${PORT}`}`);
   });
 }
 
-// Export for Vercel serverless
+// Export for serverless platforms (Vercel, etc.)
 module.exports = app;
