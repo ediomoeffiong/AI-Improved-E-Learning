@@ -648,6 +648,37 @@ export const userAPI = {
     return apiRequest('/user/profile');
   },
 
+  // Update username
+  updateUsername: async (username) => {
+    try {
+      const response = await apiRequest('/user/username', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ username })
+      });
+      return response;
+    } catch (error) {
+      if (error.message.includes('Backend service is not available') || error.message.includes('Demo mode is enabled')) {
+        console.log('Using mock data for username update');
+        // Mock successful response for demo mode
+        return {
+          message: 'Username updated successfully (demo mode)',
+          user: {
+            id: 'demo-user',
+            name: 'Demo User',
+            username: username.toLowerCase(),
+            email: 'demo@example.com',
+            role: 'Student'
+          }
+        };
+      }
+      throw error;
+    }
+  },
+
   // Update user profile
   updateProfile: async (profileData) => {
     return apiRequest('/user/profile', {

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { userAPI } from '../../services/api';
 import {
   manualCacheRefresh,
   clearAllCaches,
@@ -8,7 +9,7 @@ import {
 } from '../../utils/pwa';
 
 function Settings() {
-  const { getUserName, getUserEmail } = useAuth();
+  const { getUserName, getUserEmail, user, login } = useAuth();
   const [settings, setSettings] = useState({
     // Notification Settings
     emailNotifications: true,
@@ -47,7 +48,12 @@ function Settings() {
     confirmPassword: ''
   });
 
-  const [activeTab, setActiveTab] = useState('notifications');
+  const [usernameData, setUsernameData] = useState({
+    newUsername: '',
+    isUpdating: false
+  });
+
+  const [activeTab, setActiveTab] = useState('account');
   const [cacheStatus, setCacheStatus] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
@@ -150,6 +156,43 @@ function Settings() {
     });
   };
 
+  const handleUsernameUpdate = async (e) => {
+    e.preventDefault();
+
+    if (!usernameData.newUsername.trim()) {
+      alert('Please enter a username');
+      return;
+    }
+
+    if (usernameData.newUsername.length < 3 || usernameData.newUsername.length > 20) {
+      alert('Username must be between 3 and 20 characters');
+      return;
+    }
+
+    if (!/^[a-zA-Z0-9_]+$/.test(usernameData.newUsername)) {
+      alert('Username can only contain letters, numbers, and underscores');
+      return;
+    }
+
+    setUsernameData(prev => ({ ...prev, isUpdating: true }));
+
+    try {
+      const response = await userAPI.updateUsername(usernameData.newUsername);
+
+      // Update the user context with new username
+      const updatedUser = { ...user, username: response.user.username };
+      const token = localStorage.getItem('token');
+      login(updatedUser, token);
+
+      alert('Username updated successfully!');
+      setUsernameData({ newUsername: '', isUpdating: false });
+    } catch (error) {
+      console.error('Username update error:', error);
+      alert(error.message || 'Failed to update username. Please try again.');
+      setUsernameData(prev => ({ ...prev, isUpdating: false }));
+    }
+  };
+
   // Load cache status when cache tab is active
   useEffect(() => {
     if (activeTab === 'cache') {
@@ -199,6 +242,7 @@ function Settings() {
   };
 
   const tabs = [
+    { id: 'account', name: 'Account', icon: '👤' },
     { id: 'notifications', name: 'Notifications', icon: '🔔' },
     { id: 'privacy', name: 'Privacy', icon: '🔒' },
     { id: 'preferences', name: 'Preferences', icon: '⚙️' },
@@ -279,6 +323,117 @@ function Settings() {
 
         {/* Tab Content */}
         <div className="p-6">
+          {/* Account Tab */}
+          {activeTab === 'account' && (
+            <div className="space-y-8">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Account Information</h3>
+
+                {/* Current Account Info */}
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6 mb-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Full Name
+                      </label>
+                      <p className="text-gray-900 dark:text-white font-medium">
+                        {getUserName() || 'Not set'}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Email Address
+                      </label>
+                      <p className="text-gray-900 dark:text-white font-medium">
+                        {getUserEmail() || 'Not set'}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Current Username
+                      </label>
+                      <p className="text-gray-900 dark:text-white font-medium">
+                        {user?.username ? `@${user.username}` : 'Not set'}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Account Role
+                      </label>
+                      <p className="text-gray-900 dark:text-white font-medium">
+                        {user?.role || 'Not set'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Update Username */}
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+                  <h4 className="text-md font-semibold text-gray-900 dark:text-white mb-4">Update Username</h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    Your username is used for login and identification. It must be unique and can contain letters, numbers, and underscores only.
+                  </p>
+
+                  <form onSubmit={handleUsernameUpdate} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        New Username
+                      </label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <span className="text-gray-500 dark:text-gray-400">@</span>
+                        </div>
+                        <input
+                          type="text"
+                          value={usernameData.newUsername}
+                          onChange={(e) => setUsernameData(prev => ({ ...prev, newUsername: e.target.value }))}
+                          placeholder="Enter new username"
+                          className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                          disabled={usernameData.isUpdating}
+                          minLength={3}
+                          maxLength={20}
+                          pattern="^[a-zA-Z0-9_]+$"
+                        />
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        3-20 characters, letters, numbers, and underscores only
+                      </p>
+                    </div>
+
+                    <div className="flex space-x-3">
+                      <button
+                        type="submit"
+                        disabled={usernameData.isUpdating || !usernameData.newUsername.trim()}
+                        className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-md font-medium transition-colors duration-200 flex items-center"
+                      >
+                        {usernameData.isUpdating ? (
+                          <>
+                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Updating...
+                          </>
+                        ) : (
+                          'Update Username'
+                        )}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setUsernameData({ newUsername: '', isUpdating: false })}
+                        disabled={usernameData.isUpdating}
+                        className="bg-gray-300 hover:bg-gray-400 disabled:bg-gray-200 disabled:cursor-not-allowed text-gray-700 px-4 py-2 rounded-md font-medium transition-colors duration-200"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Notifications Tab */}
           {activeTab === 'notifications' && (
             <div className="space-y-6">
