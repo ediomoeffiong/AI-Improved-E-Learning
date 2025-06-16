@@ -201,12 +201,9 @@ function Register() {
 
       // Handle different types of errors
       if (err.message.includes('Backend service is not available') || err.message.includes('Demo mode is enabled')) {
-        setApiMessage('🎭 Demo mode - Registration successful! Redirecting to login...');
-        setApiSuccess(true);
-
-        setTimeout(() => {
-          navigate('/login');
-        }, 2000);
+        // Don't automatically enter demo mode - let the user choose via the popup
+        setApiMessage('❌ Registration failed due to server unavailability. Please try again or use demo mode.');
+        setApiSuccess(false);
       } else {
         setApiMessage(err.message || 'Registration failed');
         setApiSuccess(false);

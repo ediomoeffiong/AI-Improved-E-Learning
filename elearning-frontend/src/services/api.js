@@ -154,8 +154,14 @@ export const courseAPI = {
       return await apiRequest(endpoint);
     } catch (error) {
       if (error.message.includes('Backend service is not available') || error.message.includes('Demo mode is enabled')) {
-        console.log('Using mock data for courses');
-        return await mockAPI.getCourses(filters);
+        // Only use mock data if demo mode is explicitly enabled
+        if (isDemoModeEnabled()) {
+          console.log('Using mock data for courses (demo mode enabled)');
+          return await mockAPI.getCourses(filters);
+        } else {
+          console.log('Backend unavailable, not auto-entering demo mode');
+          throw error; // Re-throw to show error to user
+        }
       }
       throw error;
     }
@@ -597,8 +603,14 @@ export const authAPI = {
       });
     } catch (error) {
       if (error.message.includes('Backend service is not available') || error.message.includes('Demo mode is enabled')) {
-        console.log('Using mock data for login');
-        return await mockAPI.login(credentials);
+        // Only use mock data if demo mode is explicitly enabled
+        if (isDemoModeEnabled()) {
+          console.log('Using mock data for login (demo mode enabled)');
+          return await mockAPI.login(credentials);
+        } else {
+          console.log('Backend unavailable, not auto-entering demo mode');
+          throw error; // Re-throw to show error to user
+        }
       }
       throw error;
     }
@@ -613,8 +625,14 @@ export const authAPI = {
       });
     } catch (error) {
       if (error.message.includes('Backend service is not available') || error.message.includes('Demo mode is enabled')) {
-        console.log('Using mock data for registration');
-        return await mockAPI.register(userData);
+        // Only use mock data if demo mode is explicitly enabled
+        if (isDemoModeEnabled()) {
+          console.log('Using mock data for registration (demo mode enabled)');
+          return await mockAPI.register(userData);
+        } else {
+          console.log('Backend unavailable, not auto-entering demo mode');
+          throw error; // Re-throw to show error to user
+        }
       }
       throw error;
     }

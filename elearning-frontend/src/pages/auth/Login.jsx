@@ -145,23 +145,30 @@ function Login() {
 
       // Handle different types of errors
       if (err.message.includes('Backend service is not available') || err.message.includes('Demo mode is enabled')) {
-        setApiMessage('🎭 Demo mode activated - Welcome to the preview experience!');
-        setApiSuccess(true);
+        // Check if user has manually enabled demo mode
+        if (window.isDemoModeEnabled && window.isDemoModeEnabled()) {
+          setApiMessage('🎭 Demo mode activated - Welcome to the preview experience!');
+          setApiSuccess(true);
 
-        // For demo mode, create a mock user
-        const mockUser = {
-          id: 'demo-user',
-          name: formData.email.split('@')[0] || 'Demo User',
-          email: formData.email,
-          role: 'Student'
-        };
-        const mockToken = 'demo-token';
+          // For demo mode, create a mock user
+          const mockUser = {
+            id: 'demo-user',
+            name: formData.email.split('@')[0] || 'Demo User',
+            email: formData.email,
+            role: 'Student'
+          };
+          const mockToken = 'demo-token';
 
-        login(mockUser, mockToken);
+          login(mockUser, mockToken);
 
-        setTimeout(() => {
-          navigate(from, { replace: true });
-        }, 1500);
+          setTimeout(() => {
+            navigate(from, { replace: true });
+          }, 1500);
+        } else {
+          // Don't automatically enter demo mode - let the user choose via the popup
+          setApiMessage('❌ Login failed due to server unavailability. Please try again or use demo mode.');
+          setApiSuccess(false);
+        }
       } else {
         setApiMessage(err.message || 'Login failed');
         setApiSuccess(false);
