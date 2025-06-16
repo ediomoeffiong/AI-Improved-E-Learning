@@ -200,7 +200,7 @@ function Login() {
             {/* Email Field */}
             <div>
               <label htmlFor="email-address" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Email address
+                Email or Username
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -216,7 +216,7 @@ function Login() {
                   className={`block w-full pl-10 pr-3 py-3 border rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 dark:bg-gray-700 dark:text-white dark:border-gray-600 ${
                     errors.email ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
                   } ${focusedField === 'email' ? 'ring-2 ring-blue-500 border-blue-500' : ''}`}
-                  placeholder="Enter your email address"
+                  placeholder="Enter your email or username"
                   value={formData.email}
                   onChange={handleChange}
                   onFocus={() => setFocusedField('email')}

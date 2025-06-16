@@ -9,6 +9,7 @@ function Register() {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
+    username: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -112,6 +113,16 @@ function Register() {
       newErrors.lastName = 'Last name must be at least 2 characters';
     }
 
+    if (formData.username.trim()) {
+      if (formData.username.trim().length < 3) {
+        newErrors.username = 'Username must be at least 3 characters';
+      } else if (formData.username.trim().length > 20) {
+        newErrors.username = 'Username must be no more than 20 characters';
+      } else if (!/^[a-zA-Z0-9_]+$/.test(formData.username.trim())) {
+        newErrors.username = 'Username can only contain letters, numbers, and underscores';
+      }
+    }
+
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
@@ -169,6 +180,7 @@ function Register() {
     // Combine firstName and lastName into name
     const payload = {
       name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
+      username: formData.username.trim() || undefined, // Only include if provided
       email: formData.email.trim(),
       password: formData.password,
       role: formData.role,
@@ -335,6 +347,48 @@ function Register() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   {errors.email}
+                </p>
+              )}
+            </div>
+
+            {/* Username Field */}
+            <div>
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Username <span className="text-gray-500 text-xs">(optional)</span>
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+                <input
+                  id="username"
+                  name="username"
+                  type="text"
+                  autoComplete="username"
+                  className={`block w-full pl-10 pr-3 py-3 border rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 dark:bg-gray-700 dark:text-white dark:border-gray-600 ${
+                    errors.username ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
+                  } ${focusedField === 'username' ? 'ring-2 ring-indigo-500 border-indigo-500' : ''}`}
+                  placeholder="Choose a unique username"
+                  value={formData.username}
+                  onChange={handleChange}
+                  onFocus={() => setFocusedField('username')}
+                  onBlur={() => setFocusedField(null)}
+                />
+              </div>
+              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400 flex items-center">
+                <svg className="w-4 h-4 mr-1 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                If not provided, we'll create one from your name. 3-20 characters, letters, numbers, and underscores only.
+              </p>
+              {errors.username && (
+                <p className="mt-2 text-sm text-red-600 flex items-center">
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  {errors.username}
                 </p>
               )}
             </div>
