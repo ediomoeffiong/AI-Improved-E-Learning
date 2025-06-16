@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { authAPI } from '../../services/api';
 import { ROLE_ICONS } from '../../constants/roles';
+import { isOnline } from '../../utils/pwa';
 
 function Login() {
   const navigate = useNavigate();
@@ -22,6 +23,34 @@ function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [focusedField, setFocusedField] = useState(null);
+  const [isOffline, setIsOffline] = useState(false);
+
+  // Check online status
+  useEffect(() => {
+    const checkOnlineStatus = async () => {
+      const online = await isOnline();
+      setIsOffline(!online);
+    };
+
+    // Initial check
+    checkOnlineStatus();
+
+    // Listen for online/offline events
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Periodic check
+    const interval = setInterval(checkOnlineStatus, 5000);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      clearInterval(interval);
+    };
+  }, []);
 
   // Auto-fill demo credentials
   const fillDemoCredentials = (role) => {
@@ -76,6 +105,13 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Check if offline
+    if (isOffline) {
+      setApiMessage('❌ Login is disabled while offline. Please check your internet connection.');
+      setApiSuccess(false);
+      return;
+    }
+
     // Validate form
     const formErrors = validateForm();
     if (Object.keys(formErrors).length > 0) {
@@ -108,14 +144,14 @@ function Login() {
       console.error('Login error:', err);
 
       // Handle different types of errors
-      if (err.message.includes('Backend service is not available')) {
-        setApiMessage('Using demo mode - Login successful!');
+      if (err.message.includes('Backend service is not available') || err.message.includes('Demo mode is enabled')) {
+        setApiMessage('🎭 Demo mode activated - Welcome to the preview experience!');
         setApiSuccess(true);
 
         // For demo mode, create a mock user
         const mockUser = {
           id: 'demo-user',
-          name: formData.email.split('@')[0],
+          name: formData.email.split('@')[0] || 'Demo User',
           email: formData.email,
           role: 'Student'
         };
@@ -276,10 +312,21 @@ function Login() {
             <div>
               <button
                 type="submit"
-                disabled={isLoading}
-                className="group relative flex w-full justify-center rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
+                disabled={isLoading || isOffline}
+                className={`group relative flex w-full justify-center rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] ${
+                  isOffline
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700'
+                }`}
               >
-                {isLoading ? (
+                {isOffline ? (
+                  <div className="flex items-center">
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-12.728 12.728m0 0L12 12m-6.364 6.364L12 12m6.364-6.364L12 12" />
+                    </svg>
+                    Login Disabled (Offline)
+                  </div>
+                ) : isLoading ? (
                   <div className="flex items-center">
                     <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -341,8 +388,13 @@ function Login() {
               <button
                 key={demo.role}
                 type="button"
-                onClick={() => fillDemoCredentials(demo.role)}
-                className="flex items-center p-3 bg-white dark:bg-gray-800 rounded-xl border border-blue-200 dark:border-blue-700 hover:border-blue-300 dark:hover:border-blue-600 transition-all duration-200 hover:shadow-md group"
+                onClick={() => !isOffline && fillDemoCredentials(demo.role)}
+                disabled={isOffline}
+                className={`flex items-center p-3 rounded-xl border transition-all duration-200 group ${
+                  isOffline
+                    ? 'bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 cursor-not-allowed opacity-50'
+                    : 'bg-white dark:bg-gray-800 border-blue-200 dark:border-blue-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-md'
+                }`}
               >
                 <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center text-white text-lg mr-3">
                   {ROLE_ICONS[demo.role]}

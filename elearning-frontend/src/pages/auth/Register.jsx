@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authAPI } from '../../services/api';
 import { ROLE_OPTIONS, DEFAULT_ROLE, ROLE_ICONS } from '../../constants/roles';
+import { isOnline } from '../../utils/pwa';
 
 function Register() {
   const navigate = useNavigate();
@@ -23,6 +24,34 @@ function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
   const [passwordStrength, setPasswordStrength] = useState(0);
+  const [isOffline, setIsOffline] = useState(false);
+
+  // Check online status
+  useEffect(() => {
+    const checkOnlineStatus = async () => {
+      const online = await isOnline();
+      setIsOffline(!online);
+    };
+
+    // Initial check
+    checkOnlineStatus();
+
+    // Listen for online/offline events
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Periodic check
+    const interval = setInterval(checkOnlineStatus, 5000);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      clearInterval(interval);
+    };
+  }, []);
 
   // Password strength calculation
   const calculatePasswordStrength = (password) => {
@@ -116,14 +145,22 @@ function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Check if offline
+    if (isOffline) {
+      setApiMessage('❌ Registration is disabled while offline. Please check your internet connection.');
+      setApiSuccess(false);
+      return;
+    }
+
     const formErrors = validateForm();
-    
+
     if (Object.keys(formErrors).length > 0) {
       setErrors(formErrors);
       setApiMessage(null);
       return;
     }
-    
+
     setErrors({});
     setApiMessage(null);
     setApiSuccess(false);
@@ -151,8 +188,8 @@ function Register() {
       console.error('Registration error:', err);
 
       // Handle different types of errors
-      if (err.message.includes('Backend service is not available')) {
-        setApiMessage('Demo mode - Registration successful! Redirecting to login...');
+      if (err.message.includes('Backend service is not available') || err.message.includes('Demo mode is enabled')) {
+        setApiMessage('🎭 Demo mode - Registration successful! Redirecting to login...');
         setApiSuccess(true);
 
         setTimeout(() => {
@@ -507,10 +544,21 @@ function Register() {
             <div>
               <button
                 type="submit"
-                disabled={isLoading}
-                className="group relative flex w-full justify-center rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-3 text-sm font-semibold text-white shadow-lg hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
+                disabled={isLoading || isOffline}
+                className={`group relative flex w-full justify-center rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] ${
+                  isOffline
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700'
+                }`}
               >
-                {isLoading ? (
+                {isOffline ? (
+                  <div className="flex items-center">
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-12.728 12.728m0 0L12 12m-6.364 6.364L12 12m6.364-6.364L12 12" />
+                    </svg>
+                    Registration Disabled (Offline)
+                  </div>
+                ) : isLoading ? (
                   <div className="flex items-center">
                     <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>

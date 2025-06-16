@@ -11,6 +11,8 @@ import ScrollToTop from './components/common/ScrollToTop';
 import DevModeIndicator from './components/common/DevModeIndicator';
 import CacheRefreshIndicator from './components/common/CacheRefreshIndicator';
 import OfflineIndicator from './components/common/OfflineIndicator';
+import BackendErrorNotification from './components/common/DemoModeNotification';
+import DemoModeIndicator from './components/common/DemoModeIndicator';
 import PWAPrompt from './components/pwa/PWAPrompt';
 import { AuthProvider } from './contexts/AuthContext';
 import { GamificationProvider } from './contexts/GamificationContext';
@@ -126,6 +128,8 @@ function App() {
         <OfflineIndicator />
         <CacheRefreshIndicator />
         <DevModeIndicator />
+        <BackendErrorNotification />
+        <DemoModeIndicator />
         </div>
       </Router>
       </GamificationProvider>

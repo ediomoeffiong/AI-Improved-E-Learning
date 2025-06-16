@@ -5,6 +5,47 @@ let backendAvailable = true;
 let lastBackendCheck = 0;
 const BACKEND_CHECK_INTERVAL = 30000; // 30 seconds
 
+// Demo mode management system
+let isDemoModeForced = false;
+let backendErrorNotificationShown = false;
+
+// Check if user has manually enabled demo mode
+const isDemoModeEnabled = () => {
+  return localStorage.getItem('demoModeEnabled') === 'true' || isDemoModeForced;
+};
+
+// Enable demo mode
+const enableDemoMode = () => {
+  localStorage.setItem('demoModeEnabled', 'true');
+  isDemoModeForced = true;
+  window.dispatchEvent(new CustomEvent('demoModeChanged', { detail: { enabled: true } }));
+};
+
+// Disable demo mode
+const disableDemoMode = () => {
+  localStorage.removeItem('demoModeEnabled');
+  isDemoModeForced = false;
+  window.dispatchEvent(new CustomEvent('demoModeChanged', { detail: { enabled: false } }));
+};
+
+// Show backend error notification with demo mode option
+const showBackendErrorNotification = (error) => {
+  if (backendErrorNotificationShown || isDemoModeEnabled()) return;
+  backendErrorNotificationShown = true;
+
+  window.dispatchEvent(new CustomEvent('backendError', {
+    detail: {
+      error: error.message,
+      canUseDemoMode: true
+    }
+  }));
+};
+
+// Export demo mode functions globally
+window.enableDemoMode = enableDemoMode;
+window.disableDemoMode = disableDemoMode;
+window.isDemoModeEnabled = isDemoModeEnabled;
+
 // PWA offline support
 import { cacheOfflineData, getCachedOfflineData, isOnline } from '../utils/pwa.js';
 
@@ -15,26 +56,22 @@ const getAuthToken = () => {
 
 // Helper function to make API requests with offline support
 const apiRequest = async (endpoint, options = {}) => {
-  // In development mode, always assume backend is available
-  const isDev = import.meta.env.DEV;
-  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  // If demo mode is manually enabled, skip API call
+  if (isDemoModeEnabled()) {
+    throw new Error('Demo mode is enabled. Using mock data.');
+  }
 
-  if (isDev || isLocalhost) {
-    // Force backend availability in development/localhost
-    backendAvailable = true;
-  } else {
-    // Check if we should retry backend connection in production
-    const now = Date.now();
-    if (!backendAvailable && (now - lastBackendCheck) > BACKEND_CHECK_INTERVAL) {
-      console.log('Retrying backend connection...');
-      backendAvailable = true; // Reset and try again
-      lastBackendCheck = now;
-    }
+  // Check if we should retry backend connection
+  const now = Date.now();
+  if (!backendAvailable && (now - lastBackendCheck) > BACKEND_CHECK_INTERVAL) {
+    console.log('Retrying backend connection...');
+    backendAvailable = true; // Reset and try again
+    lastBackendCheck = now;
+  }
 
-    // If backend is not available and we recently checked, use fallback
-    if (!backendAvailable) {
-      throw new Error('Backend service is not available. Using mock data.');
-    }
+  // If backend is not available and we recently checked, use fallback
+  if (!backendAvailable) {
+    throw new Error('Backend service is not available. Using mock data.');
   }
 
   const url = `${API_BASE_URL}${endpoint}`;
@@ -66,35 +103,33 @@ const apiRequest = async (endpoint, options = {}) => {
 
     return data;
   } catch (error) {
-    // In development/localhost, don't mark backend as unavailable for network errors
-    const isDev = import.meta.env.DEV;
-    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    // Handle different types of errors
+    const isNetworkError = error.message.includes('fetch') ||
+                          error.message.includes('NetworkError') ||
+                          error.message.includes('Failed to fetch') ||
+                          error.message.includes('ERR_CONNECTION_REFUSED') ||
+                          error.name === 'TypeError';
 
-    // If it's a network error, handle differently based on environment
-    if (error.message.includes('fetch') || error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
+    if (isNetworkError) {
+      // Mark backend as unavailable
+      backendAvailable = false;
+      lastBackendCheck = Date.now();
+      console.warn('Backend connection failed:', error.message);
 
-      if (isDev || isLocalhost) {
-        // In development, just throw the original error without marking backend unavailable
-        console.error(`API request failed in development: ${endpoint}`, error);
-        throw error;
-      } else {
-        // In production, mark backend as unavailable temporarily
-        backendAvailable = false;
-        lastBackendCheck = Date.now();
-        console.warn('Backend is temporarily unavailable, will retry in 30 seconds');
-
-        // Try to get cached data for GET requests
-        if (options.method === 'GET' || !options.method) {
-          const cachedData = getCachedOfflineData(`api_${endpoint.replace(/[^a-zA-Z0-9]/g, '_')}`);
-          if (cachedData) {
-            console.log('Using cached data for:', endpoint);
-            return cachedData;
-          }
+      // Try to get cached data for GET requests
+      if (options.method === 'GET' || !options.method) {
+        const cachedData = getCachedOfflineData(`api_${endpoint.replace(/[^a-zA-Z0-9]/g, '_')}`);
+        if (cachedData) {
+          console.log('Using cached data for:', endpoint);
+          return cachedData;
         }
-
-        throw new Error('Backend service is not available. Using mock data.');
       }
+
+      // Show backend error notification
+      showBackendErrorNotification(error);
+      throw new Error('Backend service is not available. Using mock data.');
     }
+
     console.error(`API request failed: ${endpoint}`, error);
     throw error;
   }
@@ -118,7 +153,7 @@ export const courseAPI = {
       const endpoint = `/courses${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
       return await apiRequest(endpoint);
     } catch (error) {
-      if (error.message.includes('Backend service is not available')) {
+      if (error.message.includes('Backend service is not available') || error.message.includes('Demo mode is enabled')) {
         console.log('Using mock data for courses');
         return await mockAPI.getCourses(filters);
       }
@@ -561,7 +596,7 @@ export const authAPI = {
         body: JSON.stringify(credentials),
       });
     } catch (error) {
-      if (error.message.includes('Backend service is not available')) {
+      if (error.message.includes('Backend service is not available') || error.message.includes('Demo mode is enabled')) {
         console.log('Using mock data for login');
         return await mockAPI.login(credentials);
       }
@@ -577,7 +612,7 @@ export const authAPI = {
         body: JSON.stringify(userData),
       });
     } catch (error) {
-      if (error.message.includes('Backend service is not available')) {
+      if (error.message.includes('Backend service is not available') || error.message.includes('Demo mode is enabled')) {
         console.log('Using mock data for registration');
         return await mockAPI.register(userData);
       }

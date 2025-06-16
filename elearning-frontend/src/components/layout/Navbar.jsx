@@ -2,14 +2,71 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useScrollToTop } from '../../hooks/useScrollToTop';
 import { useAuth } from '../../contexts/AuthContext';
+import { isOnline } from '../../utils/pwa';
 
 const Navbar = ({ isScrolled = false }) => {
   const navigate = useNavigate();
   const [openDropdown, setOpenDropdown] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
   const navRef = useRef(null);
   const { scrollToTop } = useScrollToTop();
   const { isAuthenticated, logout, getUserName, getUserEmail, hasInstitutionFunctions } = useAuth();
+
+  // Check demo mode status
+  useEffect(() => {
+    const checkDemoMode = () => {
+      const demoEnabled = localStorage.getItem('demoModeEnabled') === 'true';
+      const token = localStorage.getItem('token');
+      const hasDemo = token === 'demo-token' || token?.startsWith('mock-jwt-token');
+      return demoEnabled || hasDemo;
+    };
+
+    setIsDemoMode(checkDemoMode());
+
+    const handleDemoModeChange = (event) => {
+      setIsDemoMode(event.detail.enabled);
+    };
+
+    window.addEventListener('demoModeChanged', handleDemoModeChange);
+
+    const interval = setInterval(() => {
+      setIsDemoMode(checkDemoMode());
+    }, 1000);
+
+    return () => {
+      window.removeEventListener('demoModeChanged', handleDemoModeChange);
+      clearInterval(interval);
+    };
+  }, []);
+
+  // Check offline status
+  useEffect(() => {
+    const checkOfflineStatus = async () => {
+      const online = await isOnline();
+      setIsOffline(!online);
+    };
+
+    // Initial check
+    checkOfflineStatus();
+
+    // Listen for online/offline events
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Periodic check
+    const interval = setInterval(checkOfflineStatus, 5000);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      clearInterval(interval);
+    };
+  }, []);
 
   // Mock notifications data
   const [notifications, setNotifications] = useState([
@@ -147,6 +204,11 @@ const Navbar = ({ isScrolled = false }) => {
 
   // Handle logout
   const handleLogout = () => {
+    if (isOffline) {
+      alert('❌ Logout is disabled while offline. Please check your internet connection.');
+      return;
+    }
+
     logout();
     setOpenDropdown(null);
     setMobileMenuOpen(false);
@@ -157,6 +219,22 @@ const Navbar = ({ isScrolled = false }) => {
       behavior: 'smooth',
       delay: 100
     });
+  };
+
+  // Handle demo mode toggle
+  const handleToggleDemoMode = () => {
+    if (isDemoMode) {
+      window.disableDemoMode();
+      // Clear demo tokens
+      if (localStorage.getItem('token')?.includes('demo') || localStorage.getItem('token')?.includes('mock')) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
+    } else {
+      window.enableDemoMode();
+    }
+    setOpenDropdown(null);
+    window.location.reload();
   };
 
   return (
@@ -631,16 +709,49 @@ const Navbar = ({ isScrolled = false }) => {
                         <span className="font-medium">Settings</span>
                       </Link>
 
+                      {/* Demo Mode Toggle */}
+                      <button
+                        onClick={handleToggleDemoMode}
+                        className={`flex items-center w-full px-4 py-3 transition-colors duration-150 group ${
+                          isDemoMode
+                            ? 'text-amber-700 hover:bg-amber-50 hover:text-amber-800'
+                            : 'text-gray-700 hover:bg-gray-50 hover:text-gray-800'
+                        }`}
+                      >
+                        <svg className={`w-4 h-4 mr-3 group-hover:scale-110 transition-transform ${
+                          isDemoMode ? 'text-amber-500' : 'text-gray-500'
+                        }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                        </svg>
+                        <span className="font-medium">
+                          {isDemoMode ? 'Exit Demo Mode' : 'Enable Demo Mode'}
+                        </span>
+                        {isDemoMode && (
+                          <span className="ml-auto text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full">
+                            Active
+                          </span>
+                        )}
+                      </button>
+
                       <div className="border-t border-gray-100 my-2"></div>
 
                       <button
                         onClick={handleLogout}
-                        className="flex items-center w-full px-4 py-3 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors duration-150 group"
+                        disabled={isOffline}
+                        className={`flex items-center w-full px-4 py-3 transition-colors duration-150 group ${
+                          isOffline
+                            ? 'text-gray-400 cursor-not-allowed opacity-50'
+                            : 'text-gray-700 hover:bg-red-50 hover:text-red-600'
+                        }`}
                       >
-                        <svg className="w-4 h-4 mr-3 text-red-500 group-hover:text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className={`w-4 h-4 mr-3 ${
+                          isOffline ? 'text-gray-400' : 'text-red-500 group-hover:text-red-600'
+                        }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                         </svg>
-                        <span className="font-medium">Logout</span>
+                        <span className="font-medium">
+                          {isOffline ? 'Logout (Offline)' : 'Logout'}
+                        </span>
                       </button>
                     </div>
                   )}
@@ -1001,10 +1112,26 @@ const Navbar = ({ isScrolled = false }) => {
                   ⚙️ Settings
                 </Link>
                 <button
-                  onClick={handleLogout}
-                  className="w-full text-left px-3 py-2 text-white hover:bg-red-600 rounded-md transition-colors duration-150"
+                  onClick={handleToggleDemoMode}
+                  className={`w-full text-left px-3 py-2 rounded-md transition-colors duration-150 ${
+                    isDemoMode
+                      ? 'text-amber-200 hover:bg-amber-600'
+                      : 'text-white hover:bg-gray-600'
+                  }`}
                 >
-                  🚪 Logout
+                  {isDemoMode ? '🎭 Exit Demo Mode' : '🎭 Enable Demo Mode'}
+                  {isDemoMode && <span className="ml-2 text-xs">(Active)</span>}
+                </button>
+                <button
+                  onClick={handleLogout}
+                  disabled={isOffline}
+                  className={`w-full text-left px-3 py-2 rounded-md transition-colors duration-150 ${
+                    isOffline
+                      ? 'text-gray-400 cursor-not-allowed opacity-50'
+                      : 'text-white hover:bg-red-600'
+                  }`}
+                >
+                  🚪 {isOffline ? 'Logout (Offline)' : 'Logout'}
                 </button>
               </div>
             )}
