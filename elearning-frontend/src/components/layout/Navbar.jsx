@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useScrollToTop } from '../../hooks/useScrollToTop';
 import { useAuth } from '../../contexts/AuthContext';
 import { isOnline } from '../../utils/pwa';
+import ConfirmationModal from '../common/ConfirmationModal';
+import MessageModal from '../common/MessageModal';
 
 const Navbar = ({ isScrolled = false }) => {
   const navigate = useNavigate();
@@ -10,6 +12,8 @@ const Navbar = ({ isScrolled = false }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showLogoutMessage, setShowLogoutMessage] = useState(false);
   const navRef = useRef(null);
   const { scrollToTop } = useScrollToTop();
   const { isAuthenticated, logout, getUserName, getUserEmail, hasInstitutionFunctions } = useAuth();
@@ -209,6 +213,23 @@ const Navbar = ({ isScrolled = false }) => {
       return;
     }
 
+    // Show custom confirmation modal
+    setShowLogoutConfirm(true);
+  };
+
+  // Handle logout confirmation
+  const handleLogoutConfirm = () => {
+    setShowLogoutConfirm(false);
+
+    // Show logout message
+    setShowLogoutMessage(true);
+  };
+
+  // Handle logout message close
+  const handleLogoutMessageClose = () => {
+    setShowLogoutMessage(false);
+
+    // Perform actual logout
     logout();
     setOpenDropdown(null);
     setMobileMenuOpen(false);
@@ -1250,6 +1271,32 @@ const Navbar = ({ isScrolled = false }) => {
           </div>
         </div>
       )}
+
+      {/* Logout Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showLogoutConfirm}
+        onClose={() => setShowLogoutConfirm(false)}
+        onConfirm={handleLogoutConfirm}
+        title="Confirm Logout"
+        message="Are you sure you want to logout? You will need to sign in again to access your account."
+        confirmText="Yes, Logout"
+        cancelText="Cancel"
+        confirmButtonClass="bg-red-600 hover:bg-red-700 text-white"
+        icon="🚪"
+        iconClass="text-red-600 dark:text-red-400"
+      />
+
+      {/* Logout Success Message Modal */}
+      <MessageModal
+        isOpen={showLogoutMessage}
+        onClose={handleLogoutMessageClose}
+        title={`Goodbye, ${getUserName() || 'User'}!`}
+        message="You have been successfully logged out. Thank you for using AI E-Learning!"
+        buttonText="Continue"
+        buttonClass="bg-blue-600 hover:bg-blue-700 text-white"
+        icon="👋"
+        iconClass="text-blue-600 dark:text-blue-400"
+      />
     </nav>
   );
 };
