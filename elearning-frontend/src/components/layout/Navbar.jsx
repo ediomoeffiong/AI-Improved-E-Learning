@@ -444,12 +444,28 @@ const Navbar = ({ isScrolled = false }) => {
               )}
             </div>
             
-            {/* Quiz Direct Link - Only show to authenticated users */}
-            {isAuthenticated() && (
+            {/* Quiz Direct Link - Show to all users */}
+            {isAuthenticated() ? (
               <Link
                 to="/quiz/dashboard"
                 onClick={handleLinkClick}
-                className="text-white hover:text-blue-100 transition-colors duration-200 px-3 py-2 rounded-md hover:bg-white/10"
+                className={`transition-colors duration-200 px-3 py-2 rounded-md ${
+                  isScrolled
+                    ? 'text-gray-700 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-gray-700'
+                    : 'text-white hover:text-blue-100 hover:bg-white/10'
+                }`}
+              >
+                Quiz
+              </Link>
+            ) : (
+              <Link
+                to="/login?redirect=/quiz/dashboard"
+                onClick={handleLinkClick}
+                className={`transition-colors duration-200 px-3 py-2 rounded-md ${
+                  isScrolled
+                    ? 'text-gray-700 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-gray-700'
+                    : 'text-white hover:text-blue-100 hover:bg-white/10'
+                }`}
               >
                 Quiz
               </Link>
@@ -739,6 +755,17 @@ const Navbar = ({ isScrolled = false }) => {
                           <span className="font-medium">Settings</span>
                         </Link>
                       )}
+
+                      <Link
+                        to="/support"
+                        onClick={handleLinkClick}
+                        className="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150 group"
+                      >
+                        <svg className="w-4 h-4 mr-3 text-orange-500 group-hover:text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="font-medium">Help & Support</span>
+                      </Link>
 
                       {/* Demo Mode Toggle */}
                       <button
@@ -1038,11 +1065,20 @@ const Navbar = ({ isScrolled = false }) => {
               </div>
             )}
             
-            {/* Mobile Quiz Direct Link - Only show to authenticated users */}
-            {isAuthenticated() && (
+            {/* Mobile Quiz Direct Link - Show to all users */}
+            {isAuthenticated() ? (
               <Link
                 to="/quiz/dashboard"
-                className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md transition-colors"
+                onClick={handleLinkClick}
+                className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md transition-colors duration-150"
+              >
+                📝 Quiz
+              </Link>
+            ) : (
+              <Link
+                to="/login?redirect=/quiz/dashboard"
+                onClick={handleLinkClick}
+                className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md transition-colors duration-150"
               >
                 📝 Quiz
               </Link>
@@ -1148,6 +1184,13 @@ const Navbar = ({ isScrolled = false }) => {
                     ⚙️ Settings
                   </Link>
                 )}
+                <Link
+                  to="/support"
+                  onClick={handleLinkClick}
+                  className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md transition-colors duration-150"
+                >
+                  🆘 Help & Support
+                </Link>
                 <button
                   onClick={handleToggleDemoMode}
                   className={`w-full text-left px-3 py-2 rounded-md transition-colors duration-150 ${

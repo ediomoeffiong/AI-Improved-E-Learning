@@ -10,8 +10,10 @@ function Login() {
   const location = useLocation();
   const { login } = useAuth();
 
-  // Get the intended destination from location state
-  const from = location.state?.from?.pathname || '/dashboard';
+  // Get the intended destination from location state or URL query parameter
+  const urlParams = new URLSearchParams(location.search);
+  const redirectParam = urlParams.get('redirect');
+  const from = location.state?.from?.pathname || redirectParam || '/dashboard';
   const [formData, setFormData] = useState({
     email: '',
     password: '',

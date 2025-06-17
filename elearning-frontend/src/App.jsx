@@ -62,6 +62,9 @@ import PersonalizedRecommendations from './pages/progress/PersonalizedRecommenda
 import Profile from './pages/user/Profile';
 import Settings from './pages/user/Settings';
 
+// Support pages
+import Support from './pages/support/Support';
+
 function App() {
   return (
     <AuthProvider>
@@ -82,6 +85,9 @@ function App() {
               
               {/* Public Course Routes */}
               <Route path="/courses/available" element={<Available />} />
+
+              {/* Public Support Route */}
+              <Route path="/support" element={<Support />} />
 
               {/* Protected Dashboard Routes */}
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
