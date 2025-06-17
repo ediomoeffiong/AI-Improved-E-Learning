@@ -11,6 +11,7 @@ function Register() {
     lastName: '',
     username: '',
     email: '',
+    phoneNumber: '',
     password: '',
     confirmPassword: '',
     role: DEFAULT_ROLE,
@@ -129,6 +130,13 @@ function Register() {
       newErrors.email = 'Please enter a valid email address';
     }
 
+    if (formData.phoneNumber.trim()) {
+      const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+      if (!phoneRegex.test(formData.phoneNumber.replace(/[\s\-\(\)]/g, ''))) {
+        newErrors.phoneNumber = 'Please enter a valid phone number';
+      }
+    }
+
     if (!formData.password) {
       newErrors.password = 'Password is required';
     } else if (formData.password.length < 8) {
@@ -182,6 +190,7 @@ function Register() {
       name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
       username: formData.username.trim() || undefined, // Only include if provided
       email: formData.email.trim(),
+      phoneNumber: formData.phoneNumber.trim() || undefined, // Only include if provided
       password: formData.password,
       role: formData.role,
     };
@@ -386,6 +395,48 @@ function Register() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   {errors.username}
+                </p>
+              )}
+            </div>
+
+            {/* Phone Number Field */}
+            <div>
+              <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Phone Number <span className="text-gray-500 text-xs">(optional)</span>
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                </div>
+                <input
+                  id="phoneNumber"
+                  name="phoneNumber"
+                  type="tel"
+                  autoComplete="tel"
+                  className={`block w-full pl-10 pr-3 py-3 border rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 dark:bg-gray-700 dark:text-white dark:border-gray-600 ${
+                    errors.phoneNumber ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
+                  } ${focusedField === 'phoneNumber' ? 'ring-2 ring-indigo-500 border-indigo-500' : ''}`}
+                  placeholder="e.g., +1 (555) 123-4567"
+                  value={formData.phoneNumber}
+                  onChange={handleChange}
+                  onFocus={() => setFocusedField('phoneNumber')}
+                  onBlur={() => setFocusedField(null)}
+                />
+              </div>
+              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400 flex items-center">
+                <svg className="w-5 h-5 mr-1 text-indigo-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+                Optional but recommended for account security and institution features.
+              </p>
+              {errors.phoneNumber && (
+                <p className="mt-2 text-sm text-red-600 flex items-center">
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  {errors.phoneNumber}
                 </p>
               )}
             </div>

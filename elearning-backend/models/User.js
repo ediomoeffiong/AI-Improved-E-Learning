@@ -13,6 +13,12 @@ const userSchema = new mongoose.Schema({
     match: /^[a-zA-Z0-9_]+$/
   },
   email: { type: String, required: true, unique: true },
+  phoneNumber: {
+    type: String,
+    sparse: true, // Allows null values but enforces uniqueness when present
+    unique: true,
+    trim: true
+  },
   password: { type: String, required: true },
   role: {
     type: String,

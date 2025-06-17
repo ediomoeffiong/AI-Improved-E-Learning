@@ -12,6 +12,7 @@ let inMemoryUsers = [
     name: 'Demo User',
     username: 'demo',
     email: 'demo@example.com',
+    phoneNumber: '+1-555-0001',
     password: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password: 'password'
     role: 'Student'
   },
@@ -20,6 +21,7 @@ let inMemoryUsers = [
     name: 'Instructor User',
     username: 'instructor',
     email: 'instructor@example.com',
+    phoneNumber: '+1-555-0002',
     password: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password: 'password'
     role: 'Instructor'
   },
@@ -28,6 +30,7 @@ let inMemoryUsers = [
     name: 'Admin User',
     username: 'admin',
     email: 'admin@example.com',
+    phoneNumber: '+1-555-0003',
     password: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password: 'password'
     role: 'Admin'
   }
@@ -69,7 +72,7 @@ const ensureUniqueUsername = async (baseUsername) => {
 // Register
 router.post('/register', async (req, res) => {
   try {
-    const { name, username: providedUsername, email, password, role = 'Student' } = req.body;
+    const { name, username: providedUsername, email, phoneNumber, password, role = 'Student' } = req.body;
 
     // Validation
     if (!name || !email || !password) {
@@ -113,35 +116,70 @@ router.post('/register', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     if (isMongoConnected()) {
-      // Use MongoDB
+      // Use MongoDB - Check for duplicates with creative error messages
       const existingUser = await User.findOne({
-        $or: [{ email }, { username }]
+        $or: [
+          { email },
+          { username },
+          ...(phoneNumber ? [{ phoneNumber }] : [])
+        ]
       });
+
       if (existingUser) {
         if (existingUser.email === email) {
-          return res.status(400).json({ message: 'Email already exists' });
+          return res.status(400).json({
+            message: '🎭 Plot twist! That email is already starring in someone else\'s learning journey. Time for a new email to take the spotlight!'
+          });
         }
         if (existingUser.username === username) {
-          return res.status(400).json({ message: 'Username already taken' });
+          return res.status(400).json({
+            message: '🎯 Oops! That username is already claimed by another scholar. How about trying a different creative alias?'
+          });
+        }
+        if (phoneNumber && existingUser.phoneNumber === phoneNumber) {
+          return res.status(400).json({
+            message: '📱 Ring ring! That phone number is already connected to another learner\'s adventure. Please dial up a different number!'
+          });
         }
       }
 
-      const user = new User({ name, username, email, password: hashedPassword, role });
+      const user = new User({ name, username, email, phoneNumber, password: hashedPassword, role });
       await user.save();
 
       res.status(201).json({
         message: 'User registered successfully',
-        user: { id: user._id, name: user.name, username: user.username, email: user.email, role: user.role }
+        user: {
+          id: user._id,
+          name: user.name,
+          username: user.username,
+          email: user.email,
+          phoneNumber: user.phoneNumber,
+          role: user.role
+        }
       });
     } else {
       // Use in-memory storage for development
-      const existingUser = inMemoryUsers.find(user => user.email === email || user.username === username);
+      const existingUser = inMemoryUsers.find(user =>
+        user.email === email ||
+        user.username === username ||
+        (phoneNumber && user.phoneNumber === phoneNumber)
+      );
+
       if (existingUser) {
         if (existingUser.email === email) {
-          return res.status(400).json({ message: 'Email already exists' });
+          return res.status(400).json({
+            message: '🎭 Plot twist! That email is already starring in someone else\'s learning journey. Time for a new email to take the spotlight!'
+          });
         }
         if (existingUser.username === username) {
-          return res.status(400).json({ message: 'Username already taken' });
+          return res.status(400).json({
+            message: '🎯 Oops! That username is already claimed by another scholar. How about trying a different creative alias?'
+          });
+        }
+        if (phoneNumber && existingUser.phoneNumber === phoneNumber) {
+          return res.status(400).json({
+            message: '📱 Ring ring! That phone number is already connected to another learner\'s adventure. Please dial up a different number!'
+          });
         }
       }
 
@@ -150,6 +188,7 @@ router.post('/register', async (req, res) => {
         name,
         username,
         email,
+        phoneNumber,
         password: hashedPassword,
         role
       };
@@ -158,7 +197,14 @@ router.post('/register', async (req, res) => {
 
       res.status(201).json({
         message: 'User registered successfully (development mode)',
-        user: { id: newUser._id, name: newUser.name, username: newUser.username, email: newUser.email, role: newUser.role }
+        user: {
+          id: newUser._id,
+          name: newUser.name,
+          username: newUser.username,
+          email: newUser.email,
+          phoneNumber: newUser.phoneNumber,
+          role: newUser.role
+        }
       });
     }
   } catch (err) {
@@ -215,6 +261,7 @@ router.post('/login', async (req, res) => {
         name: user.name,
         username: user.username,
         email: user.email,
+        phoneNumber: user.phoneNumber,
         role: user.role
       }
     });
@@ -229,7 +276,7 @@ router.get('/test', (req, res) => {
   res.json({
     message: 'Auth API is working!',
     mongoConnected: isMongoConnected(),
-    availableUsers: isMongoConnected() ? 'Check MongoDB' : inMemoryUsers.map(u => ({ id: u._id, name: u.name, username: u.username, email: u.email, role: u.role }))
+    availableUsers: isMongoConnected() ? 'Check MongoDB' : inMemoryUsers.map(u => ({ id: u._id, name: u.name, username: u.username, email: u.email, phoneNumber: u.phoneNumber, role: u.role }))
   });
 });
 

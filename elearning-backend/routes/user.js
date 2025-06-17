@@ -117,4 +117,98 @@ router.put('/username', auth, async (req, res) => {
   }
 });
 
+// Update phone number
+router.put('/phone', auth, async (req, res) => {
+  try {
+    const { phoneNumber } = req.body;
+    const userId = req.user.userId;
+
+    // Validation
+    if (!phoneNumber) {
+      return res.status(400).json({ message: 'Phone number is required' });
+    }
+
+    // Validate phone number format
+    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+    if (!phoneRegex.test(phoneNumber.replace(/[\s\-\(\)]/g, ''))) {
+      return res.status(400).json({ message: 'Please enter a valid phone number' });
+    }
+
+    if (isMongoConnected()) {
+      // Check if phone number already exists (excluding current user)
+      const existingUser = await User.findOne({
+        phoneNumber: phoneNumber,
+        _id: { $ne: userId }
+      });
+
+      if (existingUser) {
+        return res.status(400).json({
+          message: '📱 Ring ring! That phone number is already connected to another learner\'s adventure. Please dial up a different number!'
+        });
+      }
+
+      // Update phone number
+      const updatedUser = await User.findByIdAndUpdate(
+        userId,
+        { phoneNumber: phoneNumber },
+        { new: true, select: '-password' }
+      );
+
+      if (!updatedUser) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      res.json({
+        message: 'Phone number updated successfully',
+        user: {
+          id: updatedUser._id,
+          name: updatedUser.name,
+          username: updatedUser.username,
+          email: updatedUser.email,
+          phoneNumber: updatedUser.phoneNumber,
+          role: updatedUser.role
+        }
+      });
+    } else {
+      // For development mode with in-memory storage
+      const authModule = require('./auth');
+      const inMemoryUsers = authModule.inMemoryUsers || [];
+
+      // Check if phone number already exists (excluding current user)
+      const existingUser = inMemoryUsers.find(u =>
+        u.phoneNumber === phoneNumber && u._id !== userId
+      );
+
+      if (existingUser) {
+        return res.status(400).json({
+          message: '📱 Ring ring! That phone number is already connected to another learner\'s adventure. Please dial up a different number!'
+        });
+      }
+
+      // Update phone number in memory
+      const userIndex = inMemoryUsers.findIndex(u => u._id === userId);
+      if (userIndex === -1) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      inMemoryUsers[userIndex].phoneNumber = phoneNumber;
+
+      res.json({
+        message: 'Phone number updated successfully (development mode)',
+        user: {
+          id: inMemoryUsers[userIndex]._id,
+          name: inMemoryUsers[userIndex].name,
+          username: inMemoryUsers[userIndex].username,
+          email: inMemoryUsers[userIndex].email,
+          phoneNumber: inMemoryUsers[userIndex].phoneNumber,
+          role: inMemoryUsers[userIndex].role
+        }
+      });
+    }
+  } catch (err) {
+    console.error('Phone number update error:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;
