@@ -77,7 +77,7 @@ if (typeof window !== 'undefined') {
 }
 
 // PWA offline support
-import { cacheOfflineData, getCachedOfflineData, isOnline } from '../utils/pwa.js';
+import { cacheOfflineData, getCachedOfflineData } from '../utils/pwa.js';
 
 // Helper function to get auth token
 const getAuthToken = () => {

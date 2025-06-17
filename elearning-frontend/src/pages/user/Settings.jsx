@@ -58,6 +58,78 @@ function Settings() {
   const [cacheStatus, setCacheStatus] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [isOfflineState, setIsOfflineState] = useState(false);
+  const [isCheckingOnline, setIsCheckingOnline] = useState(true);
+
+  // Check online status
+  useEffect(() => {
+    let mounted = true;
+
+    const checkOnlineStatus = async () => {
+      try {
+        const online = await isOnline();
+        if (mounted) {
+          setIsOfflineState(!online);
+          setIsCheckingOnline(false);
+        }
+      } catch (error) {
+        console.error('Error checking online status:', error);
+        if (mounted) {
+          setIsOfflineState(false); // Assume online if check fails
+          setIsCheckingOnline(false);
+        }
+      }
+    };
+
+    // Initial check
+    checkOnlineStatus();
+
+    // Listen for online/offline events
+    const handleOnline = async () => {
+      if (mounted) {
+        const online = await isOnline();
+        setIsOfflineState(!online);
+      }
+    };
+
+    const handleOffline = () => {
+      if (mounted) {
+        setIsOfflineState(true);
+      }
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Periodic check every 10 seconds
+    const interval = setInterval(() => {
+      if (mounted) {
+        checkOnlineStatus();
+      }
+    }, 10000);
+
+    return () => {
+      mounted = false;
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      clearInterval(interval);
+    };
+  }, []);
+
+  // Check offline status
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   // Load settings from localStorage on component mount
   useEffect(() => {
@@ -286,6 +358,110 @@ function Settings() {
     { id: 'institution', name: 'Institution', icon: '🏫' },
     { id: 'cache', name: 'Cache & Storage', icon: '💾' }
   ];
+
+  // Show loading spinner while checking online status
+  if (isCheckingOnline) {
+    return (
+      <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-center min-h-96">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">Loading...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show offline message if user is offline
+  if (isOfflineState) {
+    return (
+      <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-center min-h-96">
+          <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 text-center">
+            <div className="mb-6">
+              <div className="mx-auto w-16 h-16 bg-orange-100 dark:bg-orange-900 rounded-full flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M12 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                Offline Mode
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400">
+                Settings are not available while offline. Please check your internet connection and try again.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <button
+                onClick={() => window.location.reload()}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200"
+              >
+                Try Again
+              </button>
+
+              <button
+                onClick={() => window.history.back()}
+                className="w-full bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-medium py-2 px-4 rounded-md transition-colors duration-200"
+              >
+                Go Back
+              </button>
+            </div>
+
+            <div className="mt-6 text-sm text-gray-500 dark:text-gray-400">
+              <p>Some features may be available in offline mode. Visit the dashboard to see what's accessible.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show offline message if user is offline
+  if (isOffline) {
+    return (
+      <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-center min-h-96">
+          <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 text-center">
+            <div className="mb-6">
+              <div className="mx-auto w-16 h-16 bg-orange-100 dark:bg-orange-900 rounded-full flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M12 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                Offline Mode
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400">
+                Settings are not available while offline. Please check your internet connection and try again.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <button
+                onClick={() => window.location.reload()}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200"
+              >
+                Try Again
+              </button>
+
+              <button
+                onClick={() => window.history.back()}
+                className="w-full bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-medium py-2 px-4 rounded-md transition-colors duration-200"
+              >
+                Go Back
+              </button>
+            </div>
+
+            <div className="mt-6 text-sm text-gray-500 dark:text-gray-400">
+              <p>Some features may be available in offline mode. Visit the dashboard to see what's accessible.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
