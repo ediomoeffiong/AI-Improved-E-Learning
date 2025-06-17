@@ -19,7 +19,7 @@ const GamifiedCalendar = () => {
     overdueEvents: 0
   });
 
-  const { userStats, addPoints, updateDailyProgress } = useGamification();
+  const { userStats, addPoints, updateDailyProgress, showAchievement } = useGamification();
 
   // Mock events data with comprehensive E-Learning events
   const mockEvents = [
@@ -161,15 +161,51 @@ const GamifiedCalendar = () => {
   const handleEventComplete = (eventId) => {
     const event = events.find(e => e.id === eventId);
     if (event && !event.completed) {
-      setEvents(events.map(e => 
+      setEvents(events.map(e =>
         e.id === eventId ? { ...e, completed: true } : e
       ));
-      
+
       // Award points and update daily progress
       if (event.points) {
         addPoints(event.points);
       }
       updateDailyProgress(event.duration || 30);
+
+      // Check for achievements and show notifications
+      const completedEvents = events.filter(e => e.completed).length + 1;
+
+      // Show achievement for completing first task
+      if (completedEvents === 1) {
+        showAchievement({
+          name: 'First Steps',
+          description: 'Completed your first learning task!',
+          icon: '🎯',
+          points: 10,
+          diamonds: 1
+        }, { position: 'left' });
+      }
+
+      // Show achievement for completing 5 tasks
+      if (completedEvents === 5) {
+        showAchievement({
+          name: 'Getting Started',
+          description: 'Completed 5 learning tasks!',
+          icon: '🚀',
+          points: 25,
+          diamonds: 2
+        }, { position: 'left' });
+      }
+
+      // Show achievement for weekly streak
+      if (userStats.currentStreak > 0 && userStats.currentStreak % 7 === 0) {
+        showAchievement({
+          name: 'Weekly Learning Streak',
+          description: `Maintained a ${userStats.currentStreak}-day learning streak!`,
+          icon: '🔥',
+          points: 50,
+          diamonds: 5
+        }, { position: 'left' });
+      }
     }
   };
 
@@ -311,18 +347,7 @@ const GamifiedCalendar = () => {
         selectedDate={selectedDate}
       />
 
-      {/* Achievement Notifications */}
-      {userStats.currentStreak > 0 && userStats.currentStreak % 7 === 0 && (
-        <div className="fixed bottom-4 right-4 bg-gradient-to-r from-yellow-400 to-orange-500 text-white p-4 rounded-xl shadow-lg animate-bounce">
-          <div className="flex items-center space-x-3">
-            <span className="text-2xl">🏆</span>
-            <div>
-              <div className="font-bold">Achievement Unlocked!</div>
-              <div className="text-sm">Weekly Learning Streak!</div>
-            </div>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 };

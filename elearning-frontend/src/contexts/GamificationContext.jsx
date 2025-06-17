@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
+import useAchievementNotifications from '../hooks/useAchievementNotifications';
 
 const GamificationContext = createContext();
 
@@ -13,6 +14,7 @@ export const useGamification = () => {
 
 export const GamificationProvider = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
+  const { showAchievement, dismissAchievement, dismissAll, getSmartPosition } = useAchievementNotifications();
   
   // User gamification data
   const [userStats, setUserStats] = useState({
@@ -239,7 +241,14 @@ export const GamificationProvider = ({ children }) => {
     setUserStats(newStats);
     saveUserStats(newStats);
     generateLeaderboard();
-    
+
+    // Show achievement notification with smart positioning
+    showAchievement(achievement, {
+      position: getSmartPosition(),
+      autoHide: true,
+      hideDelay: 6000
+    });
+
     return achievement;
   };
 
@@ -275,7 +284,11 @@ export const GamificationProvider = ({ children }) => {
     getAchievementById,
     getUnlockedAchievements,
     getLockedAchievements,
-    resetDailyProgress
+    resetDailyProgress,
+    // Achievement notification functions
+    showAchievement,
+    dismissAchievement,
+    dismissAll
   };
 
   return (

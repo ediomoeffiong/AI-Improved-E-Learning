@@ -14,6 +14,7 @@ import OfflineIndicator from './components/common/OfflineIndicator';
 import BackendErrorNotification from './components/common/DemoModeNotification';
 import DemoModeIndicator from './components/common/DemoModeIndicator';
 import PWAPrompt from './components/pwa/PWAPrompt';
+import AchievementNotificationManager from './components/gamification/AchievementNotificationManager';
 import { AuthProvider } from './contexts/AuthContext';
 import { GamificationProvider } from './contexts/GamificationContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
@@ -65,6 +66,10 @@ import Settings from './pages/user/Settings';
 // Support pages
 import Support from './pages/support/Support';
 
+// Legal pages
+import TermsOfService from './pages/legal/TermsOfService';
+import PrivacyPolicy from './pages/legal/PrivacyPolicy';
+
 function App() {
   return (
     <AuthProvider>
@@ -88,6 +93,10 @@ function App() {
 
               {/* Public Support Route */}
               <Route path="/support" element={<Support />} />
+
+              {/* Legal Routes */}
+              <Route path="/terms" element={<TermsOfService />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
 
               {/* Protected Dashboard Routes */}
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
@@ -136,6 +145,7 @@ function App() {
         <DevModeIndicator />
         <BackendErrorNotification />
         <DemoModeIndicator />
+        <AchievementNotificationManager />
         </div>
       </Router>
       </GamificationProvider>

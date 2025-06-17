@@ -623,13 +623,13 @@ function Register() {
               <div className="ml-3 text-sm">
                 <label htmlFor="agreeTerms" className="text-gray-700 dark:text-gray-300">
                   I agree to the{' '}
-                  <a href="#" className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 transition-colors">
+                  <Link to="/terms" target="_blank" rel="noopener noreferrer" className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 transition-colors underline">
                     Terms of Service
-                  </a>{' '}
+                  </Link>{' '}
                   and{' '}
-                  <a href="#" className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 transition-colors">
+                  <Link to="/privacy" target="_blank" rel="noopener noreferrer" className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 transition-colors underline">
                     Privacy Policy
-                  </a>
+                  </Link>
                 </label>
               </div>
             </div>
