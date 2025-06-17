@@ -7,6 +7,8 @@ import {
   getCacheStatus,
   isOnline
 } from '../../utils/pwa';
+import { NIGERIAN_UNIVERSITIES, INSTITUTION_REQUEST_STATUS } from '../../constants/institutions';
+import { USER_ROLES } from '../../constants/roles';
 
 function Settings() {
   const { getUserName, getUserEmail, user, login } = useAuth();
@@ -186,7 +188,7 @@ function Settings() {
   const handleInstitutionToggle = (enabled) => {
     if (enabled) {
       // Show warning about required fields
-      const message = "Enabling institution functions requires:\n\n• Phone number (for verification)\n• Institution name\n• Student ID\n\nYou can fill these details after enabling the feature.";
+      const message = "Enabling institution functions requires:\n\n• Phone number (for verification)\n• Institution selection\n• Student ID\n\nYou can fill these details after enabling the feature.";
       if (confirm(message)) {
         handleSettingChange('institutionFunctionsEnabled', true);
       }
@@ -212,7 +214,7 @@ function Settings() {
           return;
         }
         if (!settings.institutionName.trim()) {
-          alert('Institution name is required when enabling institution functions.');
+          alert('Institution selection is required when enabling institution functions.');
           return;
         }
         if (!settings.studentId.trim()) {
@@ -982,16 +984,39 @@ function Settings() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Institution Name *
+                        Institution *
                       </label>
-                      <input
-                        type="text"
+                      <select
                         value={settings.institutionName}
                         onChange={(e) => handleSettingChange('institutionName', e.target.value)}
-                        placeholder="e.g., University of Technology"
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                         required
-                      />
+                      >
+                        <option value="">Select your institution</option>
+                        {NIGERIAN_UNIVERSITIES.map((university) => (
+                          <option key={university.value} value={university.value}>
+                            {university.label}
+                          </option>
+                        ))}
+                        <option value="other">Other (Request to add new institution)</option>
+                      </select>
+                      {settings.institutionName === 'other' && (
+                        <div className="mt-3 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
+                          <div className="flex items-start">
+                            <svg className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                            </svg>
+                            <div>
+                              <h4 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                                Request New Institution
+                              </h4>
+                              <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+                                Your institution will need to be verified by our app administrators before it can be added to the system. Please contact support with your institution details.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div>

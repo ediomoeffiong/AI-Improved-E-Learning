@@ -646,6 +646,25 @@ export const authAPI = {
     }
   },
 
+  // App Admin Login
+  appAdminLogin: async (credentials) => {
+    try {
+      return await apiRequest('/auth/app-admin-login', {
+        method: 'POST',
+        body: JSON.stringify(credentials),
+      });
+    } catch (error) {
+      // Handle 404 (endpoint not implemented) or other backend issues
+      if (error.message.includes('404') ||
+          error.message.includes('Backend service is not available') ||
+          error.message.includes('Demo mode is enabled')) {
+        console.log('App admin endpoint not available, using mock data');
+        return await mockAPI.appAdminLogin(credentials);
+      }
+      throw error;
+    }
+  },
+
   // Register
   register: async (userData) => {
     try {

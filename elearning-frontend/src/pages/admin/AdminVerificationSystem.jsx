@@ -1,0 +1,371 @@
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
+import { USER_ROLES, ADMIN_TYPES } from '../../constants/roles';
+
+const AdminVerificationSystem = () => {
+  const { user } = useAuth();
+  const [pendingAdmins, setPendingAdmins] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filterStatus, setFilterStatus] = useState('all');
+
+  // Check if current user can verify admins (Super Admin or Super Moderator)
+  const canVerifyAdmins = user?.role === USER_ROLES.SUPER_ADMIN || user?.role === USER_ROLES.SUPER_MODERATOR;
+
+  useEffect(() => {
+    // Mock data for pending admin verifications
+    const mockPendingAdmins = [
+      {
+        id: 1,
+        name: 'Prof. Michael Johnson',
+        email: 'michael.johnson@unilag.edu.ng',
+        requestedRole: USER_ROLES.ADMIN,
+        requestedAdminType: ADMIN_TYPES.PRIMARY,
+        institution: 'university-of-lagos',
+        institutionName: 'University of Lagos',
+        department: 'Administration',
+        staffId: 'ADMIN/2024/03',
+        phoneNumber: '+234-803-456-7890',
+        documents: [
+          { name: 'Administrative Appointment Letter', url: '/docs/admin-appointment-3.pdf', verified: true },
+          { name: 'University Authorization', url: '/docs/auth-3.pdf', verified: false },
+          { name: 'Academic Credentials', url: '/docs/credentials-3.pdf', verified: true }
+        ],
+        submittedAt: '2024-01-14 16:45:00',
+        status: 'pending',
+        requestType: 'admin_verification',
+        additionalInfo: 'Requesting primary admin access for student affairs management',
+        currentAdminCount: 1 // Current number of admins in this institution
+      },
+      {
+        id: 2,
+        name: 'Dr. Sarah Wilson',
+        email: 'sarah.wilson@abu.edu.ng',
+        requestedRole: USER_ROLES.ADMIN,
+        requestedAdminType: ADMIN_TYPES.SECONDARY,
+        institution: 'ahmadu-bello-university',
+        institutionName: 'Ahmadu Bello University',
+        department: 'Academic Affairs',
+        staffId: 'ADMIN/2024/05',
+        phoneNumber: '+234-804-567-8901',
+        documents: [
+          { name: 'Appointment Letter', url: '/docs/appointment-5.pdf', verified: true },
+          { name: 'ID Card', url: '/docs/id-5.pdf', verified: true },
+          { name: 'Authorization Letter', url: '/docs/auth-5.pdf', verified: false }
+        ],
+        submittedAt: '2024-01-13 14:30:00',
+        status: 'under_review',
+        requestType: 'admin_verification',
+        additionalInfo: 'Experienced administrator seeking secondary admin role',
+        currentAdminCount: 1
+      }
+    ];
+    
+    setPendingAdmins(mockPendingAdmins);
+    setLoading(false);
+  }, []);
+
+  const handleAdminVerification = async (adminId, action, notes = '') => {
+    try {
+      const admin = pendingAdmins.find(a => a.id === adminId);
+      
+      if (action === 'approve') {
+        // Check admin limits
+        if (admin.currentAdminCount >= 2) {
+          alert('❌ Maximum of 2 admins allowed per institution. Cannot approve this request.');
+          return;
+        }
+
+        // Update admin status
+        setPendingAdmins(prev => 
+          prev.map(a => 
+            a.id === adminId 
+              ? { ...a, status: 'approved', adminNotes: notes, approvedAt: new Date().toISOString() }
+              : a
+          )
+        );
+
+        // TODO: Call API to approve admin and grant access
+        console.log(`Approving admin ${admin.name} as ${admin.requestedAdminType} admin`);
+        alert(`✅ ${admin.name} has been approved as ${admin.requestedAdminType} admin for ${admin.institutionName}`);
+      } else {
+        // Reject admin
+        setPendingAdmins(prev => 
+          prev.map(a => 
+            a.id === adminId 
+              ? { ...a, status: 'rejected', adminNotes: notes, rejectedAt: new Date().toISOString() }
+              : a
+          )
+        );
+        
+        console.log(`Rejecting admin ${admin.name}`);
+        alert(`❌ ${admin.name}'s admin request has been rejected`);
+      }
+    } catch (error) {
+      console.error('Error processing admin verification:', error);
+      alert('Error processing verification. Please try again.');
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
+      case 'under_review':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
+      case 'approved':
+        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
+      case 'rejected':
+        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
+    }
+  };
+
+  const filteredAdmins = pendingAdmins.filter(admin => {
+    if (filterStatus !== 'all' && admin.status !== filterStatus) return false;
+    return true;
+  });
+
+  if (!canVerifyAdmins) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <span className="text-6xl mb-4 block">🚫</span>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            Access Denied
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400">
+            Only Super Admins and Super Moderators can verify institution admin requests.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Admin Verification System</h2>
+          <p className="text-gray-600 dark:text-gray-400">
+            Review and verify institution admin requests (Super Admin/Moderator only)
+          </p>
+        </div>
+        <div className="flex space-x-4">
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+          >
+            <option value="all">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="under_review">Under Review</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Statistics */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+          <div className="flex items-center">
+            <div className="p-2 bg-yellow-100 dark:bg-yellow-900 rounded-lg">
+              <span className="text-xl">⏳</span>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-gray-600 dark:text-gray-400">Pending</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-white">
+                {pendingAdmins.filter(a => a.status === 'pending').length}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+          <div className="flex items-center">
+            <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+              <span className="text-xl">🔍</span>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-gray-600 dark:text-gray-400">Under Review</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-white">
+                {pendingAdmins.filter(a => a.status === 'under_review').length}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+          <div className="flex items-center">
+            <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
+              <span className="text-xl">✅</span>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-gray-600 dark:text-gray-400">Approved</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-white">
+                {pendingAdmins.filter(a => a.status === 'approved').length}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+          <div className="flex items-center">
+            <div className="p-2 bg-red-100 dark:bg-red-900 rounded-lg">
+              <span className="text-xl">❌</span>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-gray-600 dark:text-gray-400">Rejected</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-white">
+                {pendingAdmins.filter(a => a.status === 'rejected').length}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Admin Requests List */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+            Admin Verification Requests ({filteredAdmins.length})
+          </h3>
+        </div>
+        <div className="p-6">
+          {filteredAdmins.length === 0 ? (
+            <div className="text-center py-8">
+              <span className="text-4xl mb-4 block">📭</span>
+              <p className="text-gray-500 dark:text-gray-400">No admin verification requests match your current filters</p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {filteredAdmins.map((admin) => (
+                <div key={admin.id} className="border border-gray-200 dark:border-gray-600 rounded-lg p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center">
+                        <span className="text-2xl">👑</span>
+                      </div>
+                      <div>
+                        <h4 className="text-lg font-medium text-gray-900 dark:text-white">{admin.name}</h4>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">{admin.email}</p>
+                        <div className="flex items-center space-x-2 mt-1">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(admin.status)}`}>
+                            {admin.status.replace('_', ' ').toUpperCase()}
+                          </span>
+                          <span className="px-2 py-1 bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 rounded-full text-xs font-medium">
+                            {admin.requestedAdminType.toUpperCase()} ADMIN
+                          </span>
+                          <span className="px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full text-xs font-medium">
+                            {admin.currentAdminCount}/2 ADMINS
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Submitted</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">{admin.submittedAt}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Institution</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{admin.institutionName}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Department</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{admin.department}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Staff ID</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{admin.staffId}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Phone Number</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{admin.phoneNumber}</p>
+                    </div>
+                  </div>
+
+                  {admin.additionalInfo && (
+                    <div className="mb-4">
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Additional Information</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 p-3 rounded">
+                        {admin.additionalInfo}
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="mb-4">
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Verification Documents</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {admin.documents.map((doc, index) => (
+                        <div key={index} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded">
+                          <span className="text-sm text-gray-700 dark:text-gray-300">{doc.name}</span>
+                          <div className="flex items-center space-x-2">
+                            {doc.verified ? (
+                              <span className="text-green-600 dark:text-green-400">✅</span>
+                            ) : (
+                              <span className="text-yellow-600 dark:text-yellow-400">⏳</span>
+                            )}
+                            <button className="text-blue-600 dark:text-blue-400 hover:underline text-xs">
+                              Review
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {(admin.status === 'pending' || admin.status === 'under_review') && (
+                    <div className="flex space-x-3">
+                      <button
+                        onClick={() => {
+                          const notes = prompt('Add approval notes (optional):');
+                          handleAdminVerification(admin.id, 'approve', notes || '');
+                        }}
+                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                      >
+                        Approve as {admin.requestedAdminType} Admin
+                      </button>
+                      <button
+                        onClick={() => {
+                          const notes = prompt('Reason for rejection:');
+                          if (notes) handleAdminVerification(admin.id, 'reject', notes);
+                        }}
+                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                      >
+                        Reject Request
+                      </button>
+                      <button
+                        onClick={() => {
+                          setPendingAdmins(prev => 
+                            prev.map(a => 
+                              a.id === admin.id ? { ...a, status: 'under_review' } : a
+                            )
+                          );
+                        }}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                      >
+                        Mark Under Review
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default AdminVerificationSystem;

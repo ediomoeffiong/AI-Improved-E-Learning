@@ -390,12 +390,30 @@ export const mockAPI = {
   // Mock authentication functions
   login: (credentials) => {
     // Simple mock login - accepts any email/password combination
+    // Determine approval status based on role
+    let approvalStatus = 'approved'; // Default for students and instructors
+    let role = 'student'; // Default role
+
+    if (credentials.email.includes('admin')) {
+      role = 'admin';
+      approvalStatus = credentials.email.includes('pending') ? 'pending' : 'approved';
+    } else if (credentials.email.includes('moderator')) {
+      role = 'moderator';
+      approvalStatus = credentials.email.includes('pending') ? 'pending' : 'approved';
+    } else if (credentials.email.includes('instructor')) {
+      role = 'instructor';
+    }
+
     const mockUser = {
       id: '1',
       name: 'Demo User',
       email: credentials.email,
-      role: 'student',
-      avatar: 'https://via.placeholder.com/40'
+      role: role,
+      avatar: 'https://via.placeholder.com/40',
+      approvalStatus: approvalStatus,
+      institutionName: 'University of Lagos',
+      applicationDate: '2024-01-15',
+      adminNotes: approvalStatus === 'pending' ? 'Application under review' : ''
     };
 
     const mockToken = 'mock-jwt-token-' + Date.now();
@@ -404,6 +422,25 @@ export const mockAPI = {
       token: mockToken,
       user: mockUser,
       message: 'Login successful (using mock data)'
+    });
+  },
+
+  appAdminLogin: (credentials) => {
+    // Mock super admin login - accepts any email/password combination
+    const mockSuperAdmin = {
+      id: 'super-admin-1',
+      name: 'Demo Super Admin',
+      email: credentials.email,
+      role: credentials.role || 'Super Admin',
+      avatar: 'https://via.placeholder.com/150',
+      permissions: ['manage_users', 'manage_institutions', 'manage_platform', 'view_analytics']
+    };
+    const mockToken = 'mock-super-admin-token-' + Date.now();
+
+    return Promise.resolve({
+      token: mockToken,
+      user: mockSuperAdmin,
+      message: 'Super Admin login successful (using mock data)'
     });
   },
 

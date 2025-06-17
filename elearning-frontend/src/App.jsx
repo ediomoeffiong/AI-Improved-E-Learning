@@ -70,6 +70,23 @@ import Support from './pages/support/Support';
 import TermsOfService from './pages/legal/TermsOfService';
 import PrivacyPolicy from './pages/legal/PrivacyPolicy';
 
+// Super Admin pages
+import SuperAdminLogin from './pages/auth/AppAdminLogin';
+
+// Role-based components
+import RoleBasedDashboard from './components/dashboard/RoleBasedDashboard';
+import RoleBasedHeader from './components/layout/RoleBasedHeader';
+
+// Protected route components
+import SuperAdminProtectedRoute from './components/auth/SuperAdminProtectedRoute';
+
+// Admin management components
+import UserApprovalSystem from './pages/admin/UserApprovalSystem';
+import UniversityVerificationSystem from './pages/admin/UniversityVerificationSystem';
+import AdminVerificationSystem from './pages/admin/AdminVerificationSystem';
+import ModeratorVerificationSystem from './pages/admin/ModeratorVerificationSystem';
+import InstitutionJoinRequest from './pages/user/InstitutionJoinRequest';
+
 function App() {
   return (
     <AuthProvider>
@@ -98,8 +115,22 @@ function App() {
               <Route path="/terms" element={<TermsOfService />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
 
+              {/* Super Admin Routes */}
+              <Route path="/super-admin-login" element={<SuperAdminLogin />} />
+
+              {/* Admin Management Routes */}
+              <Route path="/admin/approvals" element={<ProtectedRoute><UserApprovalSystem /></ProtectedRoute>} />
+              <Route path="/admin/moderators" element={<ProtectedRoute><ModeratorVerificationSystem /></ProtectedRoute>} />
+
+              {/* Super Admin Protected Routes */}
+              <Route path="/super-admin/universities" element={<SuperAdminProtectedRoute><UniversityVerificationSystem /></SuperAdminProtectedRoute>} />
+              <Route path="/super-admin/admins" element={<SuperAdminProtectedRoute><AdminVerificationSystem /></SuperAdminProtectedRoute>} />
+
+              {/* User Institution Routes */}
+              <Route path="/join-institution" element={<ProtectedRoute><InstitutionJoinRequest /></ProtectedRoute>} />
+
               {/* Protected Dashboard Routes */}
-              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/dashboard" element={<RoleBasedDashboard />} />
 
               {/* Protected Courses Routes */}
               <Route path="/courses/dashboard" element={<ProtectedRoute><CoursesDashboard /></ProtectedRoute>} />

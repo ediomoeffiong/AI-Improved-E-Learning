@@ -198,13 +198,27 @@ function Register() {
     try {
       const data = await authAPI.register(payload);
 
-      setApiMessage('Registration successful! Redirecting to login...');
+      // Different messages based on role
+      let successMessage = '';
+      let redirectDelay = 2000;
+
+      if (payload.role === 'admin') {
+        successMessage = 'Registration successful! Your admin request has been submitted for App Admin approval. You can login with limited access while awaiting verification.';
+        redirectDelay = 4000; // Longer delay for admin message
+      } else if (payload.role === 'moderator') {
+        successMessage = 'Registration successful! Your moderator request has been submitted for Institution Admin approval. You can login with limited access while awaiting verification.';
+        redirectDelay = 4000; // Longer delay for moderator message
+      } else {
+        successMessage = 'Registration successful! Redirecting to login...';
+      }
+
+      setApiMessage(successMessage);
       setApiSuccess(true);
 
-      // Redirect to login page after a short delay
+      // Redirect to login page after a delay
       setTimeout(() => {
         navigate('/login');
-      }, 2000);
+      }, redirectDelay);
     } catch (err) {
       console.error('Registration error:', err);
 
