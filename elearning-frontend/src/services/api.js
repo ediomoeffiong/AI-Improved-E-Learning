@@ -761,6 +761,38 @@ export const userAPI = {
       body: JSON.stringify(passwordData),
     });
   },
+
+  // Update phone number
+  updatePhoneNumber: async (phoneNumber) => {
+    try {
+      const response = await apiRequest('/user/phone', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ phoneNumber })
+      });
+      return response;
+    } catch (error) {
+      if (error.message.includes('Backend service is not available') || error.message.includes('Demo mode is enabled')) {
+        console.log('Using mock data for phone number update');
+        // Mock successful response for demo mode
+        return {
+          message: 'Phone number updated successfully (demo mode)',
+          user: {
+            id: 'demo-user',
+            name: 'Demo User',
+            username: 'demo',
+            email: 'demo@example.com',
+            phoneNumber: phoneNumber,
+            role: 'Student'
+          }
+        };
+      }
+      throw error;
+    }
+  },
 };
 
 // Error handling utility

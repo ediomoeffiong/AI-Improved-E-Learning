@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { USER_ROLES } from '../../constants/roles';
 import { NIGERIAN_UNIVERSITIES, INSTITUTION_REQUEST_STATUS } from '../../constants/institutions';
+import PhoneNumberInput from '../../components/PhoneNumberInput';
 
 const InstitutionJoinRequest = () => {
   const { user } = useAuth();
@@ -370,23 +371,14 @@ const InstitutionJoinRequest = () => {
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Phone Number *
-              </label>
-              <input
-                type="tel"
-                name="phoneNumber"
+              <PhoneNumberInput
                 value={formData.phoneNumber}
-                onChange={handleInputChange}
-                placeholder="+234-XXX-XXX-XXXX"
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
-                  errors.phoneNumber ? 'border-red-300' : 'border-gray-300'
-                }`}
-                required
+                onChange={(value) => setFormData(prev => ({ ...prev, phoneNumber: value }))}
+                label="Phone Number"
+                placeholder="Enter your phone number"
+                required={true}
+                error={errors.phoneNumber}
               />
-              {errors.phoneNumber && (
-                <p className="mt-1 text-sm text-red-600">{errors.phoneNumber}</p>
-              )}
             </div>
           </div>
 

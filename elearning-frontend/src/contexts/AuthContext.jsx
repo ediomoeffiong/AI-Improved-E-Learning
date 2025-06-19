@@ -77,6 +77,10 @@ export const AuthProvider = ({ children }) => {
     return user?.email || null;
   };
 
+  const getUserPhoneNumber = () => {
+    return user?.phoneNumber || null;
+  };
+
   const hasRole = (requiredRole) => {
     return user?.role === requiredRole;
   };
@@ -131,6 +135,7 @@ export const AuthProvider = ({ children }) => {
     getUserRole,
     getUserName,
     getUserEmail,
+    getUserPhoneNumber,
     hasRole,
     hasAnyRole,
     hasInstitutionFunctions,

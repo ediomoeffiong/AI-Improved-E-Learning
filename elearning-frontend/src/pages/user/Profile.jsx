@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import PhoneNumberInput from '../../components/PhoneNumberInput';
+import { formatPhoneNumber } from '../../constants/countryCodes';
 
 function Profile() {
   const { user, getUserName, getUserEmail, getUserRole } = useAuth();
@@ -135,15 +137,16 @@ function Profile() {
                 Phone Number
               </label>
               {isEditing ? (
-                <input
-                  type="tel"
-                  name="phone"
+                <PhoneNumberInput
                   value={formData.phone}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  onChange={(value) => setFormData(prev => ({ ...prev, phone: value }))}
+                  placeholder="Enter your phone number"
+                  label=""
                 />
               ) : (
-                <p className="text-gray-900 dark:text-white py-2">{formData.phone || 'Not provided'}</p>
+                <p className="text-gray-900 dark:text-white py-2">
+                  {formData.phone ? formatPhoneNumber(formData.phone) : 'Not provided'}
+                </p>
               )}
             </div>
 

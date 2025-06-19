@@ -9,9 +9,11 @@ import {
 } from '../../utils/pwa';
 import { NIGERIAN_UNIVERSITIES, INSTITUTION_REQUEST_STATUS } from '../../constants/institutions';
 import { USER_ROLES } from '../../constants/roles';
+import { COUNTRY_CODES, formatPhoneNumber } from '../../constants/countryCodes';
+import PhoneNumberInput from '../../components/PhoneNumberInput';
 
 function Settings() {
-  const { getUserName, getUserEmail, user, login } = useAuth();
+  const { getUserName, getUserEmail, getUserPhoneNumber, user, login, getInstitutionData } = useAuth();
   const [settings, setSettings] = useState({
     // Notification Settings
     emailNotifications: true,
@@ -55,6 +57,9 @@ function Settings() {
     newUsername: '',
     isUpdating: false
   });
+
+  const [phoneNumber, setPhoneNumber] = useState(getUserPhoneNumber() || '');
+  const [isUpdatingPhone, setIsUpdatingPhone] = useState(false);
 
   const [activeTab, setActiveTab] = useState('account');
   const [cacheStatus, setCacheStatus] = useState(null);
@@ -303,6 +308,41 @@ function Settings() {
     }
   };
 
+  const handlePhoneNumberUpdate = async (e) => {
+    e.preventDefault();
+
+    if (!phoneNumber.trim()) {
+      alert('Please enter a phone number');
+      return;
+    }
+
+    // Basic phone number validation
+    const cleanPhone = phoneNumber.replace(/[^\d+]/g, '');
+    if (cleanPhone.length < 8) {
+      alert('Please enter a valid phone number');
+      return;
+    }
+
+    setIsUpdatingPhone(true);
+
+    try {
+      const response = await userAPI.updatePhoneNumber(phoneNumber);
+
+      // Update user data in localStorage and context
+      const updatedUser = { ...user, phoneNumber: response.user.phoneNumber };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      login(updatedUser, localStorage.getItem('token'));
+
+      alert('📱 Phone number updated successfully! Your contact information is now up to date.');
+      setPhoneNumber(response.user.phoneNumber);
+    } catch (error) {
+      console.error('Error updating phone number:', error);
+      alert(error.message || 'Error updating phone number. Please try again.');
+    } finally {
+      setIsUpdatingPhone(false);
+    }
+  };
+
   // Load cache status when cache tab is active
   useEffect(() => {
     if (activeTab === 'cache') {
@@ -544,39 +584,140 @@ function Settings() {
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Account Information</h3>
 
                 {/* Current Account Info */}
-                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6 mb-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Full Name
-                      </label>
-                      <p className="text-gray-900 dark:text-white font-medium">
-                        {getUserName() || 'Not set'}
-                      </p>
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 rounded-xl p-6 mb-6 border border-blue-100 dark:border-gray-600">
+                  <div className="flex items-center mb-4">
+                    <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center mr-3">
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Email Address
-                      </label>
+                      <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Account Overview</h4>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">Your learning identity at a glance</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {/* Basic Info */}
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+                      <div className="flex items-center mb-2">
+                        <svg className="w-4 h-4 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Full Name
+                        </label>
+                      </div>
                       <p className="text-gray-900 dark:text-white font-medium">
-                        {getUserEmail() || 'Not set'}
+                        {getUserName() || '🎭 Mystery Scholar'}
                       </p>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Current Username
-                      </label>
-                      <p className="text-gray-900 dark:text-white font-medium">
-                        {user?.username ? `@${user.username}` : 'Not set'}
+
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+                      <div className="flex items-center mb-2">
+                        <svg className="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                        </svg>
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Email Address
+                        </label>
+                      </div>
+                      <p className="text-gray-900 dark:text-white font-medium break-all">
+                        {getUserEmail() || '📧 No email set'}
                       </p>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Account Role
-                      </label>
+
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+                      <div className="flex items-center mb-2">
+                        <svg className="w-4 h-4 text-purple-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                        </svg>
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Username
+                        </label>
+                      </div>
                       <p className="text-gray-900 dark:text-white font-medium">
-                        {user?.role || 'Not set'}
+                        {user?.username ? `@${user.username}` : '🏷️ No username set'}
                       </p>
+                    </div>
+
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+                      <div className="flex items-center mb-2">
+                        <svg className="w-4 h-4 text-orange-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                        </svg>
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Phone Number
+                        </label>
+                      </div>
+                      <p className="text-gray-900 dark:text-white font-medium">
+                        {getUserPhoneNumber() ? formatPhoneNumber(getUserPhoneNumber()) : '📱 No phone number set'}
+                      </p>
+                    </div>
+
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+                      <div className="flex items-center mb-2">
+                        <svg className="w-4 h-4 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Account Role
+                        </label>
+                      </div>
+                      <div className="flex items-center">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          user?.role === 'Admin' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' :
+                          user?.role === 'Instructor' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
+                          'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                        }`}>
+                          {user?.role === 'Admin' ? '👑' : user?.role === 'Instructor' ? '🎓' : '📚'} {user?.role || 'Student'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Institution Info */}
+                    {(() => {
+                      const institutionData = getInstitutionData();
+                      return (
+                        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+                          <div className="flex items-center mb-2">
+                            <svg className="w-4 h-4 text-indigo-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                              Institution
+                            </label>
+                          </div>
+                          <p className="text-gray-900 dark:text-white font-medium">
+                            {institutionData?.institutionName ?
+                              NIGERIAN_UNIVERSITIES.find(uni => uni.value === institutionData.institutionName)?.label || institutionData.institutionName
+                              : '🏛️ No institution set'}
+                          </p>
+                          {institutionData?.studentId && (
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              ID: {institutionData.studentId}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Quick Stats */}
+                  <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-600">
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center text-gray-600 dark:text-gray-400">
+                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Member since {new Date().getFullYear()}
+                      </div>
+                      <div className="flex items-center text-gray-600 dark:text-gray-400">
+                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Profile {getUserName() && getUserEmail() && getUserPhoneNumber() ? '100%' : '75%'} complete
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -643,6 +784,229 @@ function Settings() {
                       </button>
                     </div>
                   </form>
+                </div>
+
+                {/* Contact Information & Profile Management */}
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+                  <div className="flex items-center mb-4">
+                    <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center mr-3">
+                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 className="text-md font-semibold text-gray-900 dark:text-white">Contact & Profile Enhancement</h4>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Complete your profile for a better learning experience</p>
+                    </div>
+                  </div>
+
+                  {/* Profile Completion Progress */}
+                  <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 rounded-lg border border-blue-200 dark:border-gray-600">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Profile Completion</span>
+                      <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
+                        {(() => {
+                          const fields = [getUserName(), getUserEmail(), getUserPhoneNumber(), user?.username];
+                          const completed = fields.filter(Boolean).length;
+                          const total = fields.length;
+                          return `${Math.round((completed / total) * 100)}%`;
+                        })()}
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                      <div
+                        className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-300"
+                        style={{
+                          width: `${(() => {
+                            const fields = [getUserName(), getUserEmail(), getUserPhoneNumber(), user?.username];
+                            const completed = fields.filter(Boolean).length;
+                            const total = fields.length;
+                            return Math.round((completed / total) * 100);
+                          })()}%`
+                        }}
+                      ></div>
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {[
+                        { label: 'Name', value: getUserName(), icon: '👤' },
+                        { label: 'Email', value: getUserEmail(), icon: '📧' },
+                        { label: 'Phone', value: getUserPhoneNumber(), icon: '📱' },
+                        { label: 'Username', value: user?.username, icon: '🏷️' }
+                      ].map((field, index) => (
+                        <span
+                          key={index}
+                          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            field.value
+                              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                              : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
+                          }`}
+                        >
+                          <span className="mr-1">{field.icon}</span>
+                          {field.label}
+                          {field.value && <span className="ml-1">✓</span>}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Quick Actions */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Phone Number Management */}
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-600 shadow-sm">
+                      <div className="flex items-center mb-3">
+                        <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900 rounded-full flex items-center justify-center mr-3">
+                          <svg className="w-4 h-4 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                          </svg>
+                        </div>
+                        <h5 className="font-medium text-gray-900 dark:text-white">Phone Number</h5>
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                        {getUserPhoneNumber() ? 'Update your contact number' : 'Add your phone number for account security'}
+                      </p>
+
+                      <form onSubmit={handlePhoneNumberUpdate} className="space-y-4">
+                        <PhoneNumberInput
+                          value={phoneNumber}
+                          onChange={setPhoneNumber}
+                          disabled={isUpdatingPhone}
+                          placeholder="Enter your phone number"
+                          label=""
+                          className="mb-4"
+                        />
+
+                        <div className="flex space-x-2">
+                          <button
+                            type="submit"
+                            disabled={isUpdatingPhone || !phoneNumber.trim()}
+                            className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 flex items-center justify-center"
+                          >
+                            {isUpdatingPhone ? (
+                              <>
+                                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Updating...
+                              </>
+                            ) : (
+                              getUserPhoneNumber() ? 'Update Phone' : 'Add Phone Number'
+                            )}
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setPhoneNumber('')}
+                            disabled={isUpdatingPhone}
+                            className="bg-gray-300 hover:bg-gray-400 disabled:bg-gray-200 disabled:cursor-not-allowed text-gray-700 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+                          >
+                            Clear
+                          </button>
+                        </div>
+                      </form>
+
+                      {getUserPhoneNumber() && (
+                        <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-xs font-medium text-green-800 dark:text-green-200 flex items-center">
+                                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                                Current Phone Number
+                              </p>
+                              <p className="text-sm text-green-700 dark:text-green-300 font-mono">
+                                {formatPhoneNumber(getUserPhoneNumber())}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => setPhoneNumber(getUserPhoneNumber())}
+                              className="text-xs text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200 underline"
+                            >
+                              Edit
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Institution Quick View */}
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-600 shadow-sm">
+                      <div className="flex items-center mb-3">
+                        <div className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900 rounded-full flex items-center justify-center mr-3">
+                          <svg className="w-4 h-4 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                          </svg>
+                        </div>
+                        <h5 className="font-medium text-gray-900 dark:text-white">Institution Status</h5>
+                      </div>
+                      {(() => {
+                        const institutionData = getInstitutionData();
+                        const hasInstitution = institutionData?.institutionName;
+
+                        return (
+                          <div className="space-y-3">
+                            {hasInstitution ? (
+                              <div>
+                                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                  {NIGERIAN_UNIVERSITIES.find(uni => uni.value === institutionData.institutionName)?.label || institutionData.institutionName}
+                                </p>
+                                {institutionData.studentId && (
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">ID: {institutionData.studentId}</p>
+                                )}
+                                {institutionData.department && (
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">Dept: {institutionData.department}</p>
+                                )}
+                                <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
+                                  <p className="text-xs text-blue-700 dark:text-blue-300 flex items-center">
+                                    <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    Institution functions enabled
+                                  </p>
+                                </div>
+                              </div>
+                            ) : (
+                              <div>
+                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                                  🏛️ No institution set
+                                </p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                                  Enable institution functions to access classroom features and CBT assessments
+                                </p>
+                              </div>
+                            )}
+                            <button
+                              onClick={() => setActiveTab('institution')}
+                              className="w-full bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+                            >
+                              {hasInstitution ? 'Manage Institution' : 'Setup Institution'}
+                            </button>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </div>
+
+                  {/* Profile Tips */}
+                  <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                    <div className="flex items-start">
+                      <svg className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                      </svg>
+                      <div>
+                        <h4 className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-1">
+                          💡 Profile Enhancement Tips
+                        </h4>
+                        <ul className="text-sm text-yellow-700 dark:text-yellow-300 space-y-1">
+                          <li>• Complete your profile to unlock personalized learning recommendations</li>
+                          <li>• Add your phone number for account recovery and security notifications</li>
+                          <li>• Set up institution details to access classroom and assessment features</li>
+                          <li>• A complete profile helps instructors and peers connect with you better</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -966,16 +1330,12 @@ function Settings() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Phone Number *
-                      </label>
-                      <input
-                        type="tel"
+                      <PhoneNumberInput
                         value={settings.phoneNumber}
-                        onChange={(e) => handleSettingChange('phoneNumber', e.target.value)}
-                        placeholder="e.g., +1 (555) 123-4567"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                        required
+                        onChange={(value) => handleSettingChange('phoneNumber', value)}
+                        label="Phone Number"
+                        placeholder="Enter your phone number"
+                        required={true}
                       />
                       <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                         Required for institution verification and emergency contact
