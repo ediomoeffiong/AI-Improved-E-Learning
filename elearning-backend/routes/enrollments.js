@@ -11,7 +11,7 @@ router.get('/', auth, async (req, res) => {
   try {
     const { status, sortBy = 'recent' } = req.query;
 
-    let query = Enrollment.find({ user: req.user.id }).populate('course');
+    let query = Enrollment.find({ user: req.user.userId }).populate('course');
 
     // Filter by status if provided
     if (status && status !== 'all') {
@@ -70,7 +70,7 @@ router.get('/', auth, async (req, res) => {
 // @access  Private
 router.get('/stats', auth, async (req, res) => {
   try {
-    const enrollments = await Enrollment.find({ user: req.user.id });
+    const enrollments = await Enrollment.find({ user: req.user.userId });
 
     const stats = {
       totalCourses: enrollments.length,
@@ -96,7 +96,7 @@ router.get('/stats', auth, async (req, res) => {
 router.get('/:courseId', auth, async (req, res) => {
   try {
     const enrollment = await Enrollment.findOne({
-      user: req.user.id,
+      user: req.user.userId,
       course: req.params.courseId
     }).populate('course');
 
@@ -119,7 +119,7 @@ router.put('/:courseId/progress', auth, async (req, res) => {
     const { lessonId, completed, timeSpent = 0 } = req.body;
 
     const enrollment = await Enrollment.findOne({
-      user: req.user.id,
+      user: req.user.userId,
       course: req.params.courseId
     });
 
@@ -169,7 +169,7 @@ router.put('/:courseId/progress', auth, async (req, res) => {
 router.post('/:courseId/certificate', auth, async (req, res) => {
   try {
     const enrollment = await Enrollment.findOne({
-      user: req.user.id,
+      user: req.user.userId,
       course: req.params.courseId
     }).populate('course');
 
@@ -207,7 +207,7 @@ router.post('/:courseId/certificate', auth, async (req, res) => {
 router.delete('/:courseId', auth, async (req, res) => {
   try {
     const enrollment = await Enrollment.findOne({
-      user: req.user.id,
+      user: req.user.userId,
       course: req.params.courseId
     });
 

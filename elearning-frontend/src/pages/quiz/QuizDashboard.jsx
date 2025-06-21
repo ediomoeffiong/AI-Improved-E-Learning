@@ -529,8 +529,8 @@ function QuizDashboard() {
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
                   <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-4">Achievements</h3>
                   <div className="space-y-2">
-                    {quizData.stats.badges.map((badge, index) => (
-                      <div key={index} className="flex items-center space-x-3 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    {(quizData.stats.badges || []).map((badge, index) => (
+                      <div key={`badge-${index}-${badge}`} className="flex items-center space-x-3 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
                         <div className="w-8 h-8 bg-yellow-100 dark:bg-yellow-900/20 rounded-full flex items-center justify-center">
                           <span className="text-yellow-600 dark:text-yellow-400">🏆</span>
                         </div>
@@ -590,7 +590,7 @@ function QuizDashboard() {
             {/* Quiz Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredQuizzes.map((quiz) => (
-                <div key={quiz.id} className="group bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-200 hover:scale-105">
+                <div key={quiz._id || quiz.id} className="group bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-200 hover:scale-105">
                   <div className="p-6">
                     {/* Quiz Header */}
                     <div className="flex justify-between items-start mb-4">
@@ -621,7 +621,7 @@ function QuizDashboard() {
                         <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        {quiz.questions} questions
+                        {Array.isArray(quiz.questions) ? quiz.questions.length : quiz.questions} questions
                       </div>
                       <div className="flex items-center">
                         <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -666,8 +666,8 @@ function QuizDashboard() {
 
                     {/* Tags */}
                     <div className="flex flex-wrap gap-1 mb-4">
-                      {quiz.tags.slice(0, 3).map((tag, index) => (
-                        <span key={index} className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-1 rounded-full text-xs">
+                      {(quiz.tags || []).slice(0, 3).map((tag, index) => (
+                        <span key={`${quiz._id || quiz.id}-tag-${index}`} className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-1 rounded-full text-xs">
                           #{tag}
                         </span>
                       ))}
@@ -774,7 +774,7 @@ function QuizDashboard() {
           <div className="space-y-6">
             {quizData.upcomingQuizzes.length > 0 ? (
               quizData.upcomingQuizzes.map((quiz) => (
-                <div key={quiz.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+                <div key={quiz._id || quiz.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">{quiz.title}</h3>

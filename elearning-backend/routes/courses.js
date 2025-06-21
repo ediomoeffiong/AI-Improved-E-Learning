@@ -454,7 +454,7 @@ router.post('/:id/enroll', auth, async (req, res) => {
 router.get('/:id/enrollment', auth, async (req, res) => {
   try {
     const enrollment = await Enrollment.findOne({
-      user: req.user.id,
+      user: req.user.userId,
       course: req.params.id
     }).populate('course');
 
@@ -488,7 +488,7 @@ router.post('/:id/review', auth, async (req, res) => {
 
     // Check if user is enrolled
     const enrollment = await Enrollment.findOne({
-      user: req.user.id,
+      user: req.user.userId,
       course: req.params.id
     });
 
@@ -498,7 +498,7 @@ router.post('/:id/review', auth, async (req, res) => {
 
     // Check if user already reviewed
     const existingReview = course.reviews.find(
-      review => review.user.toString() === req.user.id
+      review => review.user.toString() === req.user.userId
     );
 
     if (existingReview) {
@@ -507,7 +507,7 @@ router.post('/:id/review', auth, async (req, res) => {
 
     // Add review
     course.reviews.push({
-      user: req.user.id,
+      user: req.user.userId,
       name: req.user.name,
       rating,
       comment
@@ -530,7 +530,7 @@ router.put('/:id/lesson/:lessonId/complete', auth, async (req, res) => {
     const { timeSpent = 0 } = req.body;
 
     const enrollment = await Enrollment.findOne({
-      user: req.user.id,
+      user: req.user.userId,
       course: req.params.id
     });
 

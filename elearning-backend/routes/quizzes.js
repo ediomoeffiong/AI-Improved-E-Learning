@@ -172,311 +172,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-// @route   GET /api/quizzes/:id
-// @desc    Get quiz by ID (for taking the quiz)
-// @access  Private
-router.get('/:id', auth, async (req, res) => {
-  try {
-    if (isMongoConnected()) {
-      const quiz = await Quiz.findById(req.params.id);
-
-      if (!quiz || !quiz.isActive) {
-        return res.status(404).json({ message: 'Quiz not found' });
-      }
-
-      // Check user's previous attempts
-      const attempts = await QuizAttempt.find({
-        user: req.user.id,
-        quiz: req.params.id
-      }).sort({ attemptNumber: -1 });
-
-      const canTakeQuiz = attempts.length < quiz.maxAttempts;
-      const bestScore = attempts.length > 0 ? Math.max(...attempts.map(a => a.percentage)) : null;
-
-      res.json({
-        ...quiz.toObject(),
-        attempts: attempts.length,
-        bestScore,
-        canTakeQuiz
-      });
-    } else {
-      // Use mock data
-      const quiz = mockQuizzes.find(q => q._id === req.params.id);
-
-      if (!quiz || !quiz.isActive) {
-        return res.status(404).json({ message: 'Quiz not found' });
-      }
-
-      res.json({
-        ...quiz,
-        attempts: 0,
-        bestScore: null,
-        canTakeQuiz: true
-      });
-    }
-  } catch (error) {
-    console.error('Error fetching quiz:', error);
-    if (error.kind === 'ObjectId') {
-      return res.status(404).json({ message: 'Quiz not found' });
-    }
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// @route   POST /api/quizzes/:id/start
-// @desc    Start a new quiz attempt
-// @access  Private
-router.post('/:id/start', auth, async (req, res) => {
-  try {
-    if (isMongoConnected()) {
-      const quiz = await Quiz.findById(req.params.id);
-
-      if (!quiz || !quiz.isActive) {
-        return res.status(404).json({ message: 'Quiz not found' });
-      }
-
-      // Check if user can take the quiz
-      const previousAttempts = await QuizAttempt.countDocuments({
-        user: req.user.id,
-        quiz: req.params.id
-      });
-
-      if (previousAttempts >= quiz.maxAttempts) {
-        return res.status(400).json({ message: 'Maximum attempts reached' });
-      }
-
-      // Create new attempt
-      const attempt = new QuizAttempt({
-        user: req.user.id,
-        quiz: req.params.id,
-        attemptNumber: previousAttempts + 1,
-        totalPoints: quiz.totalPoints,
-        totalQuestions: quiz.questions.length
-      });
-
-      await attempt.save();
-
-      // Return quiz without correct answers
-      const quizForTaking = {
-        ...quiz.toObject(),
-        questions: quiz.questions.map(q => ({
-          _id: q._id,
-          question: q.question,
-          type: q.type,
-          options: q.options.map(opt => ({ text: opt.text })), // Remove isCorrect
-          points: q.points,
-          order: q.order
-        }))
-      };
-
-      res.json({
-        quiz: quizForTaking,
-        attemptId: attempt._id,
-        timeLimit: quiz.timeLimit
-      });
-    } else {
-      // Mock response for development
-      const quiz = mockQuizzes.find(q => q._id === req.params.id);
-
-      if (!quiz) {
-        return res.status(404).json({ message: 'Quiz not found' });
-      }
-
-      const quizForTaking = {
-        ...quiz,
-        questions: quiz.questions.map(q => ({
-          _id: q._id,
-          question: q.question,
-          type: q.type,
-          options: q.options.map(opt => ({ text: opt.text })),
-          points: q.points,
-          order: q.order
-        }))
-      };
-
-      res.json({
-        quiz: quizForTaking,
-        attemptId: 'mock-attempt-' + Date.now(),
-        timeLimit: quiz.timeLimit
-      });
-    }
-  } catch (error) {
-    console.error('Error starting quiz:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// @route   POST /api/quizzes/:id/submit
-// @desc    Submit quiz answers
-// @access  Private
-router.post('/:id/submit', auth, async (req, res) => {
-  try {
-    const { attemptId, answers, timeSpent } = req.body;
-
-    if (isMongoConnected()) {
-      const quiz = await Quiz.findById(req.params.id);
-      const attempt = await QuizAttempt.findById(attemptId);
-
-      if (!quiz || !attempt) {
-        return res.status(404).json({ message: 'Quiz or attempt not found' });
-      }
-
-      if (attempt.user.toString() !== req.user.id) {
-        return res.status(403).json({ message: 'Unauthorized' });
-      }
-
-      if (attempt.status !== 'in-progress') {
-        return res.status(400).json({ message: 'Quiz already submitted' });
-      }
-
-      // Process answers
-      const processedAnswers = answers.map(answer => {
-        const question = quiz.questions.find(q => q._id.toString() === answer.questionId);
-        if (!question) return null;
-
-        let isCorrect = false;
-        let pointsEarned = 0;
-
-        if (question.type === 'multiple-choice' || question.type === 'true-false') {
-          const selectedOption = question.options.find(opt => opt.text === answer.selectedOption);
-          isCorrect = selectedOption && selectedOption.isCorrect;
-        } else if (question.type === 'fill-in-blank') {
-          isCorrect = answer.selectedAnswer &&
-            answer.selectedAnswer.toLowerCase().trim() === question.correctAnswer.toLowerCase().trim();
-        }
-
-        if (isCorrect) {
-          pointsEarned = question.points;
-        }
-
-        return {
-          questionId: answer.questionId,
-          selectedOption: answer.selectedOption,
-          selectedAnswer: answer.selectedAnswer,
-          isCorrect,
-          pointsEarned,
-          timeSpent: answer.timeSpent || 0
-        };
-      }).filter(Boolean);
-
-      // Update attempt
-      attempt.answers = processedAnswers;
-      attempt.status = 'completed';
-      attempt.submittedAt = new Date();
-      attempt.timeSpent = timeSpent || 0;
-
-      await attempt.save();
-
-      res.json({
-        message: 'Quiz submitted successfully',
-        attemptId: attempt._id,
-        score: attempt.score,
-        percentage: attempt.percentage,
-        passed: attempt.passed,
-        grade: attempt.grade
-      });
-    } else {
-      // Mock response for development
-      const quiz = mockQuizzes.find(q => q._id === req.params.id);
-      if (!quiz) {
-        return res.status(404).json({ message: 'Quiz not found' });
-      }
-
-      // Calculate mock score
-      let correctAnswers = 0;
-      answers.forEach(answer => {
-        const question = quiz.questions.find(q => q._id === answer.questionId);
-        if (question) {
-          if (question.type === 'multiple-choice' || question.type === 'true-false') {
-            const selectedOption = question.options.find(opt => opt.text === answer.selectedOption);
-            if (selectedOption && selectedOption.isCorrect) correctAnswers++;
-          }
-        }
-      });
-
-      const percentage = Math.round((correctAnswers / quiz.questions.length) * 100);
-      const passed = percentage >= 70;
-
-      res.json({
-        message: 'Quiz submitted successfully (demo mode)',
-        attemptId: attemptId,
-        score: correctAnswers,
-        percentage,
-        passed,
-        grade: passed ? 'B' : 'F'
-      });
-    }
-  } catch (error) {
-    console.error('Error submitting quiz:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// @route   GET /api/quizzes/:id/results/:attemptId
-// @desc    Get quiz results
-// @access  Private
-router.get('/:id/results/:attemptId', auth, async (req, res) => {
-  try {
-    if (isMongoConnected()) {
-      const quiz = await Quiz.findById(req.params.id);
-      const attempt = await QuizAttempt.findById(req.params.attemptId);
-
-      if (!quiz || !attempt) {
-        return res.status(404).json({ message: 'Quiz or attempt not found' });
-      }
-
-      if (attempt.user.toString() !== req.user.id) {
-        return res.status(403).json({ message: 'Unauthorized' });
-      }
-
-      // Build detailed results
-      const detailedResults = attempt.answers.map(answer => {
-        const question = quiz.questions.find(q => q._id.toString() === answer.questionId);
-        return {
-          question: question.question,
-          type: question.type,
-          options: question.options,
-          selectedOption: answer.selectedOption,
-          selectedAnswer: answer.selectedAnswer,
-          isCorrect: answer.isCorrect,
-          pointsEarned: answer.pointsEarned,
-          explanation: question.explanation,
-          timeSpent: answer.timeSpent
-        };
-      });
-
-      res.json({
-        quiz: {
-          title: quiz.title,
-          description: quiz.description,
-          totalPoints: quiz.totalPoints
-        },
-        attempt: {
-          score: attempt.score,
-          percentage: attempt.percentage,
-          passed: attempt.passed,
-          grade: attempt.grade,
-          timeSpent: attempt.timeSpent,
-          submittedAt: attempt.submittedAt,
-          correctAnswers: attempt.correctAnswers,
-          totalQuestions: attempt.totalQuestions
-        },
-        results: detailedResults
-      });
-    } else {
-      // Mock response
-      res.json({
-        quiz: { title: 'Mock Quiz', description: 'Demo quiz', totalPoints: 10 },
-        attempt: { score: 8, percentage: 80, passed: true, grade: 'B', timeSpent: 15 },
-        results: []
-      });
-    }
-  } catch (error) {
-    console.error('Error fetching quiz results:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
 // @route   GET /api/quizzes/dashboard
 // @desc    Get quiz dashboard data for user
 // @access  Private
@@ -484,7 +179,7 @@ router.get('/dashboard', auth, async (req, res) => {
   try {
     if (isMongoConnected()) {
       // Get user's quiz attempts
-      const attempts = await QuizAttempt.find({ user: req.user.id })
+      const attempts = await QuizAttempt.find({ user: req.user.userId })
         .populate('quiz', 'title course category difficulty')
         .sort({ submittedAt: -1 });
 
@@ -594,7 +289,7 @@ router.get('/dashboard', auth, async (req, res) => {
 router.get('/attempts', auth, async (req, res) => {
   try {
     if (isMongoConnected()) {
-      const attempts = await QuizAttempt.find({ user: req.user.id })
+      const attempts = await QuizAttempt.find({ user: req.user.userId })
         .populate('quiz', 'title course category difficulty')
         .sort({ submittedAt: -1 });
 
@@ -614,6 +309,334 @@ router.get('/attempts', auth, async (req, res) => {
     }
   } catch (error) {
     console.error('Error fetching quiz attempts:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/quizzes/:id
+// @desc    Get quiz by ID (for taking the quiz)
+// @access  Private
+router.get('/:id', auth, async (req, res) => {
+  try {
+    // Validate ObjectId format
+    if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ message: 'Invalid quiz ID format' });
+    }
+
+    if (isMongoConnected()) {
+      const quiz = await Quiz.findById(req.params.id);
+
+      if (!quiz || !quiz.isActive) {
+        return res.status(404).json({ message: 'Quiz not found' });
+      }
+
+      // Check user's previous attempts
+      const attempts = await QuizAttempt.find({
+        user: req.user.userId,
+        quiz: req.params.id
+      }).sort({ attemptNumber: -1 });
+
+      const canTakeQuiz = attempts.length < quiz.maxAttempts;
+      const bestScore = attempts.length > 0 ? Math.max(...attempts.map(a => a.percentage)) : null;
+
+      res.json({
+        ...quiz.toObject(),
+        attempts: attempts.length,
+        bestScore,
+        canTakeQuiz
+      });
+    } else {
+      // Use mock data
+      const quiz = mockQuizzes.find(q => q._id === req.params.id);
+
+      if (!quiz || !quiz.isActive) {
+        return res.status(404).json({ message: 'Quiz not found' });
+      }
+
+      res.json({
+        ...quiz,
+        attempts: 0,
+        bestScore: null,
+        canTakeQuiz: true
+      });
+    }
+  } catch (error) {
+    console.error('Error fetching quiz:', error);
+    if (error.kind === 'ObjectId') {
+      return res.status(404).json({ message: 'Quiz not found' });
+    }
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/quizzes/:id/start
+// @desc    Start a new quiz attempt
+// @access  Private
+router.post('/:id/start', auth, async (req, res) => {
+  try {
+    // Validate ObjectId format
+    if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ message: 'Invalid quiz ID format' });
+    }
+
+    if (isMongoConnected()) {
+      const quiz = await Quiz.findById(req.params.id);
+
+      if (!quiz || !quiz.isActive) {
+        return res.status(404).json({ message: 'Quiz not found' });
+      }
+
+      // Check if user can take the quiz
+      const previousAttempts = await QuizAttempt.countDocuments({
+        user: req.user.userId,
+        quiz: req.params.id
+      });
+
+      if (previousAttempts >= quiz.maxAttempts) {
+        return res.status(400).json({ message: 'Maximum attempts reached' });
+      }
+
+      // Create new attempt
+      const attempt = new QuizAttempt({
+        user: req.user.userId,
+        quiz: req.params.id,
+        attemptNumber: previousAttempts + 1,
+        totalPoints: quiz.totalPoints,
+        totalQuestions: quiz.questions.length
+      });
+
+      await attempt.save();
+
+      // Return quiz without correct answers
+      const quizForTaking = {
+        ...quiz.toObject(),
+        questions: quiz.questions.map(q => ({
+          _id: q._id,
+          question: q.question,
+          type: q.type,
+          options: q.options.map(opt => ({ text: opt.text })), // Remove isCorrect
+          points: q.points,
+          order: q.order
+        }))
+      };
+
+      res.json({
+        quiz: quizForTaking,
+        attemptId: attempt._id,
+        timeLimit: quiz.timeLimit
+      });
+    } else {
+      // Mock response for development
+      const quiz = mockQuizzes.find(q => q._id === req.params.id);
+
+      if (!quiz) {
+        return res.status(404).json({ message: 'Quiz not found' });
+      }
+
+      const quizForTaking = {
+        ...quiz,
+        questions: quiz.questions.map(q => ({
+          _id: q._id,
+          question: q.question,
+          type: q.type,
+          options: q.options.map(opt => ({ text: opt.text })),
+          points: q.points,
+          order: q.order
+        }))
+      };
+
+      res.json({
+        quiz: quizForTaking,
+        attemptId: 'mock-attempt-' + Date.now(),
+        timeLimit: quiz.timeLimit
+      });
+    }
+  } catch (error) {
+    console.error('Error starting quiz:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/quizzes/:id/submit
+// @desc    Submit quiz answers
+// @access  Private
+router.post('/:id/submit', auth, async (req, res) => {
+  try {
+    // Validate ObjectId format
+    if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ message: 'Invalid quiz ID format' });
+    }
+
+    const { attemptId, answers, timeSpent } = req.body;
+
+    if (isMongoConnected()) {
+      const quiz = await Quiz.findById(req.params.id);
+      const attempt = await QuizAttempt.findById(attemptId);
+
+      if (!quiz || !attempt) {
+        return res.status(404).json({ message: 'Quiz or attempt not found' });
+      }
+
+      if (attempt.user.toString() !== req.user.userId) {
+        return res.status(403).json({ message: 'Unauthorized' });
+      }
+
+      if (attempt.status !== 'in-progress') {
+        return res.status(400).json({ message: 'Quiz already submitted' });
+      }
+
+      // Process answers
+      const processedAnswers = answers.map(answer => {
+        const question = quiz.questions.find(q => q._id.toString() === answer.questionId);
+        if (!question) return null;
+
+        let isCorrect = false;
+        let pointsEarned = 0;
+
+        if (question.type === 'multiple-choice' || question.type === 'true-false') {
+          const selectedOption = question.options.find(opt => opt.text === answer.selectedOption);
+          isCorrect = selectedOption && selectedOption.isCorrect;
+        } else if (question.type === 'fill-in-blank') {
+          isCorrect = answer.selectedAnswer &&
+            answer.selectedAnswer.toLowerCase().trim() === question.correctAnswer.toLowerCase().trim();
+        }
+
+        if (isCorrect) {
+          pointsEarned = question.points;
+        }
+
+        return {
+          questionId: answer.questionId,
+          selectedOption: answer.selectedOption,
+          selectedAnswer: answer.selectedAnswer,
+          isCorrect,
+          pointsEarned,
+          timeSpent: answer.timeSpent || 0
+        };
+      }).filter(Boolean);
+
+      // Update attempt
+      attempt.answers = processedAnswers;
+      attempt.status = 'completed';
+      attempt.submittedAt = new Date();
+      attempt.timeSpent = timeSpent || 0;
+
+      await attempt.save();
+
+      res.json({
+        message: 'Quiz submitted successfully',
+        attemptId: attempt._id,
+        score: attempt.score,
+        percentage: attempt.percentage,
+        passed: attempt.passed,
+        grade: attempt.grade
+      });
+    } else {
+      // Mock response for development
+      const quiz = mockQuizzes.find(q => q._id === req.params.id);
+      if (!quiz) {
+        return res.status(404).json({ message: 'Quiz not found' });
+      }
+
+      // Calculate mock score
+      let correctAnswers = 0;
+      answers.forEach(answer => {
+        const question = quiz.questions.find(q => q._id === answer.questionId);
+        if (question) {
+          if (question.type === 'multiple-choice' || question.type === 'true-false') {
+            const selectedOption = question.options.find(opt => opt.text === answer.selectedOption);
+            if (selectedOption && selectedOption.isCorrect) correctAnswers++;
+          }
+        }
+      });
+
+      const percentage = Math.round((correctAnswers / quiz.questions.length) * 100);
+      const passed = percentage >= 70;
+
+      res.json({
+        message: 'Quiz submitted successfully (demo mode)',
+        attemptId: attemptId,
+        score: correctAnswers,
+        percentage,
+        passed,
+        grade: passed ? 'B' : 'F'
+      });
+    }
+  } catch (error) {
+    console.error('Error submitting quiz:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/quizzes/:id/results/:attemptId
+// @desc    Get quiz results
+// @access  Private
+router.get('/:id/results/:attemptId', auth, async (req, res) => {
+  try {
+    // Validate ObjectId formats
+    if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ message: 'Invalid quiz ID format' });
+    }
+    if (!req.params.attemptId.match(/^[0-9a-fA-F]{24}$/) && !req.params.attemptId.startsWith('mock-attempt-')) {
+      return res.status(400).json({ message: 'Invalid attempt ID format' });
+    }
+
+    if (isMongoConnected()) {
+      const quiz = await Quiz.findById(req.params.id);
+      const attempt = await QuizAttempt.findById(req.params.attemptId);
+
+      if (!quiz || !attempt) {
+        return res.status(404).json({ message: 'Quiz or attempt not found' });
+      }
+
+      if (attempt.user.toString() !== req.user.userId) {
+        return res.status(403).json({ message: 'Unauthorized' });
+      }
+
+      // Build detailed results
+      const detailedResults = attempt.answers.map(answer => {
+        const question = quiz.questions.find(q => q._id.toString() === answer.questionId);
+        return {
+          question: question.question,
+          type: question.type,
+          options: question.options,
+          selectedOption: answer.selectedOption,
+          selectedAnswer: answer.selectedAnswer,
+          isCorrect: answer.isCorrect,
+          pointsEarned: answer.pointsEarned,
+          explanation: question.explanation,
+          timeSpent: answer.timeSpent
+        };
+      });
+
+      res.json({
+        quiz: {
+          title: quiz.title,
+          description: quiz.description,
+          totalPoints: quiz.totalPoints
+        },
+        attempt: {
+          score: attempt.score,
+          percentage: attempt.percentage,
+          passed: attempt.passed,
+          grade: attempt.grade,
+          timeSpent: attempt.timeSpent,
+          submittedAt: attempt.submittedAt,
+          correctAnswers: attempt.correctAnswers,
+          totalQuestions: attempt.totalQuestions
+        },
+        results: detailedResults
+      });
+    } else {
+      // Mock response
+      res.json({
+        quiz: { title: 'Mock Quiz', description: 'Demo quiz', totalPoints: 10 },
+        attempt: { score: 8, percentage: 80, passed: true, grade: 'B', timeSpent: 15 },
+        results: []
+      });
+    }
+  } catch (error) {
+    console.error('Error fetching quiz results:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
