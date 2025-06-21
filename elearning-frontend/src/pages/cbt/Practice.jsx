@@ -1,93 +1,78 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { practiceTestAPI, handleAPIError } from '../../services/api';
 
 const Practice = () => {
   const [selectedSubject, setSelectedSubject] = useState('all');
   const [selectedDifficulty, setSelectedDifficulty] = useState('all');
+  const [practiceTests, setPracticeTests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const [practiceTests] = useState([
-    {
-      id: 1,
-      title: 'Basic Mathematics',
-      subject: 'Mathematics',
-      difficulty: 'Easy',
-      questions: 20,
-      timeLimit: 30,
-      attempts: 3,
-      bestScore: 85,
-      description: 'Practice basic arithmetic, algebra, and geometry concepts.',
-      topics: ['Arithmetic', 'Basic Algebra', 'Geometry'],
-      lastAttempt: '2024-01-10'
-    },
-    {
-      id: 2,
-      title: 'Advanced Calculus',
-      subject: 'Mathematics',
-      difficulty: 'Hard',
-      questions: 15,
-      timeLimit: 45,
-      attempts: 1,
-      bestScore: 72,
-      description: 'Advanced calculus problems including derivatives and integrals.',
-      topics: ['Derivatives', 'Integrals', 'Limits'],
-      lastAttempt: '2024-01-08'
-    },
-    {
-      id: 3,
-      title: 'Programming Fundamentals',
-      subject: 'Computer Science',
-      difficulty: 'Medium',
-      questions: 25,
-      timeLimit: 40,
-      attempts: 2,
-      bestScore: 90,
-      description: 'Basic programming concepts and problem-solving.',
-      topics: ['Variables', 'Loops', 'Functions'],
-      lastAttempt: '2024-01-12'
-    },
-    {
-      id: 4,
-      title: 'Data Structures',
-      subject: 'Computer Science',
-      difficulty: 'Hard',
-      questions: 20,
-      timeLimit: 50,
-      attempts: 0,
-      bestScore: null,
-      description: 'Arrays, linked lists, stacks, queues, and trees.',
-      topics: ['Arrays', 'Linked Lists', 'Trees'],
-      lastAttempt: null
-    },
-    {
-      id: 5,
-      title: 'Basic Physics',
-      subject: 'Physics',
-      difficulty: 'Easy',
-      questions: 18,
-      timeLimit: 35,
-      attempts: 4,
-      bestScore: 78,
-      description: 'Fundamental physics concepts and formulas.',
-      topics: ['Mechanics', 'Thermodynamics', 'Waves'],
-      lastAttempt: '2024-01-09'
-    },
-    {
-      id: 6,
-      title: 'Organic Chemistry',
-      subject: 'Chemistry',
-      difficulty: 'Medium',
-      questions: 22,
-      timeLimit: 45,
-      attempts: 1,
-      bestScore: 82,
-      description: 'Organic compounds, reactions, and mechanisms.',
-      topics: ['Hydrocarbons', 'Functional Groups', 'Reactions'],
-      lastAttempt: '2024-01-11'
-    }
-  ]);
+  // Fetch practice tests from API
+  useEffect(() => {
+    const fetchPracticeTests = async () => {
+      try {
+        setLoading(true);
+        const tests = await practiceTestAPI.getPracticeTests();
+        setPracticeTests(tests);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching practice tests:', err);
+        setError(handleAPIError(err));
+        // Fallback to hardcoded data if API fails
+        setPracticeTests([
+          {
+            _id: '1',
+            title: 'Basic Mathematics',
+            subject: 'Mathematics',
+            difficulty: 'Easy',
+            questions: 3, // Actual number from backend
+            timeLimit: 30,
+            attempts: 0,
+            bestScore: null,
+            description: 'Practice basic arithmetic, algebra, and geometry concepts.',
+            topics: ['Arithmetic', 'Basic Algebra', 'Geometry'],
+            lastAttempt: null
+          },
+          {
+            _id: '2',
+            title: 'Advanced Calculus',
+            subject: 'Mathematics',
+            difficulty: 'Hard',
+            questions: 2, // Actual number from backend
+            timeLimit: 45,
+            attempts: 0,
+            bestScore: null,
+            description: 'Advanced calculus problems including derivatives and integrals.',
+            topics: ['Derivatives', 'Integrals', 'Limits'],
+            lastAttempt: null
+          },
+          {
+            _id: '3',
+            title: 'Programming Fundamentals',
+            subject: 'Computer Science',
+            difficulty: 'Medium',
+            questions: 2, // Actual number from backend
+            timeLimit: 40,
+            attempts: 0,
+            bestScore: null,
+            description: 'Basic programming concepts and problem-solving.',
+            topics: ['Variables', 'Loops', 'Functions'],
+            lastAttempt: null
+          }
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const subjects = ['all', 'Mathematics', 'Computer Science', 'Physics', 'Chemistry'];
-  const difficulties = ['all', 'Easy', 'Medium', 'Hard'];
+    fetchPracticeTests();
+  }, []);
+
+  // Extract unique subjects and difficulties from the fetched data
+  const subjects = ['all', ...new Set(practiceTests.map(test => test.subject))];
+  const difficulties = ['all', ...new Set(practiceTests.map(test => test.difficulty))];
 
   const filteredTests = practiceTests.filter(test => {
     const subjectMatch = selectedSubject === 'all' || test.subject === selectedSubject;
@@ -161,10 +146,32 @@ const Practice = () => {
         </div>
       </div>
 
+      {/* Loading State */}
+      {loading && (
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <span className="ml-3 text-gray-600 dark:text-gray-400">Loading practice tests...</span>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-8">
+          <div className="flex items-center">
+            <svg className="w-5 h-5 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="text-red-800 font-medium">Error loading practice tests</span>
+          </div>
+          <p className="text-red-600 mt-2">{error}</p>
+        </div>
+      )}
+
       {/* Practice Tests Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredTests.map((test) => (
-          <div key={test.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200">
+      {!loading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredTests.map((test) => (
+            <div key={test._id || test.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200">
             <div className="p-6">
               {/* Header */}
               <div className="flex items-start justify-between mb-4">
@@ -199,7 +206,9 @@ const Practice = () => {
               <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
                 <div>
                   <span className="text-gray-500 dark:text-gray-400">Questions:</span>
-                  <span className="ml-1 font-medium text-gray-900 dark:text-white">{test.questions}</span>
+                  <span className="ml-1 font-medium text-gray-900 dark:text-white">
+                    {test.questions?.length || test.questions || 0}
+                  </span>
                 </div>
                 <div>
                   <span className="text-gray-500 dark:text-gray-400">Time:</span>
@@ -226,7 +235,7 @@ const Practice = () => {
 
               {/* Action Button */}
               <Link
-                to={`/cbt/practice/${test.id}`}
+                to={`/cbt/practice/${test._id || test.id}`}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 text-center block"
               >
                 {test.attempts > 0 ? 'Retake Practice Test' : 'Start Practice Test'}
@@ -234,10 +243,11 @@ const Practice = () => {
             </div>
           </div>
         ))}
-      </div>
+        </div>
+      )}
 
       {/* No Results */}
-      {filteredTests.length === 0 && (
+      {!loading && filteredTests.length === 0 && (
         <div className="text-center py-12">
           <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />

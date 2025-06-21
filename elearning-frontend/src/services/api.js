@@ -916,6 +916,161 @@ export const quizAPI = {
   }
 };
 
+// Assessment API functions
+export const assessmentAPI = {
+  // Get all available assessments
+  getAssessments: async (filters = {}) => {
+    try {
+      const queryParams = new URLSearchParams();
+
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          queryParams.append(key, value);
+        }
+      });
+
+      const endpoint = `/assessments${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+      return await apiRequest(endpoint);
+    } catch (error) {
+      if (error.message.includes('Backend service is not available') || error.message.includes('Demo mode is enabled')) {
+        console.log('Using mock data for assessments');
+        return await mockAPI.getAssessments(filters);
+      }
+      throw error;
+    }
+  },
+
+  // Get assessment by ID (for taking the assessment)
+  getAssessment: async (id) => {
+    try {
+      return await apiRequest(`/assessments/${id}`);
+    } catch (error) {
+      if (error.message.includes('Backend service is not available') || error.message.includes('Demo mode is enabled')) {
+        console.log('Using mock data for assessment details');
+        return await mockAPI.getAssessment(id);
+      }
+      throw error;
+    }
+  },
+
+  // Start a new assessment attempt
+  startAssessment: async (id) => {
+    try {
+      return await apiRequest(`/assessments/${id}/start`, {
+        method: 'POST',
+      });
+    } catch (error) {
+      if (error.message.includes('Backend service is not available') || error.message.includes('Demo mode is enabled')) {
+        console.log('Using mock data for starting assessment');
+        return await mockAPI.startAssessment(id);
+      }
+      throw error;
+    }
+  },
+
+  // Submit assessment answers
+  submitAssessment: async (id, data) => {
+    try {
+      return await apiRequest(`/assessments/${id}/submit`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    } catch (error) {
+      if (error.message.includes('Backend service is not available') || error.message.includes('Demo mode is enabled')) {
+        console.log('Using mock data for submitting assessment');
+        return await mockAPI.submitAssessment(id, data);
+      }
+      throw error;
+    }
+  },
+
+  // Get assessment results
+  getAssessmentResults: async (id, attemptId) => {
+    try {
+      return await apiRequest(`/assessments/${id}/results/${attemptId}`);
+    } catch (error) {
+      if (error.message.includes('Backend service is not available') || error.message.includes('Demo mode is enabled')) {
+        console.log('Using mock data for assessment results');
+        return await mockAPI.getAssessmentResults(id, attemptId);
+      }
+      throw error;
+    }
+  }
+};
+
+// Practice Test API functions
+export const practiceTestAPI = {
+  // Get all available practice tests
+  getPracticeTests: async () => {
+    try {
+      return await apiRequest('/practice-tests');
+    } catch (error) {
+      if (error.message.includes('Backend service is not available') || error.message.includes('Demo mode is enabled')) {
+        console.log('Using mock data for practice tests');
+        return await mockAPI.getPracticeTests();
+      }
+      throw error;
+    }
+  },
+
+  // Get practice test by ID (for taking the test)
+  getPracticeTest: async (id) => {
+    try {
+      return await apiRequest(`/practice-tests/${id}`);
+    } catch (error) {
+      if (error.message.includes('Backend service is not available') || error.message.includes('Demo mode is enabled')) {
+        console.log('Using mock data for practice test details');
+        return await mockAPI.getPracticeTest(id);
+      }
+      throw error;
+    }
+  },
+
+  // Start a new practice test attempt
+  startPracticeTest: async (id) => {
+    try {
+      return await apiRequest(`/practice-tests/${id}/start`, {
+        method: 'POST',
+      });
+    } catch (error) {
+      if (error.message.includes('Backend service is not available') || error.message.includes('Demo mode is enabled')) {
+        console.log('Using mock data for starting practice test');
+        return await mockAPI.startPracticeTest(id);
+      }
+      throw error;
+    }
+  },
+
+  // Submit practice test answers
+  submitPracticeTest: async (id, submissionData) => {
+    try {
+      return await apiRequest(`/practice-tests/${id}/submit`, {
+        method: 'POST',
+        body: JSON.stringify(submissionData),
+      });
+    } catch (error) {
+      if (error.message.includes('Backend service is not available') || error.message.includes('Demo mode is enabled')) {
+        console.log('Using mock data for practice test submission');
+        return await mockAPI.submitPracticeTest(id, submissionData);
+      }
+      throw error;
+    }
+  },
+
+  // Get practice test results
+  getPracticeTestResults: async (id, attemptId) => {
+    try {
+      return await apiRequest(`/practice-tests/${id}/results/${attemptId}`);
+    } catch (error) {
+      if (error.message.includes('Backend service is not available') || error.message.includes('Demo mode is enabled')) {
+        console.log('Using mock data for practice test results');
+        return await mockAPI.getPracticeTestResults(id, attemptId);
+      }
+      throw error;
+    }
+  }
+};
+
 // Error handling utility
 export const handleAPIError = (error) => {
   if (error.message.includes('401')) {
@@ -1034,6 +1189,7 @@ export default {
   courseAPI,
   enrollmentAPI,
   quizAPI,
+  practiceTestAPI,
   authAPI,
   userAPI,
   handleAPIError,

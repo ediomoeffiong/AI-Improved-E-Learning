@@ -1,117 +1,64 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { assessmentAPI } from '../../services/api';
+import { handleAPIError } from '../../services/api';
 
 const TakeAssessment = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [assessments, setAssessments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const [assessments] = useState([
-    {
-      id: 1,
-      title: 'Mathematics Final Examination',
-      subject: 'Mathematics',
-      category: 'Final Exam',
-      date: '2024-01-25',
-      time: '10:00 AM',
-      duration: 120,
-      questions: 50,
-      totalMarks: 100,
-      status: 'scheduled',
-      description: 'Comprehensive mathematics examination covering all topics from the semester.',
-      instructions: [
-        'Ensure stable internet connection',
-        'Use only approved calculator',
-        'No external materials allowed',
-        'Submit before time expires'
-      ],
-      requirements: ['Calculator', 'Stable Internet', 'Quiet Environment']
-    },
-    {
-      id: 2,
-      title: 'Computer Science Midterm',
-      subject: 'Computer Science',
-      category: 'Midterm',
-      date: '2024-01-28',
-      time: '2:00 PM',
-      duration: 90,
-      questions: 40,
-      totalMarks: 80,
-      status: 'scheduled',
-      description: 'Midterm examination covering programming fundamentals and data structures.',
-      instructions: [
-        'Code compilation will be tested',
-        'Provide well-commented code',
-        'Follow naming conventions',
-        'Test your solutions'
-      ],
-      requirements: ['Programming Environment', 'Stable Internet']
-    },
-    {
-      id: 3,
-      title: 'Physics Quiz 3',
-      subject: 'Physics',
-      category: 'Quiz',
-      date: '2024-01-22',
-      time: '11:30 AM',
-      duration: 45,
-      questions: 20,
-      totalMarks: 40,
-      status: 'available',
-      description: 'Quiz on thermodynamics and wave mechanics.',
-      instructions: [
-        'Formula sheet provided',
-        'Show all calculations',
-        'Round to 2 decimal places',
-        'Units are important'
-      ],
-      requirements: ['Calculator', 'Formula Sheet Access']
-    },
-    {
-      id: 4,
-      title: 'Chemistry Lab Assessment',
-      subject: 'Chemistry',
-      category: 'Lab Test',
-      date: '2024-01-30',
-      time: '9:00 AM',
-      duration: 60,
-      questions: 25,
-      totalMarks: 50,
-      status: 'scheduled',
-      description: 'Practical assessment of laboratory techniques and chemical analysis.',
-      instructions: [
-        'Review safety protocols',
-        'Identify chemical compounds',
-        'Explain procedures clearly',
-        'Include observations'
-      ],
-      requirements: ['Lab Manual Access', 'Periodic Table']
-    },
-    {
-      id: 5,
-      title: 'English Literature Essay',
-      subject: 'English',
-      category: 'Assignment',
-      date: '2024-02-01',
-      time: '1:00 PM',
-      duration: 180,
-      questions: 3,
-      totalMarks: 100,
-      status: 'scheduled',
-      description: 'Analytical essay on modern literature themes and techniques.',
-      instructions: [
-        'Minimum 1500 words',
-        'Cite at least 5 sources',
-        'Use MLA format',
-        'Original work only'
-      ],
-      requirements: ['Text References', 'Citation Guide']
-    }
-  ]);
+  // Fetch assessments on component mount
+  useEffect(() => {
+    const fetchAssessments = async () => {
+      try {
+        setLoading(true);
+        const response = await assessmentAPI.getAssessments({ category: selectedCategory });
+        setAssessments(response);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching assessments:', err);
+        setError(handleAPIError(err));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAssessments();
+  }, [selectedCategory]);
+
+  // Fetch assessments when category changes
+  useEffect(() => {
+    const fetchFilteredAssessments = async () => {
+      try {
+        setLoading(true);
+        const response = await assessmentAPI.getAssessments({ category: selectedCategory });
+        setAssessments(response);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching filtered assessments:', err);
+        setError(handleAPIError(err));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFilteredAssessments();
+  }, [selectedCategory]);
 
   const categories = ['all', 'Final Exam', 'Midterm', 'Quiz', 'Lab Test', 'Assignment'];
 
-  const filteredAssessments = assessments.filter(assessment => {
-    return selectedCategory === 'all' || assessment.category === selectedCategory;
-  });
+  // Format date for display
+  const formatDate = (dateString) => {
+    if (!dateString) return 'TBD';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -187,10 +134,34 @@ const TakeAssessment = () => {
         </div>
       </div>
 
+      {/* Loading State */}
+      {loading && (
+        <div className="text-center py-12">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">Loading assessments...</p>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-8">
+          <div className="flex items-start">
+            <svg className="w-5 h-5 text-red-600 mt-0.5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+              <h3 className="text-sm font-medium text-red-800 mb-1">Error Loading Assessments</h3>
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Assessments Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {filteredAssessments.map((assessment) => (
-          <div key={assessment.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+      {!loading && !error && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {assessments.map((assessment) => (
+          <div key={assessment._id} className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
             <div className="p-6">
               {/* Header */}
               <div className="flex items-start justify-between mb-4">
@@ -220,16 +191,16 @@ const TakeAssessment = () => {
                 <div>
                   <span className="text-gray-500 dark:text-gray-400">Date & Time:</span>
                   <div className="font-medium text-gray-900 dark:text-white">
-                    {assessment.date}
+                    {formatDate(assessment.scheduledDate)}
                   </div>
                   <div className="font-medium text-gray-900 dark:text-white">
-                    {assessment.time}
+                    {assessment.scheduledTime}
                   </div>
                 </div>
                 <div>
                   <span className="text-gray-500 dark:text-gray-400">Duration:</span>
                   <div className="font-medium text-gray-900 dark:text-white">
-                    {assessment.duration} minutes
+                    {assessment.timeLimit} minutes
                   </div>
                 </div>
                 <div>
@@ -241,7 +212,7 @@ const TakeAssessment = () => {
                 <div>
                   <span className="text-gray-500 dark:text-gray-400">Total Marks:</span>
                   <div className="font-medium text-gray-900 dark:text-white">
-                    {assessment.totalMarks}
+                    {assessment.totalMarks || assessment.totalPoints}
                   </div>
                 </div>
               </div>
@@ -272,7 +243,7 @@ const TakeAssessment = () => {
               <div className="flex space-x-2">
                 {isAssessmentAvailable(assessment) ? (
                   <Link
-                    to={`/cbt/assessment/${assessment.id}`}
+                    to={`/cbt/assessment/${assessment._id}`}
                     className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 text-center"
                   >
                     {assessment.status === 'available' ? 'Start Assessment' : 'View Details'}
@@ -293,11 +264,12 @@ const TakeAssessment = () => {
               </div>
             </div>
           </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* No Results */}
-      {filteredAssessments.length === 0 && (
+      {!loading && !error && assessments.length === 0 && (
         <div className="text-center py-12">
           <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />

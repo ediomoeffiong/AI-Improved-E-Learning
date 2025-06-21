@@ -52,7 +52,11 @@ import SessionRecordings from './pages/classroom/SessionRecordings';
 // CBT pages
 import CBTDashboard from './pages/cbt/CBTDashboard';
 import Practice from './pages/cbt/Practice';
+import TakePracticeTest from './pages/cbt/TakePracticeTest';
+import PracticeTestResults from './pages/cbt/PracticeTestResults';
 import TakeAssessment from './pages/cbt/TakeAssessment';
+import TakeIndividualAssessment from './pages/cbt/TakeIndividualAssessment';
+import AssessmentResults from './pages/cbt/AssessmentResults';
 import ViewResults from './pages/cbt/ViewResults';
 
 // Progress pages
@@ -158,7 +162,11 @@ function App() {
               {/* Protected CBT Routes - Require Institution Functions */}
               <Route path="/cbt/dashboard" element={<InstitutionProtectedRoute><CBTDashboard /></InstitutionProtectedRoute>} />
               <Route path="/cbt/practice" element={<InstitutionProtectedRoute><Practice /></InstitutionProtectedRoute>} />
+              <Route path="/cbt/practice/:id" element={<InstitutionProtectedRoute><TakePracticeTest /></InstitutionProtectedRoute>} />
+              <Route path="/cbt/practice/:id/results/:attemptId" element={<InstitutionProtectedRoute><PracticeTestResults /></InstitutionProtectedRoute>} />
               <Route path="/cbt/take-assessment" element={<InstitutionProtectedRoute><TakeAssessment /></InstitutionProtectedRoute>} />
+              <Route path="/cbt/assessment/:id" element={<InstitutionProtectedRoute><TakeIndividualAssessment /></InstitutionProtectedRoute>} />
+              <Route path="/cbt/assessment/:id/results/:attemptId" element={<InstitutionProtectedRoute><AssessmentResults /></InstitutionProtectedRoute>} />
               <Route path="/cbt/view-results" element={<InstitutionProtectedRoute><ViewResults /></InstitutionProtectedRoute>} />
               
               {/* Protected Progress Routes */}

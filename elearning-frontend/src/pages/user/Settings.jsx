@@ -13,6 +13,7 @@ import { COUNTRY_CODES, formatPhoneNumber } from '../../constants/countryCodes';
 import PhoneNumberInput from '../../components/PhoneNumberInput';
 import ToggleSwitch from '../../components/common/ToggleSwitch';
 import ConfirmationModal from '../../components/common/ConfirmationModal';
+import MessageModal from '../../components/common/MessageModal';
 
 function Settings() {
   const { getUserName, getUserEmail, getUserPhoneNumber, user, login, getInstitutionData } = useAuth();
@@ -72,6 +73,13 @@ function Settings() {
   const [isCheckingOnline, setIsCheckingOnline] = useState(true);
   const [showInstitutionModal, setShowInstitutionModal] = useState(false);
   const [isEditingInstitutionPhone, setIsEditingInstitutionPhone] = useState(false);
+
+  // Message modal states
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [showErrorMessage, setShowErrorMessage] = useState(false);
+  const [showValidationMessage, setShowValidationMessage] = useState(false);
+  const [showRefreshConfirmation, setShowRefreshConfirmation] = useState(false);
+  const [messageContent, setMessageContent] = useState({ title: '', message: '' });
 
   // Check online status
   useEffect(() => {
@@ -221,6 +229,28 @@ function Settings() {
     setShowInstitutionModal(false);
   };
 
+  // Message modal handlers
+  const handleSuccessMessageClose = () => {
+    setShowSuccessMessage(false);
+  };
+
+  const handleErrorMessageClose = () => {
+    setShowErrorMessage(false);
+  };
+
+  const handleValidationMessageClose = () => {
+    setShowValidationMessage(false);
+  };
+
+  const handleRefreshConfirm = () => {
+    setShowRefreshConfirmation(false);
+    window.location.reload();
+  };
+
+  const handleRefreshCancel = () => {
+    setShowRefreshConfirmation(false);
+  };
+
   const handlePasswordChange = (e) => {
     const { name, value } = e.target;
     setPasswordData(prev => ({
@@ -234,22 +264,38 @@ function Settings() {
       // Validate institution settings if enabled
       if (settings.institutionFunctionsEnabled) {
         if (!settings.phoneNumber.trim()) {
-          alert('Phone number is required when enabling institution functions.');
+          setMessageContent({
+            title: 'Phone Number Required',
+            message: 'Phone number is required when enabling institution functions.'
+          });
+          setShowValidationMessage(true);
           return;
         }
         if (!settings.institutionName.trim()) {
-          alert('Institution selection is required when enabling institution functions.');
+          setMessageContent({
+            title: 'Institution Required',
+            message: 'Institution selection is required when enabling institution functions.'
+          });
+          setShowValidationMessage(true);
           return;
         }
         if (!settings.studentId.trim()) {
-          alert('Student ID is required when enabling institution functions.');
+          setMessageContent({
+            title: 'Student ID Required',
+            message: 'Student ID is required when enabling institution functions.'
+          });
+          setShowValidationMessage(true);
           return;
         }
 
         // Validate phone number format
         const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
         if (!phoneRegex.test(settings.phoneNumber.replace(/[\s\-\(\)]/g, ''))) {
-          alert('Please enter a valid phone number.');
+          setMessageContent({
+            title: 'Invalid Phone Number',
+            message: 'Please enter a valid phone number.'
+          });
+          setShowValidationMessage(true);
           return;
         }
       }
@@ -259,18 +305,25 @@ function Settings() {
 
       // TODO: Implement settings save API call
       console.log('Saving settings:', settings);
-      alert('Settings saved successfully!');
+
+      // Show success message
+      setMessageContent({
+        title: 'Settings Saved',
+        message: 'Settings saved successfully!'
+      });
+      setShowSuccessMessage(true);
 
       // If institution functions were just enabled/disabled, suggest page refresh
       if (settings.institutionFunctionsEnabled) {
-        const shouldRefresh = confirm('Institution functions have been enabled! Would you like to refresh the page to see the new features?');
-        if (shouldRefresh) {
-          window.location.reload();
-        }
+        setShowRefreshConfirmation(true);
       }
     } catch (error) {
       console.error('Error saving settings:', error);
-      alert('Error saving settings. Please try again.');
+      setMessageContent({
+        title: 'Error Saving Settings',
+        message: 'Error saving settings. Please try again.'
+      });
+      setShowErrorMessage(true);
     }
   };
 
@@ -1779,6 +1832,60 @@ function Settings() {
           </div>
         </ConfirmationModal>
       )}
+
+      {/* Success Message Modal */}
+      <MessageModal
+        isOpen={showSuccessMessage}
+        onClose={handleSuccessMessageClose}
+        title={messageContent.title}
+        message={messageContent.message}
+        buttonText="OK"
+        buttonClass="bg-green-600 hover:bg-green-700 text-white"
+        icon="✅"
+        iconClass="text-green-600 dark:text-green-400"
+      />
+
+      {/* Error Message Modal */}
+      <MessageModal
+        isOpen={showErrorMessage}
+        onClose={handleErrorMessageClose}
+        title={messageContent.title}
+        message={messageContent.message}
+        buttonText="OK"
+        buttonClass="bg-red-600 hover:bg-red-700 text-white"
+        icon="❌"
+        iconClass="text-red-600 dark:text-red-400"
+      />
+
+      {/* Validation Message Modal */}
+      <MessageModal
+        isOpen={showValidationMessage}
+        onClose={handleValidationMessageClose}
+        title={messageContent.title}
+        message={messageContent.message}
+        buttonText="OK"
+        buttonClass="bg-orange-600 hover:bg-orange-700 text-white"
+        icon="⚠️"
+        iconClass="text-orange-600 dark:text-orange-400"
+      />
+
+      {/* Refresh Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showRefreshConfirmation}
+        onClose={handleRefreshCancel}
+        onConfirm={handleRefreshConfirm}
+        title="Refresh Page"
+        message="Institution functions have been enabled! Would you like to refresh the page to see the new features?"
+        confirmText="Refresh"
+        cancelText="Later"
+        confirmButtonClass="bg-blue-600 hover:bg-blue-700 text-white"
+        icon={
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+        }
+        iconClass="text-blue-600 dark:text-blue-400"
+      />
     </div>
   );
 }
