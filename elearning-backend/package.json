@@ -9,7 +9,8 @@
     "dev:prod": "cross-env NODE_ENV=production nodemon app.js",
     "start:prod": "cross-env NODE_ENV=production node app.js",
     "test:env": "node -e \"require('./app.js'); setTimeout(() => process.exit(0), 2000);\"",
-    "build": "echo 'No build step required for Node.js'"
+    "build": "echo 'No build step required for Node.js'",
+    "seed:quizzes": "node scripts/seedQuizzes.js"
   },
   "engines": {
     "node": ">=18.0.0",

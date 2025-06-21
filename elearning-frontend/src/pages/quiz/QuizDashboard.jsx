@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { enrollmentAPI, handleAPIError } from '../../services/api';
+import { quizAPI, handleAPIError } from '../../services/api';
 
 // Enhanced mock data for quiz dashboard
 const mockQuizData = {
@@ -236,13 +236,13 @@ function QuizDashboard() {
     const fetchQuizData = async () => {
       try {
         setLoading(true);
-        // In a real app, this would fetch from the API
-        // const data = await quizAPI.getDashboardData();
-        setQuizData(mockQuizData);
+        const data = await quizAPI.getDashboardData();
+        setQuizData(data);
         setError(null);
       } catch (err) {
         console.error('Error fetching quiz data:', err);
         setError(handleAPIError(err));
+        // Fallback to mock data if API fails
         setQuizData(mockQuizData);
       } finally {
         setLoading(false);
@@ -676,7 +676,7 @@ function QuizDashboard() {
                     {/* Action Button */}
                     <div className="flex space-x-2">
                       <Link
-                        to={quiz.isLocked ? '#' : `/quiz/${quiz.id}`}
+                        to={quiz.isLocked ? '#' : `/quiz/${quiz._id || quiz.id}`}
                         className={`flex-1 text-center py-2 px-4 rounded-lg font-medium transition-colors ${
                           quiz.isLocked
                             ? 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
@@ -687,7 +687,10 @@ function QuizDashboard() {
                         {quiz.isLocked ? 'Locked' : quiz.attempts > 0 ? 'Retake Quiz' : 'Start Quiz'}
                       </Link>
                       {quiz.attempts > 0 && (
-                        <button className="px-3 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg transition-colors">
+                        <button
+                          className="px-3 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg transition-colors"
+                          title="View Results"
+                        >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                           </svg>

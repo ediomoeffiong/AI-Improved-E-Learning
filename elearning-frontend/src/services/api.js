@@ -795,6 +795,127 @@ export const userAPI = {
   },
 };
 
+// Quiz API functions
+export const quizAPI = {
+  // Get all available quizzes with filters
+  getQuizzes: async (filters = {}) => {
+    try {
+      const queryParams = new URLSearchParams();
+
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          queryParams.append(key, value);
+        }
+      });
+
+      const endpoint = `/quizzes${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+      return await apiRequest(endpoint);
+    } catch (error) {
+      if (error.message.includes('Backend service is not available') || error.message.includes('Demo mode is enabled')) {
+        if (isDemoModeEnabled()) {
+          console.log('Using mock data for quizzes (demo mode enabled)');
+          return await mockAPI.getQuizzes(filters);
+        } else {
+          console.log('Backend unavailable, not auto-entering demo mode');
+          throw error;
+        }
+      }
+      throw error;
+    }
+  },
+
+  // Get quiz by ID (for taking the quiz)
+  getQuiz: async (id) => {
+    try {
+      return await apiRequest(`/quizzes/${id}`);
+    } catch (error) {
+      if (error.message.includes('Backend service is not available') || error.message.includes('Demo mode is enabled')) {
+        console.log('Using mock data for quiz details');
+        return await mockAPI.getQuiz(id);
+      }
+      throw error;
+    }
+  },
+
+  // Start a new quiz attempt
+  startQuiz: async (id) => {
+    try {
+      return await apiRequest(`/quizzes/${id}/start`, {
+        method: 'POST',
+      });
+    } catch (error) {
+      if (error.message.includes('Backend service is not available') || error.message.includes('Demo mode is enabled')) {
+        console.log('Using mock data for starting quiz');
+        return await mockAPI.startQuiz(id);
+      }
+      throw error;
+    }
+  },
+
+  // Submit quiz answers
+  submitQuiz: async (id, submissionData) => {
+    try {
+      return await apiRequest(`/quizzes/${id}/submit`, {
+        method: 'POST',
+        body: JSON.stringify(submissionData),
+      });
+    } catch (error) {
+      if (error.message.includes('Backend service is not available') || error.message.includes('Demo mode is enabled')) {
+        console.log('Using mock data for quiz submission');
+        return await mockAPI.submitQuiz(id, submissionData);
+      }
+      throw error;
+    }
+  },
+
+  // Get quiz results
+  getQuizResults: async (id, attemptId) => {
+    try {
+      return await apiRequest(`/quizzes/${id}/results/${attemptId}`);
+    } catch (error) {
+      if (error.message.includes('Backend service is not available') || error.message.includes('Demo mode is enabled')) {
+        console.log('Using mock data for quiz results');
+        return await mockAPI.getQuizResults(id, attemptId);
+      }
+      throw error;
+    }
+  },
+
+  // Get user's quiz attempts
+  getUserAttempts: async (filters = {}) => {
+    try {
+      const queryParams = new URLSearchParams();
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          queryParams.append(key, value);
+        }
+      });
+
+      const endpoint = `/quizzes/attempts${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+      return await apiRequest(endpoint);
+    } catch (error) {
+      if (error.message.includes('Backend service is not available') || error.message.includes('Demo mode is enabled')) {
+        console.log('Using mock data for user attempts');
+        return await mockAPI.getUserAttempts(filters);
+      }
+      throw error;
+    }
+  },
+
+  // Get quiz dashboard data
+  getDashboardData: async () => {
+    try {
+      return await apiRequest('/quizzes/dashboard');
+    } catch (error) {
+      if (error.message.includes('Backend service is not available') || error.message.includes('Demo mode is enabled')) {
+        console.log('Using mock data for quiz dashboard');
+        return await mockAPI.getQuizDashboard();
+      }
+      throw error;
+    }
+  }
+};
+
 // Error handling utility
 export const handleAPIError = (error) => {
   if (error.message.includes('401')) {
@@ -912,6 +1033,7 @@ export const cacheAPI = {
 export default {
   courseAPI,
   enrollmentAPI,
+  quizAPI,
   authAPI,
   userAPI,
   handleAPIError,

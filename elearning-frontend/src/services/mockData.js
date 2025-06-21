@@ -273,6 +273,147 @@ export const mockEnrollments = [
   }
 ];
 
+// Mock quiz data
+export const mockQuizzes = [
+  {
+    _id: '1',
+    title: 'JavaScript Fundamentals',
+    description: 'Test your knowledge of JavaScript basics including variables, functions, and control flow.',
+    instructor: 'Prof. Michael Chen',
+    course: 'Frontend Development',
+    category: 'Programming',
+    difficulty: 'Beginner',
+    timeLimit: 20,
+    totalPoints: 15,
+    passingScore: 70,
+    isActive: true,
+    prerequisites: [],
+    tags: ['javascript', 'basics', 'variables'],
+    estimatedTime: '15-20 min',
+    maxAttempts: 3,
+    questions: [
+      {
+        _id: 'q1',
+        question: 'What is the correct way to declare a variable in JavaScript?',
+        type: 'multiple-choice',
+        options: [
+          { text: 'var myVariable;', isCorrect: true },
+          { text: 'variable myVariable;', isCorrect: false },
+          { text: 'v myVariable;', isCorrect: false },
+          { text: 'declare myVariable;', isCorrect: false }
+        ],
+        explanation: 'In JavaScript, variables are declared using var, let, or const keywords.',
+        points: 1,
+        order: 1
+      },
+      {
+        _id: 'q2',
+        question: 'JavaScript is a statically typed language.',
+        type: 'true-false',
+        options: [
+          { text: 'True', isCorrect: false },
+          { text: 'False', isCorrect: true }
+        ],
+        explanation: 'JavaScript is a dynamically typed language, meaning variable types are determined at runtime.',
+        points: 1,
+        order: 2
+      },
+      {
+        _id: 'q3',
+        question: 'Which of the following is NOT a JavaScript data type?',
+        type: 'multiple-choice',
+        options: [
+          { text: 'String', isCorrect: false },
+          { text: 'Boolean', isCorrect: false },
+          { text: 'Integer', isCorrect: true },
+          { text: 'Object', isCorrect: false }
+        ],
+        explanation: 'JavaScript has Number type, not separate Integer and Float types.',
+        points: 1,
+        order: 3
+      }
+    ],
+    createdAt: new Date('2024-01-15'),
+    updatedAt: new Date('2024-01-15')
+  },
+  {
+    _id: '2',
+    title: 'React Components & Props',
+    description: 'Challenge yourself with questions about React components, props, and state management.',
+    instructor: 'Prof. Michael Chen',
+    course: 'Frontend Development',
+    category: 'React',
+    difficulty: 'Intermediate',
+    timeLimit: 15,
+    totalPoints: 10,
+    passingScore: 70,
+    isActive: true,
+    prerequisites: ['JavaScript Fundamentals'],
+    tags: ['react', 'components', 'props'],
+    estimatedTime: '12-15 min',
+    maxAttempts: 3,
+    questions: [
+      {
+        _id: 'q4',
+        question: 'What is the correct way to pass data to a React component?',
+        type: 'multiple-choice',
+        options: [
+          { text: 'Through props', isCorrect: true },
+          { text: 'Through state', isCorrect: false },
+          { text: 'Through context only', isCorrect: false },
+          { text: 'Through refs', isCorrect: false }
+        ],
+        explanation: 'Props are the primary way to pass data from parent to child components in React.',
+        points: 1,
+        order: 1
+      },
+      {
+        _id: 'q5',
+        question: 'React components must return a single parent element.',
+        type: 'true-false',
+        options: [
+          { text: 'True', isCorrect: false },
+          { text: 'False', isCorrect: true }
+        ],
+        explanation: 'React components can return multiple elements using React.Fragment or empty tags <>.',
+        points: 1,
+        order: 2
+      }
+    ],
+    createdAt: new Date('2024-01-18'),
+    updatedAt: new Date('2024-01-18')
+  }
+];
+
+export const mockQuizAttempts = [
+  {
+    _id: 'attempt1',
+    user: 'user1',
+    quiz: '1',
+    attemptNumber: 1,
+    score: 2,
+    percentage: 67,
+    passed: false,
+    grade: 'D+',
+    timeSpent: 12,
+    submittedAt: new Date('2024-01-20'),
+    status: 'completed'
+  },
+  {
+    _id: 'attempt2',
+    user: 'user1',
+    quiz: '2',
+    attemptNumber: 1,
+    score: 2,
+    percentage: 100,
+    passed: true,
+    grade: 'A',
+    timeSpent: 8,
+    submittedAt: new Date('2024-01-22'),
+    status: 'completed'
+  }
+];
+
 // Mock API functions
 export const mockAPI = {
   getCourses: (filters = {}) => {
@@ -473,5 +614,190 @@ export const mockAPI = {
     };
 
     return Promise.resolve(mockUser);
+  },
+
+  // Quiz API functions
+  getQuizzes: (filters = {}) => {
+    let filtered = [...mockQuizzes];
+
+    // Apply filters
+    if (filters.search) {
+      const searchTerm = filters.search.toLowerCase();
+      filtered = filtered.filter(quiz =>
+        quiz.title.toLowerCase().includes(searchTerm) ||
+        quiz.description.toLowerCase().includes(searchTerm) ||
+        quiz.course.toLowerCase().includes(searchTerm) ||
+        quiz.tags.some(tag => tag.toLowerCase().includes(searchTerm))
+      );
+    }
+
+    if (filters.category && filters.category !== 'All') {
+      filtered = filtered.filter(quiz => quiz.category === filters.category);
+    }
+
+    if (filters.difficulty && filters.difficulty !== 'All') {
+      filtered = filtered.filter(quiz => quiz.difficulty === filters.difficulty);
+    }
+
+    if (filters.course && filters.course !== 'All') {
+      filtered = filtered.filter(quiz => quiz.course === filters.course);
+    }
+
+    return Promise.resolve({
+      quizzes: filtered.map(quiz => ({
+        ...quiz,
+        questions: undefined, // Don't include questions in list view
+        attempts: 0,
+        bestScore: null,
+        isLocked: false
+      }))
+    });
+  },
+
+  getQuiz: (id) => {
+    const quiz = mockQuizzes.find(q => q._id === id);
+    if (!quiz) {
+      return Promise.reject(new Error('Quiz not found'));
+    }
+
+    return Promise.resolve({
+      ...quiz,
+      attempts: 0,
+      bestScore: null,
+      canTakeQuiz: true
+    });
+  },
+
+  startQuiz: (id) => {
+    const quiz = mockQuizzes.find(q => q._id === id);
+    if (!quiz) {
+      return Promise.reject(new Error('Quiz not found'));
+    }
+
+    const quizForTaking = {
+      ...quiz,
+      questions: quiz.questions.map(q => ({
+        _id: q._id,
+        question: q.question,
+        type: q.type,
+        options: q.options.map(opt => ({ text: opt.text })), // Remove isCorrect
+        points: q.points,
+        order: q.order
+      }))
+    };
+
+    return Promise.resolve({
+      quiz: quizForTaking,
+      attemptId: 'mock-attempt-' + Date.now(),
+      timeLimit: quiz.timeLimit
+    });
+  },
+
+  submitQuiz: (id, submissionData) => {
+    const quiz = mockQuizzes.find(q => q._id === id);
+    if (!quiz) {
+      return Promise.reject(new Error('Quiz not found'));
+    }
+
+    // Calculate mock score
+    let correctAnswers = 0;
+    submissionData.answers.forEach(answer => {
+      const question = quiz.questions.find(q => q._id === answer.questionId);
+      if (question) {
+        if (question.type === 'multiple-choice' || question.type === 'true-false') {
+          const selectedOption = question.options.find(opt => opt.text === answer.selectedOption);
+          if (selectedOption && selectedOption.isCorrect) correctAnswers++;
+        }
+      }
+    });
+
+    const percentage = Math.round((correctAnswers / quiz.questions.length) * 100);
+    const passed = percentage >= quiz.passingScore;
+
+    return Promise.resolve({
+      message: 'Quiz submitted successfully (demo mode)',
+      attemptId: submissionData.attemptId,
+      score: correctAnswers,
+      percentage,
+      passed,
+      grade: passed ? (percentage >= 90 ? 'A' : 'B') : 'F'
+    });
+  },
+
+  getQuizResults: (id, attemptId) => {
+    const quiz = mockQuizzes.find(q => q._id === id);
+    if (!quiz) {
+      return Promise.reject(new Error('Quiz not found'));
+    }
+
+    // Mock detailed results
+    const detailedResults = quiz.questions.map((question, index) => ({
+      question: question.question,
+      type: question.type,
+      options: question.options,
+      selectedOption: question.options[0].text, // Mock selection
+      isCorrect: index < 2, // Mock: first 2 correct
+      pointsEarned: index < 2 ? question.points : 0,
+      explanation: question.explanation,
+      timeSpent: 30 + (index * 10)
+    }));
+
+    return Promise.resolve({
+      quiz: {
+        title: quiz.title,
+        description: quiz.description,
+        totalPoints: quiz.totalPoints
+      },
+      attempt: {
+        score: 2,
+        percentage: Math.round((2 / quiz.questions.length) * 100),
+        passed: true,
+        grade: 'B',
+        timeSpent: 15,
+        submittedAt: new Date().toISOString(),
+        correctAnswers: 2,
+        totalQuestions: quiz.questions.length
+      },
+      results: detailedResults
+    });
+  },
+
+  getUserAttempts: (filters = {}) => {
+    return Promise.resolve(mockQuizAttempts);
+  },
+
+  getQuizDashboard: () => {
+    const stats = {
+      totalQuizzes: mockQuizzes.length,
+      completedQuizzes: mockQuizAttempts.length,
+      averageScore: 85,
+      totalTimeSpent: 145,
+      streak: 7,
+      rank: 15,
+      badges: ['Quiz Master', 'Speed Demon', 'Perfect Score']
+    };
+
+    return Promise.resolve({
+      stats,
+      availableQuizzes: mockQuizzes.map(quiz => ({
+        ...quiz,
+        questions: quiz.questions.length,
+        attempts: 0,
+        bestScore: null,
+        isLocked: false
+      })),
+      recentResults: mockQuizAttempts.map(attempt => ({
+        id: attempt._id,
+        quiz: mockQuizzes.find(q => q._id === attempt.quiz)?.title || 'Unknown Quiz',
+        score: attempt.score,
+        percentage: attempt.percentage,
+        date: attempt.submittedAt,
+        status: attempt.passed ? 'Passed' : 'Failed',
+        timeSpent: attempt.timeSpent,
+        difficulty: mockQuizzes.find(q => q._id === attempt.quiz)?.difficulty || 'Unknown',
+        course: mockQuizzes.find(q => q._id === attempt.quiz)?.course || 'Unknown'
+      })),
+      upcomingQuizzes: []
+    });
   }
 };

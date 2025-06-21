@@ -38,6 +38,8 @@ import ThreadDetail from './pages/courses/ThreadDetail';
 
 // Quiz pages
 import QuizDashboard from './pages/quiz/QuizDashboard';
+import TakeQuiz from './pages/quiz/TakeQuiz';
+import QuizResults from './pages/quiz/QuizResults';
 import Badges from './pages/quiz/Badges';
 import Achievements from './pages/quiz/Achievements';
 import Leaderboard from './pages/quiz/Leaderboard';
@@ -142,6 +144,8 @@ function App() {
               
               {/* Protected Quiz Routes */}
               <Route path="/quiz/dashboard" element={<ProtectedRoute><QuizDashboard /></ProtectedRoute>} />
+              <Route path="/quiz/:id" element={<ProtectedRoute><TakeQuiz /></ProtectedRoute>} />
+              <Route path="/quiz/:id/results/:attemptId" element={<ProtectedRoute><QuizResults /></ProtectedRoute>} />
               <Route path="/quiz/badges" element={<ProtectedRoute><Badges /></ProtectedRoute>} />
               <Route path="/quiz/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
               <Route path="/quiz/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
