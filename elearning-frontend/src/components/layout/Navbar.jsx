@@ -213,6 +213,10 @@ const Navbar = ({ isScrolled = false }) => {
       return;
     }
 
+    // Close dropdown immediately to prevent interference with modal
+    setOpenDropdown(null);
+    setMobileMenuOpen(false);
+
     // Show custom confirmation modal
     setShowLogoutConfirm(true);
   };
@@ -233,13 +237,17 @@ const Navbar = ({ isScrolled = false }) => {
     logout();
     setOpenDropdown(null);
     setMobileMenuOpen(false);
-    navigate('/');
 
-    // Scroll to top after logout
-    scrollToTop({
-      behavior: 'smooth',
-      delay: 100
-    });
+    // Add a small delay to ensure logout state is processed before navigation
+    setTimeout(() => {
+      navigate('/');
+
+      // Scroll to top after logout
+      scrollToTop({
+        behavior: 'smooth',
+        delay: 100
+      });
+    }, 100);
   };
 
   // Handle demo mode toggle
@@ -1339,6 +1347,8 @@ const Navbar = ({ isScrolled = false }) => {
         buttonClass="bg-blue-600 hover:bg-blue-700 text-white"
         icon="👋"
         iconClass="text-blue-600 dark:text-blue-400"
+        autoClose={true}
+        autoCloseDelay={3000}
       />
     </nav>
   );

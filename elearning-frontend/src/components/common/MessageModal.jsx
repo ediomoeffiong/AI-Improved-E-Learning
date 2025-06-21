@@ -1,4 +1,5 @@
 import React from 'react';
+import { useScrollLock } from '../../hooks/useScrollLock';
 
 const MessageModal = ({
   isOpen,
@@ -12,6 +13,34 @@ const MessageModal = ({
   autoClose = false,
   autoCloseDelay = 3000
 }) => {
+  // Use the scroll lock hook to manage body overflow
+  useScrollLock(isOpen);
+
+  React.useEffect(() => {
+    const handleKeyDownWrapper = (e) => {
+      if (isOpen && (e.key === 'Escape' || e.key === 'Enter')) {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDownWrapper);
+
+    // Auto close if enabled and modal is open
+    let timer;
+    if (isOpen && autoClose) {
+      timer = setTimeout(() => {
+        onClose();
+      }, autoCloseDelay);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDownWrapper);
+      if (timer) {
+        clearTimeout(timer);
+      }
+    };
+  }, [isOpen, autoClose, autoCloseDelay, onClose]);
+
   if (!isOpen) return null;
 
   const handleBackdropClick = (e) => {
@@ -19,37 +48,6 @@ const MessageModal = ({
       onClose();
     }
   };
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Escape' || e.key === 'Enter') {
-      onClose();
-    }
-  };
-
-  React.useEffect(() => {
-    if (isOpen) {
-      document.addEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'hidden';
-
-      // Auto close if enabled
-      if (autoClose) {
-        const timer = setTimeout(() => {
-          onClose();
-        }, autoCloseDelay);
-
-        return () => {
-          clearTimeout(timer);
-          document.removeEventListener('keydown', handleKeyDown);
-          document.body.style.overflow = 'unset';
-        };
-      }
-    }
-
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'unset';
-    };
-  }, [isOpen, autoClose, autoCloseDelay]);
 
   return (
     <div 

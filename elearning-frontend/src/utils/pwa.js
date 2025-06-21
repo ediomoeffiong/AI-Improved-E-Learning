@@ -283,8 +283,8 @@ export const showNotification = (title, options = {}) => {
   }
   
   const defaultOptions = {
-    icon: '/icons/icon-192x192.png',
-    badge: '/icons/icon-72x72.png',
+    icon: '/icons/icon-192x192.svg',
+    badge: '/icons/icon-192x192.svg',
     vibrate: [200, 100, 200],
     ...options
   };

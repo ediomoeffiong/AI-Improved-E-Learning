@@ -11,6 +11,8 @@ import { NIGERIAN_UNIVERSITIES, INSTITUTION_REQUEST_STATUS } from '../../constan
 import { USER_ROLES } from '../../constants/roles';
 import { COUNTRY_CODES, formatPhoneNumber } from '../../constants/countryCodes';
 import PhoneNumberInput from '../../components/PhoneNumberInput';
+import ToggleSwitch from '../../components/common/ToggleSwitch';
+import ConfirmationModal from '../../components/common/ConfirmationModal';
 
 function Settings() {
   const { getUserName, getUserEmail, getUserPhoneNumber, user, login, getInstitutionData } = useAuth();
@@ -68,6 +70,8 @@ function Settings() {
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [isOfflineState, setIsOfflineState] = useState(false);
   const [isCheckingOnline, setIsCheckingOnline] = useState(true);
+  const [showInstitutionModal, setShowInstitutionModal] = useState(false);
+  const [isEditingInstitutionPhone, setIsEditingInstitutionPhone] = useState(false);
 
   // Check online status
   useEffect(() => {
@@ -149,6 +153,15 @@ function Settings() {
           ...parsedSettings
         }));
       }
+
+      // Auto-populate phone number from profile if not already set in institution settings
+      const profilePhoneNumber = getUserPhoneNumber();
+      if (profilePhoneNumber && !savedSettings?.phoneNumber) {
+        setSettings(prev => ({
+          ...prev,
+          phoneNumber: profilePhoneNumber
+        }));
+      }
     } catch (error) {
       console.error('Error loading settings:', error);
     }
@@ -192,14 +205,20 @@ function Settings() {
 
   const handleInstitutionToggle = (enabled) => {
     if (enabled) {
-      // Show warning about required fields
-      const message = "Enabling institution functions requires:\n\n• Phone number (for verification)\n• Institution selection\n• Student ID\n\nYou can fill these details after enabling the feature.";
-      if (confirm(message)) {
-        handleSettingChange('institutionFunctionsEnabled', true);
-      }
+      // Show modern confirmation modal
+      setShowInstitutionModal(true);
     } else {
       handleSettingChange('institutionFunctionsEnabled', false);
     }
+  };
+
+  const handleInstitutionConfirm = () => {
+    handleSettingChange('institutionFunctionsEnabled', true);
+    setShowInstitutionModal(false);
+  };
+
+  const handleInstitutionCancel = () => {
+    setShowInstitutionModal(false);
   };
 
   const handlePasswordChange = (e) => {
@@ -1017,58 +1036,42 @@ function Settings() {
             <div className="space-y-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Notification Preferences</h3>
               
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Email Notifications</label>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Receive notifications via email</p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={settings.emailNotifications}
-                    onChange={(e) => handleSettingChange('emailNotifications', e.target.checked)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                </div>
+              <div className="space-y-6">
+                <ToggleSwitch
+                  checked={settings.emailNotifications}
+                  onChange={(checked) => handleSettingChange('emailNotifications', checked)}
+                  label="Email Notifications"
+                  description="Receive notifications via email"
+                  color="blue"
+                  id="email-notifications"
+                />
 
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Push Notifications</label>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Receive push notifications in browser</p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={settings.pushNotifications}
-                    onChange={(e) => handleSettingChange('pushNotifications', e.target.checked)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                </div>
+                <ToggleSwitch
+                  checked={settings.pushNotifications}
+                  onChange={(checked) => handleSettingChange('pushNotifications', checked)}
+                  label="Push Notifications"
+                  description="Receive push notifications in browser"
+                  color="blue"
+                  id="push-notifications"
+                />
 
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Course Reminders</label>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Get reminded about upcoming deadlines</p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={settings.courseReminders}
-                    onChange={(e) => handleSettingChange('courseReminders', e.target.checked)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                </div>
+                <ToggleSwitch
+                  checked={settings.courseReminders}
+                  onChange={(checked) => handleSettingChange('courseReminders', checked)}
+                  label="Course Reminders"
+                  description="Get reminded about upcoming deadlines"
+                  color="blue"
+                  id="course-reminders"
+                />
 
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Weekly Digest</label>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Receive weekly progress summary</p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={settings.weeklyDigest}
-                    onChange={(e) => handleSettingChange('weeklyDigest', e.target.checked)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                </div>
+                <ToggleSwitch
+                  checked={settings.weeklyDigest}
+                  onChange={(checked) => handleSettingChange('weeklyDigest', checked)}
+                  label="Weekly Digest"
+                  description="Receive weekly progress summary"
+                  color="blue"
+                  id="weekly-digest"
+                />
               </div>
             </div>
           )}
@@ -1094,31 +1097,23 @@ function Settings() {
                   </select>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Show Progress</label>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Display your learning progress publicly</p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={settings.showProgress}
-                    onChange={(e) => handleSettingChange('showProgress', e.target.checked)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                </div>
+                <ToggleSwitch
+                  checked={settings.showProgress}
+                  onChange={(checked) => handleSettingChange('showProgress', checked)}
+                  label="Show Progress"
+                  description="Display your learning progress publicly"
+                  color="purple"
+                  id="show-progress"
+                />
 
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Show Achievements</label>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Display your badges and achievements</p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={settings.showAchievements}
-                    onChange={(e) => handleSettingChange('showAchievements', e.target.checked)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                </div>
+                <ToggleSwitch
+                  checked={settings.showAchievements}
+                  onChange={(checked) => handleSettingChange('showAchievements', checked)}
+                  label="Show Achievements"
+                  description="Display your badges and achievements"
+                  color="purple"
+                  id="show-achievements"
+                />
               </div>
             </div>
           )}
@@ -1176,18 +1171,14 @@ function Settings() {
                   </select>
                 </div>
 
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={settings.autoplay}
-                    onChange={(e) => handleSettingChange('autoplay', e.target.checked)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mr-3"
-                  />
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Autoplay Videos</label>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Automatically play next video</p>
-                  </div>
-                </div>
+                <ToggleSwitch
+                  checked={settings.autoplay}
+                  onChange={(checked) => handleSettingChange('autoplay', checked)}
+                  label="Autoplay Videos"
+                  description="Automatically play next video"
+                  color="green"
+                  id="autoplay-videos"
+                />
               </div>
             </div>
           )}
@@ -1199,18 +1190,14 @@ function Settings() {
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Security Settings</h3>
                 
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Two-Factor Authentication</label>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Add an extra layer of security</p>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={settings.twoFactorAuth}
-                      onChange={(e) => handleSettingChange('twoFactorAuth', e.target.checked)}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                  </div>
+                  <ToggleSwitch
+                    checked={settings.twoFactorAuth}
+                    onChange={(checked) => handleSettingChange('twoFactorAuth', checked)}
+                    label="Two-Factor Authentication"
+                    description="Add an extra layer of security"
+                    color="red"
+                    id="two-factor-auth"
+                  />
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -1296,16 +1283,17 @@ function Settings() {
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h4 className="text-md font-medium text-gray-900 dark:text-white">Enable Institution Functions</h4>
+                    <h4 id="institution-toggle-label" className="text-md font-medium text-gray-900 dark:text-white">Enable Institution Functions</h4>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                       Unlock classroom features, CBT assessments, and academic management tools
                     </p>
                   </div>
-                  <input
-                    type="checkbox"
+                  <ToggleSwitch
                     checked={settings.institutionFunctionsEnabled}
-                    onChange={(e) => handleInstitutionToggle(e.target.checked)}
-                    className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    onChange={handleInstitutionToggle}
+                    color="blue"
+                    size="md"
+                    id="institution-toggle"
                   />
                 </div>
 
@@ -1330,16 +1318,107 @@ function Settings() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <PhoneNumberInput
-                        value={settings.phoneNumber}
-                        onChange={(value) => handleSettingChange('phoneNumber', value)}
-                        label="Phone Number"
-                        placeholder="Enter your phone number"
-                        required={true}
-                      />
-                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                        Phone Number <span className="text-red-500">*</span>
+                      </label>
+
+                      {/* Show existing phone number or input field */}
+                      {settings.phoneNumber && !isEditingInstitutionPhone ? (
+                        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-8 h-8 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
+                                <svg className="w-4 h-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-green-900 dark:text-green-100">
+                                  Phone Number Verified
+                                </p>
+                                <p className="text-sm text-green-700 dark:text-green-300 font-mono">
+                                  {settings.phoneNumber ? formatPhoneNumber(settings.phoneNumber) : 'No phone number'}
+                                </p>
+                                <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                                  {settings.phoneNumber === getUserPhoneNumber() ?
+                                    '✓ Using phone number from your profile' :
+                                    '✓ Custom phone number for institution'
+                                  }
+                                </p>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setIsEditingInstitutionPhone(true)}
+                              className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 font-medium underline transition-colors duration-200"
+                            >
+                              Update
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <PhoneNumberInput
+                            value={settings.phoneNumber}
+                            onChange={(value) => handleSettingChange('phoneNumber', value)}
+                            placeholder="Enter your phone number"
+                            required={true}
+                            label=""
+                          />
+                          {isEditingInstitutionPhone && (
+                            <div className="flex space-x-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setIsEditingInstitutionPhone(false);
+                                  // Reset to profile phone number if available
+                                  if (getUserPhoneNumber()) {
+                                    handleSettingChange('phoneNumber', getUserPhoneNumber());
+                                  }
+                                }}
+                                className="text-sm bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-md transition-colors duration-200"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setIsEditingInstitutionPhone(false)}
+                                disabled={!settings.phoneNumber.trim()}
+                                className="text-sm bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-3 py-1 rounded-md transition-colors duration-200"
+                              >
+                                Save
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
                         Required for institution verification and emergency contact
                       </p>
+
+                      {/* Show suggestion to use profile phone number if different */}
+                      {getUserPhoneNumber() && settings.phoneNumber !== getUserPhoneNumber() && !isEditingInstitutionPhone && (
+                        <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                          <div className="flex items-start space-x-2">
+                            <svg className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <div className="flex-1">
+                              <p className="text-sm text-blue-800 dark:text-blue-200">
+                                <strong>Suggestion:</strong> Use your profile phone number ({getUserPhoneNumber() ? formatPhoneNumber(getUserPhoneNumber()) : 'N/A'}) for consistency?
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() => handleSettingChange('phoneNumber', getUserPhoneNumber())}
+                                className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 font-medium underline mt-1"
+                              >
+                                Use profile phone number
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div>
@@ -1621,6 +1700,85 @@ function Settings() {
           </div>
         </div>
       </div>
+
+      {/* Institution Functions Confirmation Modal */}
+      {showInstitutionModal && (
+        <ConfirmationModal
+          isOpen={showInstitutionModal}
+          onClose={handleInstitutionCancel}
+          onConfirm={handleInstitutionConfirm}
+          title="Enable Institution Functions"
+          confirmText="Enable"
+          cancelText="Cancel"
+          confirmButtonClass="bg-blue-600 hover:bg-blue-700 text-white"
+          icon={
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+          }
+          iconClass="text-blue-600 dark:text-blue-400"
+        >
+          <div className="space-y-4">
+            <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+              Enabling institution functions will unlock powerful academic features including:
+            </p>
+
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+              <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-3 flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Required Information:
+              </h4>
+              <ul className="space-y-2 text-sm text-blue-800 dark:text-blue-200">
+                <li className="flex items-center">
+                  <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
+                  Phone number (for verification)
+                </li>
+                <li className="flex items-center">
+                  <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
+                  Institution selection
+                </li>
+                <li className="flex items-center">
+                  <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
+                  Student ID
+                </li>
+              </ul>
+            </div>
+
+            <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
+              <h4 className="font-semibold text-green-900 dark:text-green-100 mb-3 flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Features You'll Unlock:
+              </h4>
+              <ul className="space-y-2 text-sm text-green-800 dark:text-green-200">
+                <li className="flex items-center">
+                  <span className="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
+                  Classroom management tools
+                </li>
+                <li className="flex items-center">
+                  <span className="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
+                  CBT (Computer Based Testing) assessments
+                </li>
+                <li className="flex items-center">
+                  <span className="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
+                  Academic performance analytics
+                </li>
+                <li className="flex items-center">
+                  <span className="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
+                  Institution-specific resources
+                </li>
+              </ul>
+            </div>
+
+            <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+              💡 You can fill in the required details after enabling this feature.
+            </p>
+          </div>
+        </ConfirmationModal>
+      )}
     </div>
   );
 }

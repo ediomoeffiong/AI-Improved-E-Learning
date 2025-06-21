@@ -10,22 +10,7 @@
   "scope": "/",
   "lang": "en",
   "categories": ["education", "productivity"],
-  "screenshots": [
-    {
-      "src": "/screenshots/desktop-home.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Home page on desktop"
-    },
-    {
-      "src": "/screenshots/mobile-courses.png",
-      "sizes": "390x844",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Courses page on mobile"
-    }
-  ],
+  "screenshots": [],
   "icons": [
     {
       "src": "/icons/icon-192x192.svg",

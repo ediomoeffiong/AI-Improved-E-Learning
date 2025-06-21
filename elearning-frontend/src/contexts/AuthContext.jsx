@@ -56,6 +56,15 @@ export const AuthProvider = ({ children }) => {
       setToken(null);
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      // Clear any other user-related data
+      localStorage.removeItem('userSettings');
+      localStorage.removeItem('demoModeEnabled');
+      // Clear any demo tokens
+      const currentToken = localStorage.getItem('token');
+      if (currentToken?.includes('demo') || currentToken?.includes('mock')) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
     } catch (error) {
       console.error('Error during logout:', error);
     }

@@ -37,7 +37,7 @@ const initializePWA = async () => {
       if ('Notification' in window && Notification.permission === 'granted') {
         showNotification('Back Online', {
           body: 'Refreshing latest content...',
-          icon: '/icons/icon-192x192.png'
+          icon: '/icons/icon-192x192.svg'
         });
       }
 
@@ -49,7 +49,7 @@ const initializePWA = async () => {
         setTimeout(() => {
           showNotification('Content Updated', {
             body: 'Latest content is now available',
-            icon: '/icons/icon-192x192.png'
+            icon: '/icons/icon-192x192.svg'
           });
         }, 2000);
       }
@@ -62,7 +62,7 @@ const initializePWA = async () => {
       if ('Notification' in window && Notification.permission === 'granted') {
         showNotification('Offline Mode', {
           body: 'You are now offline. Some features may be limited.',
-          icon: '/icons/icon-192x192.png'
+          icon: '/icons/icon-192x192.svg'
         });
       }
     }
