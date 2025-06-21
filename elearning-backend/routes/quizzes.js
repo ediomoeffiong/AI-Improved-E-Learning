@@ -2,6 +2,7 @@ const express = require('express');
 const auth = require('../middleware/auth');
 const Quiz = require('../models/Quiz');
 const QuizAttempt = require('../models/QuizAttempt');
+const { manualTrackQuiz } = require('../middleware/activityTracker');
 
 const router = express.Router();
 
@@ -522,6 +523,15 @@ router.post('/:id/submit', auth, async (req, res) => {
       attempt.timeSpent = timeSpent || 0;
 
       await attempt.save();
+
+      // Track quiz activity
+      await manualTrackQuiz(req.user.userId, req.params.id, {
+        _id: attempt._id,
+        percentage: attempt.percentage,
+        score: attempt.score,
+        timeSpent: attempt.timeSpent,
+        status: 'completed'
+      });
 
       res.json({
         message: 'Quiz submitted successfully',

@@ -658,4 +658,68 @@ router.get('/:id/results/:attemptId', auth, async (req, res) => {
   }
 });
 
+// @route   GET /api/assessments/attempts
+// @desc    Get user's assessment attempts
+// @access  Private
+router.get('/attempts', auth, async (req, res) => {
+  try {
+    if (isMongoConnected()) {
+      const attempts = await AssessmentAttempt.find({ user: req.user.userId })
+        .populate('assessment', 'title course category difficulty subject institution')
+        .sort({ submittedAt: -1 });
+
+      res.json(attempts);
+    } else {
+      // Mock data
+      res.json([
+        {
+          _id: 'assessment-attempt-1',
+          assessment: {
+            _id: '507f1f77bcf86cd799439011',
+            title: 'Mathematics Final Examination',
+            course: 'Advanced Mathematics',
+            category: 'Final Exam',
+            difficulty: 'Advanced',
+            subject: 'Mathematics',
+            institution: 'University of Lagos'
+          },
+          score: 85,
+          percentage: 85,
+          passed: true,
+          grade: 'B',
+          timeSpent: 95,
+          submittedAt: new Date('2024-01-15'),
+          correctAnswers: 17,
+          totalQuestions: 20,
+          gradingStatus: 'auto-graded'
+        },
+        {
+          _id: 'assessment-attempt-2',
+          assessment: {
+            _id: '507f1f77bcf86cd799439014',
+            title: 'Computer Science Midterm',
+            course: 'Computer Science 101',
+            category: 'Midterm',
+            difficulty: 'Intermediate',
+            subject: 'Computer Science',
+            institution: 'University of Lagos'
+          },
+          score: 72,
+          percentage: 90,
+          passed: true,
+          grade: 'A-',
+          timeSpent: 75,
+          submittedAt: new Date('2024-01-10'),
+          correctAnswers: 36,
+          totalQuestions: 40,
+          gradingStatus: 'auto-graded'
+        }
+      ]);
+    }
+  } catch (error) {
+    console.error('Error fetching assessment attempts:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router;

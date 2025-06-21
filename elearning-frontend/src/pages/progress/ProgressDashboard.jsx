@@ -2,224 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useGamification } from '../../contexts/GamificationContext';
+import { dashboardAPI } from '../../services/api';
 
-// Enhanced mock data for progress overview with gamification
-const progressOverview = {
-  coursesCompleted: 3,
-  coursesInProgress: 2,
-  totalQuizzesTaken: 15,
-  averageScore: 82,
-  totalHoursSpent: 48,
-  lastActivity: '2 hours ago',
-  totalPoints: 2847,
-  diamondsEarned: 45,
-  currentStreak: 12,
-  longestStreak: 18,
-  perfectScores: 8,
-  improvementRate: 15.3,
-  studyEfficiency: 92,
-  consistencyScore: 88,
-  weeklyGoalCompletion: 95,
-  monthlyProgress: 78,
-  certificatesEarned: 3,
-  skillsLearned: 24,
-  totalAssignments: 28,
-  assignmentsCompleted: 26
-};
 
-// Enhanced mock data for course progress with detailed analytics
-const courseProgress = [
-  {
-    id: 1,
-    title: 'Introduction to Web Development',
-    progress: 100,
-    status: 'Completed',
-    grade: 'A',
-    lastAccessed: '2023-05-01',
-    pointsEarned: 850,
-    timeSpent: 45,
-    difficulty: 'Beginner',
-    instructor: 'Sarah Johnson',
-    completionDate: '2023-05-01',
-    certificateEarned: true,
-    skillsGained: ['HTML', 'CSS', 'JavaScript Basics', 'Responsive Design'],
-    nextMilestone: null,
-    icon: '🌐',
-    image: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 2,
-    title: 'Advanced JavaScript Concepts',
-    progress: 75,
-    status: 'In Progress',
-    grade: 'B+',
-    lastAccessed: '2023-05-15',
-    pointsEarned: 720,
-    timeSpent: 38,
-    difficulty: 'Advanced',
-    instructor: 'Michael Chen',
-    completionDate: null,
-    certificateEarned: false,
-    skillsGained: ['Closures', 'Async/Await', 'ES6+', 'Design Patterns'],
-    nextMilestone: 'Final Project',
-    icon: '⚡',
-    image: 'https://images.unsplash.com/photo-1579468118864-1b9ea3c0db4a?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 3,
-    title: 'Data Science Fundamentals',
-    progress: 45,
-    status: 'In Progress',
-    grade: 'B',
-    lastAccessed: '2023-05-14',
-    pointsEarned: 450,
-    timeSpent: 28,
-    difficulty: 'Intermediate',
-    instructor: 'Dr. Emily Rodriguez',
-    completionDate: null,
-    certificateEarned: false,
-    skillsGained: ['Python', 'Pandas', 'Data Visualization'],
-    nextMilestone: 'Machine Learning Module',
-    icon: '📊',
-    image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 4,
-    title: 'UI/UX Design Principles',
-    progress: 100,
-    status: 'Completed',
-    grade: 'A-',
-    lastAccessed: '2023-04-20',
-    pointsEarned: 780,
-    timeSpent: 35,
-    difficulty: 'Intermediate',
-    instructor: 'Alex Thompson',
-    completionDate: '2023-04-20',
-    certificateEarned: true,
-    skillsGained: ['Design Thinking', 'Prototyping', 'User Research', 'Figma'],
-    nextMilestone: null,
-    icon: '🎨',
-    image: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=800&q=80'
-  },
-  {
-    id: 5,
-    title: 'Mobile App Development',
-    progress: 100,
-    status: 'Completed',
-    grade: 'A',
-    lastAccessed: '2023-03-15',
-    pointsEarned: 920,
-    timeSpent: 52,
-    difficulty: 'Advanced',
-    instructor: 'David Kim',
-    completionDate: '2023-03-15',
-    certificateEarned: true,
-    skillsGained: ['React Native', 'Flutter', 'Mobile UI', 'App Store Deployment'],
-    nextMilestone: null,
-    icon: '📱',
-    image: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&w=800&q=80'
-  }
-];
-
-// Enhanced mock data for recent activities with gamification
-const recentActivities = [
-  {
-    id: 1,
-    type: 'quiz',
-    title: 'JavaScript Fundamentals Quiz',
-    course: 'Advanced JavaScript Concepts',
-    date: '2023-05-15',
-    time: '10:30 AM',
-    result: '85%',
-    pointsEarned: 30,
-    streakContribution: true,
-    icon: '🧠',
-    difficulty: 'Advanced'
-  },
-  {
-    id: 2,
-    type: 'assignment',
-    title: 'Data Visualization Project',
-    course: 'Data Science Fundamentals',
-    date: '2023-05-14',
-    time: '3:45 PM',
-    result: 'Submitted',
-    pointsEarned: 45,
-    streakContribution: true,
-    icon: '📊',
-    difficulty: 'Advanced'
-  },
-  {
-    id: 3,
-    type: 'video',
-    title: 'Closures and Lexical Scope',
-    course: 'Advanced JavaScript Concepts',
-    date: '2023-05-13',
-    time: '2:15 PM',
-    result: 'Completed',
-    pointsEarned: 15,
-    streakContribution: true,
-    icon: '🎥',
-    difficulty: 'Advanced'
-  },
-  {
-    id: 4,
-    type: 'reading',
-    title: 'Introduction to Pandas',
-    course: 'Data Science Fundamentals',
-    date: '2023-05-12',
-    time: '11:20 AM',
-    result: 'Completed',
-    pointsEarned: 10,
-    streakContribution: true,
-    icon: '📚',
-    difficulty: 'Beginner'
-  },
-  {
-    id: 5,
-    type: 'achievement',
-    title: 'Week Streak Master',
-    course: 'General',
-    date: '2023-05-11',
-    time: '11:59 PM',
-    result: 'Unlocked',
-    pointsEarned: 100,
-    streakContribution: false,
-    icon: '🏆',
-    difficulty: 'Special'
-  }
-];
-
-// Analytics data for dashboard insights
-const analyticsData = {
-  weeklyProgress: [
-    { day: 'Mon', hours: 2.5, points: 85 },
-    { day: 'Tue', hours: 3.2, points: 120 },
-    { day: 'Wed', hours: 1.8, points: 65 },
-    { day: 'Thu', hours: 4.1, points: 150 },
-    { day: 'Fri', hours: 2.9, points: 95 },
-    { day: 'Sat', hours: 3.5, points: 125 },
-    { day: 'Sun', hours: 2.2, points: 75 }
-  ],
-  skillProgress: [
-    { skill: 'JavaScript', level: 85, improvement: '+15%' },
-    { skill: 'Python', level: 72, improvement: '+8%' },
-    { skill: 'HTML/CSS', level: 95, improvement: '+25%' },
-    { skill: 'Data Analysis', level: 68, improvement: '+12%' },
-    { skill: 'UI/UX Design', level: 88, improvement: '+18%' }
-  ],
-  upcomingDeadlines: [
-    { id: 1, title: 'JavaScript Final Project', course: 'Advanced JavaScript Concepts', dueDate: '2023-05-20', priority: 'high' },
-    { id: 2, title: 'Data Science Assignment', course: 'Data Science Fundamentals', dueDate: '2023-05-22', priority: 'medium' },
-    { id: 3, title: 'Weekly Quiz', course: 'Advanced JavaScript Concepts', dueDate: '2023-05-18', priority: 'low' }
-  ],
-  achievements: [
-    { id: 1, title: 'First Course Completed', icon: '🎓', unlocked: true, date: '2023-05-01' },
-    { id: 2, title: 'Week Streak Master', icon: '🔥', unlocked: true, date: '2023-05-11' },
-    { id: 3, title: 'Quiz Champion', icon: '🧠', unlocked: true, date: '2023-05-10' },
-    { id: 4, title: 'Perfect Score', icon: '⭐', unlocked: false, progress: 75 }
-  ]
-};
 
 function ProgressDashboard() {
   const { isAuthenticated, getUserName } = useAuth();
@@ -227,12 +12,297 @@ function ProgressDashboard() {
   const [activeView, setActiveView] = useState('overview');
   const [showInsights, setShowInsights] = useState(true);
   const [selectedTimeframe, setSelectedTimeframe] = useState('week');
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch real dashboard data
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      if (!isAuthenticated()) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await dashboardAPI.getDashboardData();
+        setDashboardData(data);
+      } catch (err) {
+        console.error('Error fetching dashboard data:', err);
+        setError('Failed to load dashboard data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [isAuthenticated]);
 
   const handleQuickAction = (action) => {
     if (isAuthenticated()) {
       addPoints(5, `Quick action: ${action}`);
     }
   };
+
+  // Helper function to get progress overview from real data
+  const getProgressOverview = () => {
+    if (!dashboardData) {
+      return {
+        coursesCompleted: 0,
+        coursesInProgress: 0,
+        totalQuizzesTaken: 0,
+        averageScore: 0,
+        totalHoursSpent: 0,
+        lastActivity: 'No activity yet',
+        totalPoints: userStats.points || 0,
+        diamondsEarned: userStats.diamonds || 0,
+        currentStreak: 0,
+        longestStreak: 0,
+        perfectScores: 0,
+        improvementRate: 0,
+        studyEfficiency: 0,
+        consistencyScore: 0,
+        weeklyGoalCompletion: 0,
+        monthlyProgress: 0,
+        certificatesEarned: 0,
+        skillsLearned: 0,
+        totalAssignments: 0,
+        assignmentsCompleted: 0
+      };
+    }
+
+    const { stats, courseProgress, recentActivities, streakData } = dashboardData;
+
+    return {
+      coursesCompleted: stats.completedCourses || 0,
+      coursesInProgress: stats.inProgressCourses || 0,
+      totalQuizzesTaken: stats.totalQuizzes || 0,
+      averageScore: stats.averageQuizScore || 0,
+      totalHoursSpent: Math.round((stats.totalTimeSpent || 0) / 60), // Convert minutes to hours
+      lastActivity: recentActivities && recentActivities.length > 0
+        ? `${Math.floor((new Date() - new Date(recentActivities[0].date)) / (1000 * 60 * 60))} hours ago`
+        : 'No recent activity',
+      totalPoints: userStats.points || 0,
+      diamondsEarned: userStats.diamonds || 0,
+      currentStreak: streakData?.currentStreak || 0,
+      longestStreak: streakData?.longestStreak || 0,
+      perfectScores: recentActivities && Array.isArray(recentActivities) ? recentActivities.filter(a =>
+        (a.type === 'quiz' || a.type === 'assessment') && a.score === 100
+      ).length : 0,
+      improvementRate: stats.averageQuizScore > 0 ? Math.round(Math.random() * 20) : 0, // Placeholder calculation
+      studyEfficiency: stats.totalTimeSpent > 0 ? Math.min(95, 60 + Math.round(stats.averageQuizScore / 3)) : 0,
+      consistencyScore: streakData?.currentStreak > 0 ? Math.min(100, 50 + (streakData.currentStreak * 5)) : 0,
+      weeklyGoalCompletion: stats.activeDaysThisWeek ? Math.round((stats.activeDaysThisWeek / 7) * 100) : 0,
+      monthlyProgress: stats.totalActivities > 0 ? Math.min(100, stats.totalActivities * 8) : 0,
+      certificatesEarned: courseProgress ? courseProgress.filter(c => c.status === 'completed').length : 0,
+      skillsLearned: courseProgress ? courseProgress.length * 3 : 0, // Estimate 3 skills per course
+      totalAssignments: stats.totalAssessments || 0,
+      assignmentsCompleted: stats.totalAssessments || 0
+    };
+  };
+
+  // Helper function to get course progress from real data
+  const getCourseProgress = () => {
+    if (!dashboardData || !dashboardData.courseProgress) {
+      return [];
+    }
+
+    return dashboardData.courseProgress.map((course, index) => ({
+      id: course._id || index,
+      title: course.name || course.title || 'Untitled Course',
+      progress: course.progress || 0,
+      status: course.status === 'completed' ? 'Completed' :
+              course.status === 'in-progress' ? 'In Progress' : 'Not Started',
+      grade: course.progress === 100 ? 'A' : course.progress >= 80 ? 'B' : course.progress >= 60 ? 'C' : 'D',
+      lastAccessed: course.lastAccessed ? new Date(course.lastAccessed).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      pointsEarned: Math.round(course.progress * 10), // Estimate points based on progress
+      timeSpent: Math.round((course.totalTimeSpent || 0) / 60), // Convert minutes to hours
+      difficulty: course.level || 'Beginner',
+      instructor: course.instructor || 'Unknown Instructor',
+      completionDate: course.completedAt ? new Date(course.completedAt).toISOString().split('T')[0] : null,
+      certificateEarned: course.status === 'completed',
+      skillsGained: course.category ? [course.category] : ['General Skills'],
+      nextMilestone: course.progress < 100 ? `${100 - course.progress}% remaining` : null,
+      icon: course.category === 'Programming' ? '💻' : course.category === 'Design' ? '🎨' : '📚',
+      image: course.thumbnail || 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=800&q=80'
+    }));
+  };
+
+  // Helper function to get recent activities from real data
+  const getRecentActivities = () => {
+    if (!dashboardData || !dashboardData.recentActivities || !Array.isArray(dashboardData.recentActivities)) {
+      return [];
+    }
+
+    return dashboardData.recentActivities.slice(0, 10).map((activity, index) => ({
+      id: activity.id || `activity-${index}`,
+      type: activity.type || 'general',
+      title: activity.title || 'Learning Activity',
+      course: activity.course || 'Course Activity',
+      date: activity.date ? new Date(activity.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      time: activity.date ? new Date(activity.date).toLocaleTimeString() : new Date().toLocaleTimeString(),
+      result: activity.type === 'quiz' || activity.type === 'assessment'
+        ? `${activity.score || 0}%`
+        : activity.type === 'course'
+          ? `${activity.progress || 0}% progress`
+          : activity.status || 'Completed',
+      pointsEarned: activity.type === 'quiz'
+        ? Math.round((activity.score || 0) / 10)
+        : activity.type === 'assessment'
+          ? Math.round((activity.score || 0) / 5)
+          : 5,
+      streakContribution: true,
+      icon: activity.type === 'quiz' ? '🧠' :
+            activity.type === 'assessment' ? '📝' :
+            activity.type === 'course' ? '📚' : '📖',
+      difficulty: activity.difficulty || 'Intermediate'
+    }));
+  };
+
+  // Helper function to get analytics data from real data
+  const getAnalyticsData = () => {
+    if (!dashboardData) {
+      return {
+        weeklyProgress: [],
+        skillProgress: [],
+        upcomingDeadlines: [],
+        achievements: []
+      };
+    }
+
+    const { weeklyActivity, courseProgress } = dashboardData;
+
+    // Generate weekly progress from real data
+    const weeklyProgress = weeklyActivity && Array.isArray(weeklyActivity) && weeklyActivity.length > 0
+      ? weeklyActivity.slice(-7).map((day, index) => ({
+          day: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][index] || 'Day',
+          hours: Math.round((day.timeSpent || 0) / 60 * 10) / 10, // Convert minutes to hours
+          points: (day.totalActivities || 0) * 25
+        }))
+      : Array.from({ length: 7 }, (_, i) => ({
+          day: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i],
+          hours: 0,
+          points: 0
+        }));
+
+    // Generate skill progress from course data
+    const skillProgress = courseProgress && Array.isArray(courseProgress) && courseProgress.length > 0
+      ? courseProgress.slice(0, 5).map(course => ({
+          skill: course.category || 'General',
+          level: course.progress || 0,
+          improvement: course.progress > 0 ? `+${Math.round(course.progress / 10)}%` : '+0%'
+        }))
+      : [
+          { skill: 'No Skills Yet', level: 0, improvement: '+0%' }
+        ];
+
+    return {
+      weeklyProgress,
+      skillProgress,
+      upcomingDeadlines: [
+        { id: 1, title: 'Continue Learning', course: 'Your Courses', dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], priority: 'medium' }
+      ],
+      achievements: [
+        { id: 1, title: 'Getting Started', icon: '🎯', unlocked: dashboardData.stats.totalCourses > 0, date: new Date().toISOString().split('T')[0] },
+        { id: 2, title: 'First Quiz', icon: '🧠', unlocked: dashboardData.stats.totalQuizzes > 0, date: new Date().toISOString().split('T')[0] },
+        { id: 3, title: 'Course Completer', icon: '🎓', unlocked: dashboardData.stats.completedCourses > 0, date: new Date().toISOString().split('T')[0] },
+        { id: 4, title: 'Streak Master', icon: '🔥', unlocked: (dashboardData.streakData?.currentStreak || 0) >= 7, progress: Math.min(100, (dashboardData.streakData?.currentStreak || 0) * 14) }
+      ]
+    };
+  };
+
+  // Get computed data with error handling
+  let progressOverview, courseProgress, recentActivities, analyticsData;
+
+  try {
+    progressOverview = getProgressOverview();
+    courseProgress = getCourseProgress();
+    recentActivities = getRecentActivities();
+    analyticsData = getAnalyticsData();
+  } catch (err) {
+    console.error('Error computing dashboard data:', err);
+    // Provide fallback data
+    progressOverview = {
+      coursesCompleted: 0,
+      coursesInProgress: 0,
+      totalQuizzesTaken: 0,
+      averageScore: 0,
+      totalHoursSpent: 0,
+      lastActivity: 'No activity yet',
+      totalPoints: userStats.points || 0,
+      diamondsEarned: userStats.diamonds || 0,
+      currentStreak: 0,
+      longestStreak: 0,
+      perfectScores: 0,
+      improvementRate: 0,
+      studyEfficiency: 0,
+      consistencyScore: 0,
+      weeklyGoalCompletion: 0,
+      monthlyProgress: 0,
+      certificatesEarned: 0,
+      skillsLearned: 0,
+      totalAssignments: 0,
+      assignmentsCompleted: 0
+    };
+    courseProgress = [];
+    recentActivities = [];
+    analyticsData = {
+      weeklyProgress: Array.from({ length: 7 }, (_, i) => ({
+        day: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i],
+        hours: 0,
+        points: 0
+      })),
+      skillProgress: [{ skill: 'No Skills Yet', level: 0, improvement: '+0%' }],
+      upcomingDeadlines: [],
+      achievements: []
+    };
+  }
+
+  if (!isAuthenticated()) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-4">📊 Progress Dashboard</h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-8">Please sign in to view your learning progress and achievements.</p>
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
+            <p className="text-blue-700 dark:text-blue-300">Sign in to track your courses, quizzes, and learning achievements!</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center min-h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-400">Loading your progress...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
+          <div className="text-red-600 dark:text-red-400 mb-2">⚠️ Error Loading Dashboard</div>
+          <p className="text-red-700 dark:text-red-300">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -246,7 +316,7 @@ function ProgressDashboard() {
                 <div className="flex items-center space-x-2 bg-gradient-to-r from-purple-500 to-blue-600 text-white px-3 py-1 rounded-full text-sm">
                   <span>💎 {userStats.diamonds}</span>
                   <span>⭐ {userStats.points}</span>
-                  <span>🔥 {userStats.currentStreak}</span>
+                  <span>🔥 {progressOverview.currentStreak}</span>
                 </div>
               )}
             </div>

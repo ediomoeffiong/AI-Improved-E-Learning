@@ -2,226 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useGamification } from '../../contexts/GamificationContext';
-
-// Enhanced mock data for activity logs with gamification
-const activityData = [
-  {
-    id: 1,
-    type: 'quiz',
-    title: 'JavaScript Fundamentals Quiz',
-    course: 'Advanced JavaScript Concepts',
-    date: '2023-05-15',
-    time: '10:30 AM',
-    duration: '45 minutes',
-    result: '85%',
-    pointsEarned: 25,
-    streakContribution: true,
-    difficulty: 'Intermediate',
-    icon: '🧠',
-    status: 'completed',
-    score: 85,
-    attempts: 1,
-    perfectScore: false
-  },
-  {
-    id: 2,
-    type: 'assignment',
-    title: 'Data Visualization Project',
-    course: 'Data Science Fundamentals',
-    date: '2023-05-14',
-    time: '3:45 PM',
-    duration: '2 hours',
-    result: 'Submitted',
-    pointsEarned: 50,
-    streakContribution: true,
-    difficulty: 'Advanced',
-    icon: '📊',
-    status: 'submitted',
-    score: null,
-    attempts: 1,
-    perfectScore: false
-  },
-  {
-    id: 3,
-    type: 'video',
-    title: 'Closures and Lexical Scope',
-    course: 'Advanced JavaScript Concepts',
-    date: '2023-05-13',
-    time: '2:15 PM',
-    duration: '35 minutes',
-    result: 'Completed',
-    pointsEarned: 15,
-    streakContribution: true,
-    difficulty: 'Advanced',
-    icon: '🎥',
-    status: 'completed',
-    score: null,
-    attempts: 1,
-    perfectScore: false
-  },
-  {
-    id: 4,
-    type: 'reading',
-    title: 'Introduction to Pandas',
-    course: 'Data Science Fundamentals',
-    date: '2023-05-12',
-    time: '11:20 AM',
-    duration: '50 minutes',
-    result: 'Completed',
-    pointsEarned: 10,
-    streakContribution: true,
-    difficulty: 'Beginner',
-    icon: '📚',
-    status: 'completed',
-    score: null,
-    attempts: 1,
-    perfectScore: false
-  },
-  {
-    id: 5,
-    type: 'forum',
-    title: 'Discussion: React Hooks Best Practices',
-    course: 'Advanced JavaScript Concepts',
-    date: '2023-05-11',
-    time: '4:30 PM',
-    duration: '25 minutes',
-    result: 'Participated',
-    pointsEarned: 8,
-    streakContribution: true,
-    difficulty: 'Intermediate',
-    icon: '💬',
-    status: 'participated',
-    score: null,
-    attempts: 1,
-    perfectScore: false
-  },
-  {
-    id: 6,
-    type: 'quiz',
-    title: 'HTML Basics Quiz',
-    course: 'Introduction to Web Development',
-    date: '2023-05-10',
-    time: '9:15 AM',
-    duration: '30 minutes',
-    result: '95%',
-    pointsEarned: 35,
-    streakContribution: true,
-    difficulty: 'Beginner',
-    icon: '🧠',
-    status: 'completed',
-    score: 95,
-    attempts: 1,
-    perfectScore: false
-  },
-  {
-    id: 7,
-    type: 'assignment',
-    title: 'CSS Layout Project',
-    course: 'Introduction to Web Development',
-    date: '2023-05-09',
-    time: '2:00 PM',
-    duration: '3 hours',
-    result: 'Graded: A',
-    pointsEarned: 60,
-    streakContribution: true,
-    difficulty: 'Intermediate',
-    icon: '📊',
-    status: 'graded',
-    score: 92,
-    attempts: 1,
-    perfectScore: false
-  },
-  {
-    id: 8,
-    type: 'video',
-    title: 'Introduction to Python',
-    course: 'Data Science Fundamentals',
-    date: '2023-05-08',
-    time: '10:45 AM',
-    duration: '45 minutes',
-    result: 'Completed',
-    pointsEarned: 18,
-    streakContribution: true,
-    difficulty: 'Beginner',
-    icon: '🎥',
-    status: 'completed',
-    score: null,
-    attempts: 1,
-    perfectScore: false
-  },
-  {
-    id: 9,
-    type: 'reading',
-    title: 'JavaScript: The Good Parts',
-    course: 'Advanced JavaScript Concepts',
-    date: '2023-05-07',
-    time: '1:30 PM',
-    duration: '1 hour',
-    result: 'Completed',
-    pointsEarned: 12,
-    streakContribution: true,
-    difficulty: 'Advanced',
-    icon: '📚',
-    status: 'completed',
-    score: null,
-    attempts: 1,
-    perfectScore: false
-  },
-  {
-    id: 10,
-    type: 'forum',
-    title: 'Discussion: CSS Grid vs Flexbox',
-    course: 'Introduction to Web Development',
-    date: '2023-05-06',
-    time: '3:15 PM',
-    duration: '40 minutes',
-    result: 'Participated',
-    pointsEarned: 10,
-    streakContribution: true,
-    difficulty: 'Intermediate',
-    icon: '💬',
-    status: 'participated',
-    score: null,
-    attempts: 1,
-    perfectScore: false
-  },
-  {
-    id: 11,
-    type: 'achievement',
-    title: 'First Week Streak',
-    course: 'General',
-    date: '2023-05-05',
-    time: '11:59 PM',
-    duration: '7 days',
-    result: 'Unlocked',
-    pointsEarned: 100,
-    streakContribution: false,
-    difficulty: 'Special',
-    icon: '🏆',
-    status: 'unlocked',
-    score: null,
-    attempts: 1,
-    perfectScore: true
-  },
-  {
-    id: 12,
-    type: 'practice',
-    title: 'JavaScript Coding Challenge',
-    course: 'Advanced JavaScript Concepts',
-    date: '2023-05-04',
-    time: '7:20 PM',
-    duration: '1.5 hours',
-    result: 'Perfect Score',
-    pointsEarned: 75,
-    streakContribution: true,
-    difficulty: 'Expert',
-    icon: '⚡',
-    status: 'completed',
-    score: 100,
-    attempts: 2,
-    perfectScore: true
-  }
-];
+import { userAPI } from '../../services/api';
 
 function ActivityLogs() {
   const { isAuthenticated, getUserName } = useAuth();
@@ -235,12 +16,119 @@ function ActivityLogs() {
   const [sortOrder, setSortOrder] = useState('desc');
   const [showAnalytics, setShowAnalytics] = useState(true);
 
-  // Get unique courses and difficulties for filter dropdowns
-  const courses = [...new Set(activityData.map(activity => activity.course))];
-  const difficulties = [...new Set(activityData.map(activity => activity.difficulty))];
+  // State for real data
+  const [activityData, setActivityData] = useState([]);
+  const [analytics, setAnalytics] = useState({
+    totalActivities: 0,
+    totalPoints: 0,
+    totalTime: 0,
+    averageScore: 0,
+    streakDays: 0,
+    perfectScores: 0,
+    typeBreakdown: {},
+    difficultyBreakdown: {}
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Filter activities based on selected filters and search query
-  const filteredActivities = activityData.filter(activity => {
+  // Fetch user activities
+  useEffect(() => {
+    const fetchActivities = async () => {
+      if (!isAuthenticated()) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        const filters = {
+          type: selectedType !== 'all' ? selectedType : undefined,
+          course: selectedCourse !== 'all' ? selectedCourse : undefined,
+          difficulty: selectedDifficulty !== 'all' ? selectedDifficulty : undefined,
+          search: searchQuery || undefined,
+          sortBy,
+          sortOrder,
+          limit: 50
+        };
+
+        const response = await userAPI.getActivities(filters);
+        setActivityData(response.activities || []);
+        setAnalytics(response.analytics || analytics);
+      } catch (err) {
+        console.error('Error fetching activities:', err);
+        setError('Failed to load activities. Please try again.');
+        // Fallback to empty data
+        setActivityData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchActivities();
+  }, [isAuthenticated, selectedType, selectedCourse, selectedDifficulty, searchQuery, sortBy, sortOrder]);
+
+  // Enhanced mock data for activity logs with gamification (fallback for non-authenticated users)
+  const fallbackActivityData = [
+    {
+      id: 1,
+      type: 'quiz',
+      title: 'JavaScript Fundamentals Quiz',
+      course: 'Advanced JavaScript Concepts',
+      date: '2023-05-15',
+      time: '10:30 AM',
+      duration: '45 minutes',
+      result: '85%',
+      pointsEarned: 25,
+      streakContribution: true,
+      difficulty: 'Intermediate',
+      icon: '🧠',
+      status: 'completed',
+      score: 85,
+      attempts: 1,
+      perfectScore: false
+    },
+    {
+      id: 2,
+      type: 'course',
+      title: 'React Basics Progress',
+      course: 'Frontend Development',
+      date: '2023-05-14',
+      time: '3:45 PM',
+      duration: '2 hours',
+      result: '3 lessons completed',
+      pointsEarned: 15,
+      streakContribution: true,
+      difficulty: 'Beginner',
+      icon: '📚',
+      status: 'completed',
+      score: null,
+      attempts: 1,
+      perfectScore: false
+    }
+  ];
+
+  // Use real data if authenticated, fallback data otherwise
+  const currentActivityData = isAuthenticated() ? activityData : fallbackActivityData;
+  const currentAnalytics = isAuthenticated() ? analytics : {
+    totalActivities: fallbackActivityData.length,
+    totalPoints: fallbackActivityData.reduce((sum, activity) => sum + activity.pointsEarned, 0),
+    totalTime: 7200, // 2 hours in seconds
+    averageScore: 85,
+    streakDays: 2,
+    perfectScores: 0,
+    typeBreakdown: { quiz: 1, course: 1 },
+    difficultyBreakdown: { Intermediate: 1, Beginner: 1 }
+  };
+
+  // Get unique courses and difficulties for filter dropdowns
+  const courses = [...new Set(currentActivityData.map(activity => activity.course))];
+  const difficulties = [...new Set(currentActivityData.map(activity => activity.difficulty))];
+
+  // For authenticated users, filtering is handled by the API
+  // For non-authenticated users, we filter client-side
+  const filteredActivities = isAuthenticated() ? currentActivityData : currentActivityData.filter(activity => {
     const matchesType = selectedType === 'all' || activity.type === selectedType;
     const matchesCourse = selectedCourse === 'all' || activity.course === selectedCourse;
     const matchesDifficulty = selectedDifficulty === 'all' || activity.difficulty === selectedDifficulty;
@@ -280,27 +168,6 @@ function ActivityLogs() {
     }
   });
 
-  // Calculate analytics
-  const analytics = {
-    totalActivities: activityData.length,
-    totalPoints: activityData.reduce((sum, activity) => sum + activity.pointsEarned, 0),
-    totalTime: activityData.reduce((sum, activity) => {
-      const time = parseInt(activity.duration);
-      return sum + (isNaN(time) ? 0 : time);
-    }, 0),
-    averageScore: activityData.filter(a => a.score).reduce((sum, a, _, arr) => sum + a.score / arr.length, 0),
-    streakDays: activityData.filter(a => a.streakContribution).length,
-    perfectScores: activityData.filter(a => a.perfectScore).length,
-    typeBreakdown: activityData.reduce((acc, activity) => {
-      acc[activity.type] = (acc[activity.type] || 0) + 1;
-      return acc;
-    }, {}),
-    difficultyBreakdown: activityData.reduce((acc, activity) => {
-      acc[activity.difficulty] = (acc[activity.difficulty] || 0) + 1;
-      return acc;
-    }, {})
-  };
-
   const handleExport = () => {
     if (isAuthenticated()) {
       addPoints(5, 'Exported activity data');
@@ -308,6 +175,47 @@ function ActivityLogs() {
     // Export logic would go here
     console.log('Exporting activity data...');
   };
+
+  // Loading state
+  if (loading && isAuthenticated()) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center min-h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-400">Loading your activity data...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error && isAuthenticated()) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800 dark:text-red-200">Error Loading Activities</h3>
+              <p className="mt-1 text-sm text-red-700 dark:text-red-300">{error}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="mt-2 bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -327,7 +235,7 @@ function ActivityLogs() {
             </div>
             <p className="text-gray-600 dark:text-gray-400">
               {isAuthenticated()
-                ? `Track your learning journey, ${getUserName()}! ${analytics.totalActivities} activities completed`
+                ? `Track your learning journey, ${getUserName()}! ${currentAnalytics.totalActivities} activities completed`
                 : 'Comprehensive overview of your learning activities and progress'
               }
             </p>
@@ -359,7 +267,7 @@ function ActivityLogs() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-blue-100 text-sm">Total Activities</p>
-                  <p className="text-3xl font-bold">{analytics.totalActivities}</p>
+                  <p className="text-3xl font-bold">{currentAnalytics.totalActivities}</p>
                 </div>
                 <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
                   <span className="text-2xl">📚</span>
@@ -371,7 +279,7 @@ function ActivityLogs() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-green-100 text-sm">Points Earned</p>
-                  <p className="text-3xl font-bold">{analytics.totalPoints}</p>
+                  <p className="text-3xl font-bold">{currentAnalytics.totalPoints}</p>
                 </div>
                 <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
                   <span className="text-2xl">⭐</span>
@@ -383,7 +291,7 @@ function ActivityLogs() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-orange-100 text-sm">Study Time</p>
-                  <p className="text-3xl font-bold">{Math.round(analytics.totalTime / 60)}h</p>
+                  <p className="text-3xl font-bold">{Math.round(currentAnalytics.totalTime / 3600)}h</p>
                 </div>
                 <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
                   <span className="text-2xl">⏱️</span>
@@ -395,7 +303,7 @@ function ActivityLogs() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-purple-100 text-sm">Avg Score</p>
-                  <p className="text-3xl font-bold">{Math.round(analytics.averageScore)}%</p>
+                  <p className="text-3xl font-bold">{Math.round(currentAnalytics.averageScore || 0)}%</p>
                 </div>
                 <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
                   <span className="text-2xl">🎯</span>
@@ -538,7 +446,7 @@ function ActivityLogs() {
 
         <div className="flex items-center justify-between">
           <div className="text-sm text-gray-600 dark:text-gray-400">
-            Showing {filteredActivities.length} of {activityData.length} activities
+            Showing {filteredActivities.length} of {currentActivityData.length} activities
           </div>
           <button
             onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}

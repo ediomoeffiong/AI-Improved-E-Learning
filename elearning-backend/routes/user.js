@@ -2,6 +2,10 @@ const express = require('express');
 const auth = require('../middleware/auth');
 const roleCheck = require('../middleware/role');
 const User = require('../models/User');
+const UserActivity = require('../models/UserActivity');
+const QuizAttempt = require('../models/QuizAttempt');
+const AssessmentAttempt = require('../models/AssessmentAttempt');
+const Enrollment = require('../models/Enrollment');
 
 const router = express.Router();
 
@@ -13,6 +17,299 @@ const isMongoConnected = () => {
 // Accessible by all authenticated users
 router.get('/profile', auth, (req, res) => {
   res.json({ message: `Hello, ${req.user.role}` });
+});
+
+// @route   GET /api/user/activities
+// @desc    Get user's activity logs with filtering and pagination
+// @access  Private
+router.get('/activities', auth, async (req, res) => {
+  try {
+    const {
+      type,
+      course,
+      difficulty,
+      search,
+      sortBy = 'date',
+      sortOrder = 'desc',
+      page = 1,
+      limit = 50
+    } = req.query;
+
+    if (isMongoConnected()) {
+      const userId = req.user.userId;
+
+      // Get user activities from the last 90 days
+      const ninetyDaysAgo = new Date();
+      ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+      const userActivities = await UserActivity.find({
+        user: userId,
+        date: { $gte: ninetyDaysAgo },
+        hasActivity: true
+      }).sort({ date: -1 });
+
+      // Get quiz attempts
+      const quizAttempts = await QuizAttempt.find({
+        user: userId,
+        status: 'completed',
+        submittedAt: { $gte: ninetyDaysAgo }
+      })
+        .populate('quiz', 'title course category difficulty')
+        .sort({ submittedAt: -1 });
+
+      // Get assessment attempts
+      const assessmentAttempts = await AssessmentAttempt.find({
+        user: userId,
+        status: 'completed',
+        submittedAt: { $gte: ninetyDaysAgo }
+      })
+        .populate('assessment', 'title category difficulty')
+        .sort({ submittedAt: -1 });
+
+      // Get course progress
+      const enrollments = await Enrollment.find({ user: userId })
+        .populate('course', 'title category level')
+        .sort({ lastAccessed: -1 });
+
+      // Build comprehensive activity list
+      const activities = [];
+
+      // Add quiz activities
+      quizAttempts.forEach(attempt => {
+        activities.push({
+          id: attempt._id,
+          type: 'quiz',
+          title: attempt.quiz?.title || 'Quiz Attempt',
+          course: attempt.quiz?.course || 'Unknown Course',
+          date: attempt.submittedAt.toISOString().split('T')[0],
+          time: attempt.submittedAt.toLocaleTimeString(),
+          duration: `${Math.round(attempt.timeSpent / 60)} minutes`,
+          result: `${attempt.percentage}%`,
+          pointsEarned: Math.round(attempt.percentage / 10),
+          streakContribution: true,
+          difficulty: attempt.quiz?.difficulty || 'Intermediate',
+          icon: '🧠',
+          status: attempt.passed ? 'completed' : 'failed',
+          score: attempt.percentage,
+          attempts: attempt.attemptNumber,
+          perfectScore: attempt.percentage === 100,
+          timeSpent: attempt.timeSpent
+        });
+      });
+
+      // Add assessment activities
+      assessmentAttempts.forEach(attempt => {
+        activities.push({
+          id: attempt._id,
+          type: 'assessment',
+          title: attempt.assessment?.title || 'Assessment',
+          course: attempt.assessment?.category || 'General Assessment',
+          date: attempt.submittedAt.toISOString().split('T')[0],
+          time: attempt.submittedAt.toLocaleTimeString(),
+          duration: `${Math.round(attempt.timeSpent / 60)} minutes`,
+          result: attempt.passed ? 'Passed' : 'Failed',
+          pointsEarned: Math.round(attempt.percentage / 5),
+          streakContribution: true,
+          difficulty: attempt.assessment?.difficulty || 'Intermediate',
+          icon: '📊',
+          status: attempt.passed ? 'completed' : 'failed',
+          score: attempt.percentage,
+          attempts: attempt.attemptNumber,
+          perfectScore: attempt.percentage === 100,
+          timeSpent: attempt.timeSpent
+        });
+      });
+
+      // Add course progress activities
+      userActivities.forEach(activity => {
+        activity.activities.courses.progress.forEach(courseProgress => {
+          const enrollment = enrollments.find(e => e.course._id.toString() === courseProgress.courseId.toString());
+          if (enrollment) {
+            activities.push({
+              id: `course-${courseProgress._id}`,
+              type: 'course',
+              title: `Lesson Progress: ${enrollment.course.title}`,
+              course: enrollment.course.title,
+              date: courseProgress.timestamp.toISOString().split('T')[0],
+              time: courseProgress.timestamp.toLocaleTimeString(),
+              duration: `${Math.round(courseProgress.timeSpent / 60)} minutes`,
+              result: `${courseProgress.lessonsCompleted} lessons completed`,
+              pointsEarned: courseProgress.lessonsCompleted * 5,
+              streakContribution: true,
+              difficulty: enrollment.course.level || 'Beginner',
+              icon: '📚',
+              status: 'completed',
+              score: null,
+              attempts: 1,
+              perfectScore: false,
+              timeSpent: courseProgress.timeSpent
+            });
+          }
+        });
+      });
+
+      // Apply filters
+      let filteredActivities = activities;
+
+      if (type && type !== 'all') {
+        filteredActivities = filteredActivities.filter(activity => activity.type === type);
+      }
+
+      if (course && course !== 'all') {
+        filteredActivities = filteredActivities.filter(activity =>
+          activity.course.toLowerCase().includes(course.toLowerCase())
+        );
+      }
+
+      if (difficulty && difficulty !== 'all') {
+        filteredActivities = filteredActivities.filter(activity => activity.difficulty === difficulty);
+      }
+
+      if (search) {
+        filteredActivities = filteredActivities.filter(activity =>
+          activity.title.toLowerCase().includes(search.toLowerCase()) ||
+          activity.course.toLowerCase().includes(search.toLowerCase())
+        );
+      }
+
+      // Apply sorting
+      filteredActivities.sort((a, b) => {
+        let aValue, bValue;
+
+        switch (sortBy) {
+          case 'date':
+            aValue = new Date(a.date + ' ' + a.time);
+            bValue = new Date(b.date + ' ' + b.time);
+            break;
+          case 'points':
+            aValue = a.pointsEarned;
+            bValue = b.pointsEarned;
+            break;
+          case 'duration':
+            aValue = parseInt(a.duration);
+            bValue = parseInt(b.duration);
+            break;
+          case 'score':
+            aValue = a.score || 0;
+            bValue = b.score || 0;
+            break;
+          default:
+            aValue = a.title;
+            bValue = b.title;
+        }
+
+        if (sortOrder === 'asc') {
+          return aValue > bValue ? 1 : -1;
+        } else {
+          return aValue < bValue ? 1 : -1;
+        }
+      });
+
+      // Apply pagination
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + parseInt(limit);
+      const paginatedActivities = filteredActivities.slice(startIndex, endIndex);
+
+      // Calculate analytics
+      const analytics = {
+        totalActivities: activities.length,
+        totalPoints: activities.reduce((sum, activity) => sum + activity.pointsEarned, 0),
+        totalTime: activities.reduce((sum, activity) => sum + (activity.timeSpent || 0), 0),
+        averageScore: activities.filter(a => a.score).reduce((sum, a, _, arr) => sum + a.score / arr.length, 0),
+        streakDays: activities.filter(a => a.streakContribution).length,
+        perfectScores: activities.filter(a => a.perfectScore).length,
+        typeBreakdown: activities.reduce((acc, activity) => {
+          acc[activity.type] = (acc[activity.type] || 0) + 1;
+          return acc;
+        }, {}),
+        difficultyBreakdown: activities.reduce((acc, activity) => {
+          acc[activity.difficulty] = (acc[activity.difficulty] || 0) + 1;
+          return acc;
+        }, {})
+      };
+
+      res.json({
+        activities: paginatedActivities,
+        analytics,
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages: Math.ceil(filteredActivities.length / limit),
+          totalItems: filteredActivities.length,
+          hasNext: endIndex < filteredActivities.length,
+          hasPrev: startIndex > 0
+        }
+      });
+
+    } else {
+      // Mock data for when MongoDB is not connected
+      const mockActivities = [
+        {
+          id: 1,
+          type: 'quiz',
+          title: 'JavaScript Fundamentals Quiz',
+          course: 'Advanced JavaScript Concepts',
+          date: new Date().toISOString().split('T')[0],
+          time: new Date().toLocaleTimeString(),
+          duration: '45 minutes',
+          result: '85%',
+          pointsEarned: 25,
+          streakContribution: true,
+          difficulty: 'Intermediate',
+          icon: '🧠',
+          status: 'completed',
+          score: 85,
+          attempts: 1,
+          perfectScore: false,
+          timeSpent: 2700
+        },
+        {
+          id: 2,
+          type: 'course',
+          title: 'React Basics Progress',
+          course: 'Frontend Development',
+          date: new Date(Date.now() - 86400000).toISOString().split('T')[0],
+          time: new Date(Date.now() - 86400000).toLocaleTimeString(),
+          duration: '2 hours',
+          result: '3 lessons completed',
+          pointsEarned: 15,
+          streakContribution: true,
+          difficulty: 'Beginner',
+          icon: '📚',
+          status: 'completed',
+          score: null,
+          attempts: 1,
+          perfectScore: false,
+          timeSpent: 7200
+        }
+      ];
+
+      const analytics = {
+        totalActivities: mockActivities.length,
+        totalPoints: mockActivities.reduce((sum, activity) => sum + activity.pointsEarned, 0),
+        totalTime: mockActivities.reduce((sum, activity) => sum + (activity.timeSpent || 0), 0),
+        averageScore: mockActivities.filter(a => a.score).reduce((sum, a, _, arr) => sum + a.score / arr.length, 0),
+        streakDays: mockActivities.filter(a => a.streakContribution).length,
+        perfectScores: mockActivities.filter(a => a.perfectScore).length,
+        typeBreakdown: { quiz: 1, course: 1 },
+        difficultyBreakdown: { Intermediate: 1, Beginner: 1 }
+      };
+
+      res.json({
+        activities: mockActivities,
+        analytics,
+        pagination: {
+          currentPage: 1,
+          totalPages: 1,
+          totalItems: mockActivities.length,
+          hasNext: false,
+          hasPrev: false
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Error fetching user activities:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 // Only for Instructors

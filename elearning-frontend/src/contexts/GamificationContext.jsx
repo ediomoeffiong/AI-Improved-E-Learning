@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
+import { dashboardAPI } from '../services/api';
 import useAchievementNotifications from '../hooks/useAchievementNotifications';
 
 const GamificationContext = createContext();
@@ -84,6 +85,8 @@ export const GamificationProvider = ({ children }) => {
     if (isAuthenticated() && user) {
       loadUserStats();
       generateLeaderboard();
+      // Sync with backend data after initialization
+      setTimeout(syncWithBackend, 1000);
     }
   }, [user, isAuthenticated]);
 
@@ -117,6 +120,37 @@ export const GamificationProvider = ({ children }) => {
 
   const saveUserStats = (stats) => {
     localStorage.setItem(`gamification_${user.id}`, JSON.stringify(stats));
+  };
+
+  // Sync with real backend data
+  const syncWithBackend = async () => {
+    if (!isAuthenticated()) return;
+
+    try {
+      const dashboardData = await dashboardAPI.getDashboardData();
+
+      if (dashboardData && dashboardData.streakData) {
+        const updatedStats = {
+          ...userStats,
+          currentStreak: dashboardData.streakData.currentStreak,
+          longestStreak: dashboardData.streakData.longestStreak,
+          lastActivityDate: new Date().toISOString().split('T')[0]
+        };
+
+        // Update points and diamonds based on activities if available
+        if (dashboardData.stats) {
+          updatedStats.totalXP = dashboardData.stats.totalTimeSpent || userStats.totalXP;
+          updatedStats.level = Math.floor(updatedStats.totalXP / 100) + 1;
+          updatedStats.xpToNextLevel = (updatedStats.level * 100) - updatedStats.totalXP;
+        }
+
+        setUserStats(updatedStats);
+        saveUserStats(updatedStats);
+      }
+    } catch (error) {
+      console.error('Error syncing with backend:', error);
+      // Continue with local data if backend sync fails
+    }
   };
 
   const updateStreak = (stats) => {
@@ -285,6 +319,8 @@ export const GamificationProvider = ({ children }) => {
     getUnlockedAchievements,
     getLockedAchievements,
     resetDailyProgress,
+    syncWithBackend,
+    updateUserStats: setUserStats,
     // Achievement notification functions
     showAchievement,
     dismissAchievement,

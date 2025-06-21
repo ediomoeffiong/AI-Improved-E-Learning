@@ -715,6 +715,28 @@ export const userAPI = {
     return apiRequest('/user/profile');
   },
 
+  // Get user activities with filtering and pagination
+  getActivities: async (filters = {}) => {
+    try {
+      const queryParams = new URLSearchParams();
+
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          queryParams.append(key, value);
+        }
+      });
+
+      const endpoint = `/user/activities${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+      return await apiRequest(endpoint);
+    } catch (error) {
+      if (error.message.includes('Backend service is not available') || error.message.includes('Demo mode is enabled')) {
+        console.log('Using mock data for user activities');
+        return await mockAPI.getUserActivities(filters);
+      }
+      throw error;
+    }
+  },
+
   // Update username
   updateUsername: async (username) => {
     try {
@@ -995,6 +1017,45 @@ export const assessmentAPI = {
       }
       throw error;
     }
+  },
+
+  // Get user's assessment attempts
+  getAssessmentAttempts: async () => {
+    try {
+      return await apiRequest('/assessments/attempts');
+    } catch (error) {
+      if (error.message.includes('Backend service is not available') || error.message.includes('Demo mode is enabled')) {
+        console.log('Using mock data for assessment attempts');
+        return await mockAPI.getAssessmentAttempts();
+      }
+      throw error;
+    }
+  }
+};
+
+// Results API functions (for ViewResults page)
+export const resultsAPI = {
+  // Get all user results (quizzes, practice tests, assessments)
+  getAllResults: async () => {
+    try {
+      const [quizAttempts, practiceAttempts, assessmentAttempts] = await Promise.all([
+        quizAPI.getUserAttempts(),
+        practiceTestAPI.getAttempts(),
+        assessmentAPI.getAssessmentAttempts()
+      ]);
+
+      return {
+        quizAttempts,
+        practiceAttempts,
+        assessmentAttempts
+      };
+    } catch (error) {
+      if (error.message.includes('Backend service is not available') || error.message.includes('Demo mode is enabled')) {
+        console.log('Using mock data for all results');
+        return await mockAPI.getAllResults();
+      }
+      throw error;
+    }
   }
 };
 
@@ -1065,6 +1126,19 @@ export const practiceTestAPI = {
       if (error.message.includes('Backend service is not available') || error.message.includes('Demo mode is enabled')) {
         console.log('Using mock data for practice test results');
         return await mockAPI.getPracticeTestResults(id, attemptId);
+      }
+      throw error;
+    }
+  },
+
+  // Get user's practice test attempts
+  getAttempts: async () => {
+    try {
+      return await apiRequest('/practice-tests/attempts');
+    } catch (error) {
+      if (error.message.includes('Backend service is not available') || error.message.includes('Demo mode is enabled')) {
+        console.log('Using mock data for practice test attempts');
+        return await mockAPI.getPracticeTestAttempts();
       }
       throw error;
     }
@@ -1185,6 +1259,52 @@ export const cacheAPI = {
   }
 };
 
+// Dashboard API
+export const dashboardAPI = {
+  // Get comprehensive dashboard data
+  getDashboardData: async () => {
+    try {
+      return await apiRequest('/dashboard');
+    } catch (error) {
+      if (error.message.includes('Backend service is not available') || error.message.includes('Demo mode is enabled')) {
+        console.log('Using mock data for dashboard');
+        return {
+          stats: {
+            totalCourses: 3,
+            completedCourses: 1,
+            inProgressCourses: 2,
+            averageProgress: 70,
+            totalQuizzes: 5,
+            averageQuizScore: 85,
+            totalAssessments: 2,
+            averageAssessmentScore: 78,
+            totalTimeSpent: 240,
+            currentStreak: 7,
+            longestStreak: 15,
+            activeDaysThisWeek: 5,
+            totalActivities: 12
+          },
+          courseProgress: [
+            { id: 1, name: 'Introduction to React', instructor: 'John Doe', progress: 75, status: 'in-progress', lastAccessed: new Date(), category: 'Programming' },
+            { id: 2, name: 'Advanced JavaScript', instructor: 'Jane Smith', progress: 45, status: 'in-progress', lastAccessed: new Date(), category: 'Programming' },
+            { id: 3, name: 'UI/UX Design Principles', instructor: 'Mike Johnson', progress: 100, status: 'completed', lastAccessed: new Date(), category: 'Design' }
+          ],
+          recentActivities: [
+            { id: 1, type: 'quiz', title: 'JavaScript Fundamentals', score: 85, status: 'Passed', date: new Date(), timeSpent: 15 },
+            { id: 2, type: 'course', title: 'React Basics', progress: 75, status: 'in-progress', date: new Date(), timeSpent: 45 },
+            { id: 3, type: 'assessment', title: 'Web Development Assessment', score: 78, status: 'Passed', date: new Date(), timeSpent: 30 }
+          ],
+          upcomingEvents: [
+            { id: 1, title: 'Complete React Course', type: 'course_deadline', date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), priority: 'high' }
+          ],
+          streakData: { currentStreak: 7, longestStreak: 15 }
+        };
+      }
+      throw error;
+    }
+  }
+};
+
 export default {
   courseAPI,
   enrollmentAPI,
@@ -1192,6 +1312,7 @@ export default {
   practiceTestAPI,
   authAPI,
   userAPI,
+  dashboardAPI,
   handleAPIError,
   storage,
   cacheAPI,

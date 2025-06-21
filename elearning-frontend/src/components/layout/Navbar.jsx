@@ -1106,12 +1106,12 @@ const Navbar = ({ isScrolled = false }) => {
             )}
             {isAuthenticated() && hasInstitutionFunctions() && openDropdown === 'mobile-classroom' && (
               <div className="pl-4 space-y-1 bg-blue-700/30 rounded-md mx-2 py-2">
-                <Link to="/classroom/dashboard" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">🏫 Dashboard</Link>
+                <Link to="/classroom/dashboard" onClick={handleLinkClick} className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">🏫 Dashboard</Link>
                 <div className="px-3 py-1 text-xs text-blue-200 font-semibold uppercase tracking-wide">CBT System</div>
-                <Link to="/cbt/dashboard" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">📊 Dashboard</Link>
-                <Link to="/cbt/practice" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">📚 Practice</Link>
-                <Link to="/cbt/take-assessment" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">✅ Take Assessment</Link>
-                <Link to="/cbt/view-results" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">📈 View Results</Link>
+                <Link to="/cbt/dashboard" onClick={handleLinkClick} className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">📊 Dashboard</Link>
+                <Link to="/cbt/practice" onClick={handleLinkClick} className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">📚 Practice</Link>
+                <Link to="/cbt/take-assessment" onClick={handleLinkClick} className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">✅ Take Assessment</Link>
+                <Link to="/cbt/view-results" onClick={handleLinkClick} className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">📈 View Results</Link>
               </div>
             )}
 
@@ -1129,178 +1129,10 @@ const Navbar = ({ isScrolled = false }) => {
             )}
             {isAuthenticated() && openDropdown === 'mobile-progress' && (
               <div className="pl-4">
-                <Link to="/progress/dashboard" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Dashboard</Link>
-                <Link to="/progress/reports" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Performance Reports</Link>
-                <Link to="/progress/activity" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Activity Logs</Link>
-                <Link to="/progress/recommendations" className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Personalized Recommendations</Link>
-              </div>
-            )}
-
-
-
-            {/* Mobile User Menu - Only show to authenticated users */}
-            {isAuthenticated() && (
-              <button
-                onClick={() => toggleDropdown('mobile-user')}
-                className="w-full text-left px-3 py-2 text-white hover:bg-blue-700 rounded-md flex justify-between items-center"
-              >
-                <div className="flex items-center space-x-3">
-                  <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
-                    <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  </div>
-                  <span>👤 User Menu</span>
-                </div>
-                <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 transform ${openDropdown === 'mobile-user' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-            )}
-            {isAuthenticated() && openDropdown === 'mobile-user' && (
-              <div className="pl-4 space-y-1 bg-blue-700/30 rounded-md mx-2 py-2">
-                {/* User Info */}
-                <div className="px-3 py-2 text-white text-sm border-b border-blue-500/30 mb-2">
-                  <div className="font-medium">{getUserName() || 'User'}</div>
-                  <div className="text-blue-200 text-xs truncate">{getUserEmail()}</div>
-                </div>
-
-                <Link
-                  to="/dashboard"
-                  onClick={handleLinkClick}
-                  className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md transition-colors duration-150"
-                >
-                  📊 Dashboard
-                </Link>
-                <Link
-                  to="/profile"
-                  onClick={handleLinkClick}
-                  className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md transition-colors duration-150"
-                >
-                  👤 My Profile
-                </Link>
-                {isOffline ? (
-                  <div className="block px-3 py-2 text-gray-400 cursor-not-allowed opacity-50 rounded-md">
-                    ⚙️ Settings (Offline)
-                  </div>
-                ) : (
-                  <Link
-                    to="/settings"
-                    onClick={handleLinkClick}
-                    className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md transition-colors duration-150"
-                  >
-                    ⚙️ Settings
-                  </Link>
-                )}
-                <Link
-                  to="/support"
-                  onClick={handleLinkClick}
-                  className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md transition-colors duration-150"
-                >
-                  🆘 Help & Support
-                </Link>
-                <button
-                  onClick={handleToggleDemoMode}
-                  className={`w-full text-left px-3 py-2 rounded-md transition-colors duration-150 ${
-                    isDemoMode
-                      ? 'text-amber-200 hover:bg-amber-600'
-                      : 'text-white hover:bg-gray-600'
-                  }`}
-                >
-                  {isDemoMode ? '🎭 Exit Demo Mode' : '🎭 Enable Demo Mode'}
-                  {isDemoMode && <span className="ml-2 text-xs">(Active)</span>}
-                </button>
-                <button
-                  onClick={handleLogout}
-                  disabled={isOffline}
-                  className={`w-full text-left px-3 py-2 rounded-md transition-colors duration-150 ${
-                    isOffline
-                      ? 'text-gray-400 cursor-not-allowed opacity-50'
-                      : 'text-white hover:bg-red-600'
-                  }`}
-                >
-                  🚪 {isOffline ? 'Logout (Offline)' : 'Logout'}
-                </button>
-              </div>
-            )}
-
-            {/* Mobile Notifications Menu - Only show to authenticated users */}
-            {isAuthenticated() && (
-              <button
-                onClick={() => toggleDropdown('mobile-notifications')}
-                className="w-full text-left px-3 py-2 text-white hover:bg-blue-700 rounded-md flex justify-between items-center"
-              >
-                <div className="flex items-center space-x-3">
-                  <div className="relative">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                    </svg>
-                    {unreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center">
-                        {unreadCount > 9 ? '9+' : unreadCount}
-                      </span>
-                    )}
-                  </div>
-                  <span>🔔 Notifications {unreadCount > 0 && `(${unreadCount})`}</span>
-                </div>
-                <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 transform ${openDropdown === 'mobile-notifications' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-            )}
-            {isAuthenticated() && openDropdown === 'mobile-notifications' && (
-              <div className="pl-4 space-y-1 bg-blue-700/30 rounded-md mx-2 py-2 max-h-64 overflow-y-auto">
-                {/* Header */}
-                <div className="flex items-center justify-between px-3 py-2 border-b border-blue-500/30 mb-2">
-                  <span className="text-white font-medium text-sm">Notifications</span>
-                  {unreadCount > 0 && (
-                    <button
-                      onClick={markAllAsRead}
-                      className="text-xs text-blue-200 hover:text-white"
-                    >
-                      Mark all read
-                    </button>
-                  )}
-                </div>
-
-                {/* Notifications List */}
-                {notifications.length > 0 ? (
-                  notifications.slice(0, 5).map((notification) => (
-                    <div
-                      key={notification.id}
-                      className={`px-3 py-2 rounded-md transition-colors duration-150 ${
-                        !notification.read ? 'bg-blue-600/50' : 'hover:bg-blue-700'
-                      }`}
-                    >
-                      <div className="flex items-start space-x-2">
-                        <span className="text-sm">{notification.icon}</span>
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-sm text-white ${!notification.read ? 'font-semibold' : ''}`}>
-                            {notification.title}
-                          </p>
-                          <p className="text-xs text-blue-200 mt-1 line-clamp-2">
-                            {notification.message}
-                          </p>
-                          <p className="text-xs text-blue-300 mt-1">
-                            {notification.time}
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => deleteNotification(notification.id)}
-                          className="text-blue-300 hover:text-red-400 transition-colors duration-150"
-                        >
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="px-3 py-4 text-center">
-                    <p className="text-blue-200 text-sm">No notifications</p>
-                  </div>
-                )}
+                <Link to="/progress/dashboard" onClick={handleLinkClick} className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Dashboard</Link>
+                <Link to="/progress/reports" onClick={handleLinkClick} className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Performance Reports</Link>
+                <Link to="/progress/activity" onClick={handleLinkClick} className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Activity Logs</Link>
+                <Link to="/progress/recommendations" onClick={handleLinkClick} className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Personalized Recommendations</Link>
               </div>
             )}
 

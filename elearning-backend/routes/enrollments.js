@@ -3,6 +3,7 @@ const router = express.Router();
 const Enrollment = require('../models/Enrollment');
 const Course = require('../models/Course');
 const auth = require('../middleware/auth');
+const { manualTrackCourse } = require('../middleware/activityTracker');
 
 // @route   GET /api/enrollments
 // @desc    Get user's enrollments
@@ -150,6 +151,15 @@ router.put('/:courseId/progress', auth, async (req, res) => {
     }
 
     await enrollment.updateProgress();
+
+    // Track course activity if lesson was completed
+    if (completed && lessonProgress.isCompleted) {
+      await manualTrackCourse(req.user.userId, req.params.courseId, {
+        enrollmentId: enrollment._id,
+        completedLessons: 1,
+        timeSpent: timeSpent
+      });
+    }
 
     res.json({
       message: 'Progress updated successfully',

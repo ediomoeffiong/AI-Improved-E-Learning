@@ -1,30 +1,117 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { useGamification } from '../../contexts/GamificationContext';
+import { dashboardAPI } from '../../services/api';
 import GamificationStats from '../../components/gamification/GamificationStats';
 import Leaderboard from '../../components/gamification/Leaderboard';
 import Achievements from '../../components/gamification/Achievements';
 import GamifiedCalendar from '../../components/calendar/GamifiedCalendar';
 
-// Mock data for dashboard
-const courseProgress = [
-  { id: 1, name: 'Introduction to React', progress: 75, lastAccessed: '2023-05-15' },
-  { id: 2, name: 'Advanced JavaScript', progress: 45, lastAccessed: '2023-05-10' },
-  { id: 3, name: 'UI/UX Design Principles', progress: 90, lastAccessed: '2023-05-12' },
-];
-
-const upcomingEvents = [
-  { id: 1, title: 'React Hooks Workshop', date: '2023-05-20', time: '10:00 AM' },
-  { id: 2, title: 'JavaScript Quiz', date: '2023-05-22', time: '2:00 PM' },
-  { id: 3, title: 'Group Project Meeting', date: '2023-05-25', time: '3:30 PM' },
-];
-
-const recentAnnouncements = [
-  { id: 1, title: 'New Course Available', content: 'Check out our new course on React Native!', date: '2023-05-14' },
-  { id: 2, title: 'Platform Maintenance', content: 'The platform will be down for maintenance on May 21st from 2-4 AM.', date: '2023-05-13' },
-];
-
 function Dashboard() {
   const [activeTab, setActiveTab] = useState('overview');
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { isAuthenticated, getUserName } = useAuth();
+  const { updateUserStats } = useGamification();
+
+  // Fetch dashboard data
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      if (!isAuthenticated()) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const data = await dashboardAPI.getDashboardData();
+        setDashboardData(data);
+
+        // Update gamification context with real streak data
+        if (data.streakData && updateUserStats) {
+          updateUserStats(prevStats => ({
+            ...prevStats,
+            currentStreak: data.streakData.currentStreak,
+            longestStreak: data.streakData.longestStreak,
+            lastActivityDate: new Date().toISOString().split('T')[0]
+          }));
+        }
+
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching dashboard data:', err);
+        setError('Failed to load dashboard data');
+
+        // Fallback to mock data
+        setDashboardData({
+          stats: {
+            totalCourses: 3,
+            completedCourses: 1,
+            inProgressCourses: 2,
+            averageProgress: 70,
+            totalQuizzes: 5,
+            averageQuizScore: 85,
+            totalAssessments: 2,
+            averageAssessmentScore: 78,
+            totalTimeSpent: 240,
+            currentStreak: 7,
+            longestStreak: 15,
+            activeDaysThisWeek: 5,
+            totalActivities: 12
+          },
+          courseProgress: [
+            { id: 1, name: 'Introduction to React', instructor: 'John Doe', progress: 75, status: 'in-progress', lastAccessed: new Date(), category: 'Programming' },
+            { id: 2, name: 'Advanced JavaScript', instructor: 'Jane Smith', progress: 45, status: 'in-progress', lastAccessed: new Date(), category: 'Programming' },
+            { id: 3, name: 'UI/UX Design Principles', instructor: 'Mike Johnson', progress: 100, status: 'completed', lastAccessed: new Date(), category: 'Design' }
+          ],
+          recentActivities: [
+            { id: 1, type: 'quiz', title: 'JavaScript Fundamentals', score: 85, status: 'Passed', date: new Date(), timeSpent: 15 },
+            { id: 2, type: 'course', title: 'React Basics', progress: 75, status: 'in-progress', date: new Date(), timeSpent: 45 },
+            { id: 3, type: 'assessment', title: 'Web Development Assessment', score: 78, status: 'Passed', date: new Date(), timeSpent: 30 }
+          ],
+          upcomingEvents: [
+            { id: 1, title: 'Complete React Course', type: 'course_deadline', date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), priority: 'high' }
+          ]
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [isAuthenticated, updateUserStats]);
+
+  // Default announcements (can be moved to backend later)
+  const recentAnnouncements = [
+    { id: 1, title: 'New Course Available', content: 'Check out our new course on React Native!', date: '2023-05-14' },
+    { id: 2, title: 'Platform Maintenance', content: 'The platform will be down for maintenance on May 21st from 2-4 AM.', date: '2023-05-13' },
+  ];
+
+  if (!isAuthenticated()) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-4">Welcome to the Dashboard</h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-8">Please log in to view your personalized dashboard.</p>
+          <Link to="/auth/login" className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700">
+            Log In
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -142,7 +229,9 @@ function Dashboard() {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-semibold mb-1">Learning Stats</h3>
-              <p className="text-orange-100 text-sm">3 courses in progress</p>
+              <p className="text-orange-100 text-sm">
+                {dashboardData?.stats?.inProgressCourses || 0} courses in progress
+              </p>
             </div>
             <div className="bg-white/20 rounded-lg p-2">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -151,8 +240,11 @@ function Dashboard() {
             </div>
           </div>
           <div className="mt-2">
-            <span className="text-2xl font-bold">75%</span>
+            <span className="text-2xl font-bold">{dashboardData?.stats?.averageProgress || 0}%</span>
             <span className="text-orange-100 text-sm ml-1">avg progress</span>
+          </div>
+          <div className="mt-2 text-xs text-orange-100">
+            🔥 {dashboardData?.stats?.currentStreak || 0} day streak
           </div>
         </div>
       </div>
@@ -180,48 +272,157 @@ function Dashboard() {
             <div className="md:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
               <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Course Progress</h2>
               <div className="space-y-4">
-                {courseProgress.map((course) => (
-                  <div key={course.id} className="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0 last:pb-0">
-                    <div className="flex justify-between mb-1">
-                      <span className="text-gray-700 dark:text-gray-300">{course.name}</span>
-                      <span className="text-gray-500 dark:text-gray-400">{course.progress}%</span>
+                {dashboardData?.courseProgress?.length > 0 ? (
+                  dashboardData.courseProgress.map((course) => (
+                    <div key={course.id} className="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0 last:pb-0">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-1">
+                            <span className="text-gray-700 dark:text-gray-300 font-medium">{course.name}</span>
+                            <span className={`px-2 py-1 text-xs rounded-full ${
+                              course.status === 'completed'
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                            }`}>
+                              {course.status === 'completed' ? 'Completed' : 'In Progress'}
+                            </span>
+                          </div>
+                          {course.instructor && (
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              Instructor: {course.instructor}
+                            </div>
+                          )}
+                        </div>
+                        <span className="text-gray-500 dark:text-gray-400 font-semibold">{course.progress}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mb-2">
+                        <div
+                          className={`h-2.5 rounded-full ${
+                            course.status === 'completed' ? 'bg-green-600' : 'bg-blue-600'
+                          }`}
+                          style={{ width: `${course.progress}%` }}
+                        ></div>
+                      </div>
+                      <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                        <span>
+                          Last accessed: {new Date(course.lastAccessed).toLocaleDateString()}
+                        </span>
+                        {course.completedLessons && course.totalLessons && (
+                          <span>
+                            {course.completedLessons}/{course.totalLessons} lessons
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-                      <div
-                        className="bg-blue-600 h-2.5 rounded-full"
-                        style={{ width: `${course.progress}%` }}
-                      ></div>
-                    </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Last accessed: {course.lastAccessed}
-                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                    <p>No courses enrolled yet.</p>
+                    <Link to="/courses/available" className="text-blue-600 hover:text-blue-800 dark:text-blue-400 text-sm font-medium mt-2 inline-block">
+                      Browse available courses →
+                    </Link>
                   </div>
-                ))}
+                )}
               </div>
-              <div className="mt-4">
-                <Link to="/classroom/materials" className="text-blue-600 hover:text-blue-800 dark:text-blue-400 text-sm font-medium">
-                  View all courses →
-                </Link>
-              </div>
+              {dashboardData?.courseProgress?.length > 0 && (
+                <div className="mt-4">
+                  <Link to="/courses/my-courses" className="text-blue-600 hover:text-blue-800 dark:text-blue-400 text-sm font-medium">
+                    View all courses →
+                  </Link>
+                </div>
+              )}
             </div>
 
-            {/* Upcoming Events */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Upcoming Events</h2>
-              <div className="space-y-4">
-                {upcomingEvents.map((event) => (
-                  <div key={event.id} className="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0 last:pb-0">
-                    <h3 className="font-medium text-gray-800 dark:text-white">{event.title}</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {event.date} at {event.time}
-                    </p>
+            {/* Recent Activities & Upcoming Events */}
+            <div className="space-y-6">
+              {/* Recent Activities */}
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Recent Activities</h2>
+                <div className="space-y-3">
+                  {dashboardData?.recentActivities?.length > 0 ? (
+                    dashboardData.recentActivities.slice(0, 5).map((activity) => (
+                      <div key={activity.id} className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm ${
+                          activity.type === 'quiz' ? 'bg-blue-500' :
+                          activity.type === 'course' ? 'bg-green-500' :
+                          activity.type === 'assessment' ? 'bg-purple-500' : 'bg-gray-500'
+                        }`}>
+                          {activity.type === 'quiz' ? '📝' :
+                           activity.type === 'course' ? '📚' :
+                           activity.type === 'assessment' ? '🎯' : '📋'}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                            {activity.title}
+                          </p>
+                          <div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-400">
+                            <span>{new Date(activity.date).toLocaleDateString()}</span>
+                            {activity.score && (
+                              <span className={`px-2 py-1 rounded ${
+                                activity.status === 'Passed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                              }`}>
+                                {activity.score}% - {activity.status}
+                              </span>
+                            )}
+                            {activity.progress && (
+                              <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded">
+                                {activity.progress}% complete
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-4 text-gray-500 dark:text-gray-400">
+                      <p>No recent activities.</p>
+                      <p className="text-sm mt-1">Start learning to see your progress here!</p>
+                    </div>
+                  )}
+                </div>
+                {dashboardData?.recentActivities?.length > 5 && (
+                  <div className="mt-4">
+                    <Link to="/progress/activity-logs" className="text-blue-600 hover:text-blue-800 dark:text-blue-400 text-sm font-medium">
+                      View all activities →
+                    </Link>
                   </div>
-                ))}
+                )}
               </div>
-              <div className="mt-4">
-                <button className="text-blue-600 hover:text-blue-800 dark:text-blue-400 text-sm font-medium">
-                  View calendar →
-                </button>
+
+              {/* Upcoming Events */}
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Upcoming Events</h2>
+                <div className="space-y-4">
+                  {dashboardData?.upcomingEvents?.length > 0 ? (
+                    dashboardData.upcomingEvents.map((event) => (
+                      <div key={event.id} className="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0 last:pb-0">
+                        <div className="flex items-center space-x-2 mb-1">
+                          <h3 className="font-medium text-gray-800 dark:text-white">{event.title}</h3>
+                          {event.priority === 'high' && (
+                            <span className="px-2 py-1 text-xs bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 rounded">
+                              High Priority
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {new Date(event.date).toLocaleDateString()}
+                        </p>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-4 text-gray-500 dark:text-gray-400">
+                      <p>No upcoming events.</p>
+                    </div>
+                  )}
+                </div>
+                <div className="mt-4">
+                  <button
+                    onClick={() => setActiveTab('calendar')}
+                    className="text-blue-600 hover:text-blue-800 dark:text-blue-400 text-sm font-medium"
+                  >
+                    View calendar →
+                  </button>
+                </div>
               </div>
             </div>
 

@@ -389,7 +389,15 @@ export const mockQuizAttempts = [
   {
     _id: 'attempt1',
     user: 'user1',
-    quiz: '1',
+    quiz: {
+      _id: '1',
+      title: 'JavaScript Fundamentals Quiz',
+      course: 'Web Development',
+      category: 'Quiz',
+      difficulty: 'Beginner',
+      subject: 'Computer Science',
+      timeLimit: 15
+    },
     attemptNumber: 1,
     score: 2,
     percentage: 67,
@@ -397,20 +405,55 @@ export const mockQuizAttempts = [
     grade: 'D+',
     timeSpent: 12,
     submittedAt: new Date('2024-01-20'),
-    status: 'completed'
+    status: 'completed',
+    correctAnswers: 2,
+    totalQuestions: 3
   },
   {
     _id: 'attempt2',
     user: 'user1',
-    quiz: '2',
+    quiz: {
+      _id: '2',
+      title: 'React Basics Quiz',
+      course: 'Frontend Development',
+      category: 'Quiz',
+      difficulty: 'Intermediate',
+      subject: 'Computer Science',
+      timeLimit: 20
+    },
     attemptNumber: 1,
-    score: 2,
+    score: 3,
     percentage: 100,
     passed: true,
     grade: 'A',
     timeSpent: 8,
     submittedAt: new Date('2024-01-22'),
-    status: 'completed'
+    status: 'completed',
+    correctAnswers: 3,
+    totalQuestions: 3
+  },
+  {
+    _id: 'attempt3',
+    user: 'user1',
+    quiz: {
+      _id: '3',
+      title: 'Physics Fundamentals Quiz',
+      course: 'Physics 101',
+      category: 'Quiz',
+      difficulty: 'Intermediate',
+      subject: 'Physics',
+      timeLimit: 25
+    },
+    attemptNumber: 1,
+    score: 4,
+    percentage: 80,
+    passed: true,
+    grade: 'B',
+    timeSpent: 20,
+    submittedAt: new Date('2024-01-18'),
+    status: 'completed',
+    correctAnswers: 4,
+    totalQuestions: 5
   }
 ];
 
@@ -1414,6 +1457,356 @@ export const mockAPI = {
           needsManualGrading: false
         }
       ]
+    });
+  },
+
+  // Additional mock functions for ViewResults page
+  getAssessmentAttempts: () => {
+    return Promise.resolve([
+      {
+        _id: 'assessment-attempt-1',
+        assessment: {
+          _id: '507f1f77bcf86cd799439011',
+          title: 'Mathematics Final Examination',
+          course: 'Advanced Mathematics',
+          category: 'Final Exam',
+          difficulty: 'Advanced',
+          subject: 'Mathematics',
+          institution: 'University of Lagos'
+        },
+        score: 85,
+        percentage: 85,
+        passed: true,
+        grade: 'B',
+        timeSpent: 95,
+        submittedAt: new Date('2024-01-15'),
+        correctAnswers: 17,
+        totalQuestions: 20,
+        gradingStatus: 'auto-graded'
+      },
+      {
+        _id: 'assessment-attempt-2',
+        assessment: {
+          _id: '507f1f77bcf86cd799439014',
+          title: 'Computer Science Midterm',
+          course: 'Computer Science 101',
+          category: 'Midterm',
+          difficulty: 'Intermediate',
+          subject: 'Computer Science',
+          institution: 'University of Lagos'
+        },
+        score: 72,
+        percentage: 90,
+        passed: true,
+        grade: 'A-',
+        timeSpent: 75,
+        submittedAt: new Date('2024-01-10'),
+        correctAnswers: 36,
+        totalQuestions: 40,
+        gradingStatus: 'auto-graded'
+      }
+    ]);
+  },
+
+  getPracticeTestAttempts: () => {
+    return Promise.resolve([
+      {
+        _id: 'practice-attempt-1',
+        practiceTest: {
+          _id: '1',
+          title: 'Basic Mathematics',
+          subject: 'Mathematics',
+          difficulty: 'Easy',
+          topics: ['Arithmetic', 'Basic Algebra', 'Geometry']
+        },
+        score: 18,
+        percentage: 90,
+        passed: true,
+        grade: 'A-',
+        timeSpent: 25,
+        submittedAt: new Date('2024-01-12'),
+        correctAnswers: 18,
+        totalQuestions: 20
+      },
+      {
+        _id: 'practice-attempt-2',
+        practiceTest: {
+          _id: '3',
+          title: 'Programming Fundamentals',
+          subject: 'Computer Science',
+          difficulty: 'Medium',
+          topics: ['Variables', 'Loops', 'Functions']
+        },
+        score: 20,
+        percentage: 80,
+        passed: true,
+        grade: 'B',
+        timeSpent: 35,
+        submittedAt: new Date('2024-01-08'),
+        correctAnswers: 20,
+        totalQuestions: 25
+      }
+    ]);
+  },
+
+  getAllResults: () => {
+    return Promise.resolve({
+      quizAttempts: [
+        {
+          _id: 'quiz-attempt-1',
+          quiz: {
+            _id: 'quiz-1',
+            title: 'JavaScript Fundamentals Quiz',
+            course: 'Web Development',
+            category: 'Quiz',
+            difficulty: 'Beginner',
+            subject: 'Computer Science'
+          },
+          score: 8,
+          percentage: 80,
+          passed: true,
+          grade: 'B',
+          timeSpent: 15,
+          submittedAt: new Date('2024-01-14'),
+          correctAnswers: 8,
+          totalQuestions: 10
+        },
+        {
+          _id: 'quiz-attempt-2',
+          quiz: {
+            _id: 'quiz-2',
+            title: 'React Basics Quiz',
+            course: 'Frontend Development',
+            category: 'Quiz',
+            difficulty: 'Intermediate',
+            subject: 'Computer Science'
+          },
+          score: 7,
+          percentage: 70,
+          passed: true,
+          grade: 'C+',
+          timeSpent: 12,
+          submittedAt: new Date('2024-01-11'),
+          correctAnswers: 7,
+          totalQuestions: 10
+        }
+      ],
+      practiceAttempts: [
+        {
+          _id: 'practice-attempt-1',
+          practiceTest: {
+            _id: '1',
+            title: 'Basic Mathematics',
+            subject: 'Mathematics',
+            difficulty: 'Easy',
+            topics: ['Arithmetic', 'Basic Algebra', 'Geometry']
+          },
+          score: 18,
+          percentage: 90,
+          passed: true,
+          grade: 'A-',
+          timeSpent: 25,
+          submittedAt: new Date('2024-01-12'),
+          correctAnswers: 18,
+          totalQuestions: 20
+        }
+      ],
+      assessmentAttempts: [
+        {
+          _id: 'assessment-attempt-1',
+          assessment: {
+            _id: '507f1f77bcf86cd799439011',
+            title: 'Mathematics Final Examination',
+            course: 'Advanced Mathematics',
+            category: 'Final Exam',
+            difficulty: 'Advanced',
+            subject: 'Mathematics',
+            institution: 'University of Lagos'
+          },
+          score: 85,
+          percentage: 85,
+          passed: true,
+          grade: 'B',
+          timeSpent: 95,
+          submittedAt: new Date('2024-01-15'),
+          correctAnswers: 17,
+          totalQuestions: 20,
+          gradingStatus: 'auto-graded'
+        }
+      ]
+    });
+  },
+
+  getUserActivities: (filters = {}) => {
+    const mockActivities = [
+      {
+        id: 1,
+        type: 'quiz',
+        title: 'JavaScript Fundamentals Quiz',
+        course: 'Advanced JavaScript Concepts',
+        date: new Date().toISOString().split('T')[0],
+        time: new Date().toLocaleTimeString(),
+        duration: '45 minutes',
+        result: '85%',
+        pointsEarned: 25,
+        streakContribution: true,
+        difficulty: 'Intermediate',
+        icon: '🧠',
+        status: 'completed',
+        score: 85,
+        attempts: 1,
+        perfectScore: false,
+        timeSpent: 2700
+      },
+      {
+        id: 2,
+        type: 'assessment',
+        title: 'Data Visualization Project',
+        course: 'Data Science Fundamentals',
+        date: new Date(Date.now() - 86400000).toISOString().split('T')[0],
+        time: new Date(Date.now() - 86400000).toLocaleTimeString(),
+        duration: '2 hours',
+        result: 'Submitted',
+        pointsEarned: 50,
+        streakContribution: true,
+        difficulty: 'Advanced',
+        icon: '📊',
+        status: 'submitted',
+        score: null,
+        attempts: 1,
+        perfectScore: false,
+        timeSpent: 7200
+      },
+      {
+        id: 3,
+        type: 'course',
+        title: 'Closures and Lexical Scope',
+        course: 'Advanced JavaScript Concepts',
+        date: new Date(Date.now() - 2 * 86400000).toISOString().split('T')[0],
+        time: new Date(Date.now() - 2 * 86400000).toLocaleTimeString(),
+        duration: '35 minutes',
+        result: 'Completed',
+        pointsEarned: 15,
+        streakContribution: true,
+        difficulty: 'Advanced',
+        icon: '🎥',
+        status: 'completed',
+        score: null,
+        attempts: 1,
+        perfectScore: false,
+        timeSpent: 2100
+      },
+      {
+        id: 4,
+        type: 'course',
+        title: 'Introduction to Pandas',
+        course: 'Data Science Fundamentals',
+        date: new Date(Date.now() - 3 * 86400000).toISOString().split('T')[0],
+        time: new Date(Date.now() - 3 * 86400000).toLocaleTimeString(),
+        duration: '50 minutes',
+        result: 'Completed',
+        pointsEarned: 10,
+        streakContribution: true,
+        difficulty: 'Beginner',
+        icon: '📚',
+        status: 'completed',
+        score: null,
+        attempts: 1,
+        perfectScore: false,
+        timeSpent: 3000
+      },
+      {
+        id: 5,
+        type: 'quiz',
+        title: 'HTML Basics Quiz',
+        course: 'Introduction to Web Development',
+        date: new Date(Date.now() - 4 * 86400000).toISOString().split('T')[0],
+        time: new Date(Date.now() - 4 * 86400000).toLocaleTimeString(),
+        duration: '30 minutes',
+        result: '95%',
+        pointsEarned: 35,
+        streakContribution: true,
+        difficulty: 'Beginner',
+        icon: '🧠',
+        status: 'completed',
+        score: 95,
+        attempts: 1,
+        perfectScore: false,
+        timeSpent: 1800
+      },
+      {
+        id: 6,
+        type: 'assessment',
+        title: 'CSS Layout Project',
+        course: 'Introduction to Web Development',
+        date: new Date(Date.now() - 5 * 86400000).toISOString().split('T')[0],
+        time: new Date(Date.now() - 5 * 86400000).toLocaleTimeString(),
+        duration: '3 hours',
+        result: 'Graded: A',
+        pointsEarned: 60,
+        streakContribution: true,
+        difficulty: 'Intermediate',
+        icon: '📊',
+        status: 'graded',
+        score: 92,
+        attempts: 1,
+        perfectScore: false,
+        timeSpent: 10800
+      }
+    ];
+
+    // Apply filters
+    let filteredActivities = [...mockActivities];
+
+    if (filters.type && filters.type !== 'all') {
+      filteredActivities = filteredActivities.filter(activity => activity.type === filters.type);
+    }
+
+    if (filters.course && filters.course !== 'all') {
+      filteredActivities = filteredActivities.filter(activity =>
+        activity.course.toLowerCase().includes(filters.course.toLowerCase())
+      );
+    }
+
+    if (filters.difficulty && filters.difficulty !== 'all') {
+      filteredActivities = filteredActivities.filter(activity => activity.difficulty === filters.difficulty);
+    }
+
+    if (filters.search) {
+      filteredActivities = filteredActivities.filter(activity =>
+        activity.title.toLowerCase().includes(filters.search.toLowerCase()) ||
+        activity.course.toLowerCase().includes(filters.search.toLowerCase())
+      );
+    }
+
+    // Calculate analytics
+    const analytics = {
+      totalActivities: mockActivities.length,
+      totalPoints: mockActivities.reduce((sum, activity) => sum + activity.pointsEarned, 0),
+      totalTime: mockActivities.reduce((sum, activity) => sum + (activity.timeSpent || 0), 0),
+      averageScore: mockActivities.filter(a => a.score).reduce((sum, a, _, arr) => sum + a.score / arr.length, 0),
+      streakDays: mockActivities.filter(a => a.streakContribution).length,
+      perfectScores: mockActivities.filter(a => a.perfectScore).length,
+      typeBreakdown: mockActivities.reduce((acc, activity) => {
+        acc[activity.type] = (acc[activity.type] || 0) + 1;
+        return acc;
+      }, {}),
+      difficultyBreakdown: mockActivities.reduce((acc, activity) => {
+        acc[activity.difficulty] = (acc[activity.difficulty] || 0) + 1;
+        return acc;
+      }, {})
+    };
+
+    return Promise.resolve({
+      activities: filteredActivities,
+      analytics,
+      pagination: {
+        currentPage: 1,
+        totalPages: 1,
+        totalItems: filteredActivities.length,
+        hasNext: false,
+        hasPrev: false
+      }
     });
   }
 };

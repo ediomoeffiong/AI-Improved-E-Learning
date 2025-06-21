@@ -469,4 +469,79 @@ router.get('/:id/results/:attemptId', auth, async (req, res) => {
   }
 });
 
+// @route   GET /api/practice-tests/attempts
+// @desc    Get user's practice test attempts
+// @access  Private
+router.get('/attempts', auth, async (req, res) => {
+  try {
+    if (isMongoConnected()) {
+      // In a real implementation, you would fetch from MongoDB
+      // For now, return mock data
+      res.json([
+        {
+          _id: 'practice-attempt-1',
+          practiceTest: {
+            _id: '1',
+            title: 'Basic Mathematics',
+            subject: 'Mathematics',
+            difficulty: 'Easy',
+            topics: ['Arithmetic', 'Basic Algebra', 'Geometry']
+          },
+          score: 18,
+          percentage: 90,
+          passed: true,
+          grade: 'A-',
+          timeSpent: 25,
+          submittedAt: new Date('2024-01-12'),
+          correctAnswers: 18,
+          totalQuestions: 20
+        },
+        {
+          _id: 'practice-attempt-2',
+          practiceTest: {
+            _id: '3',
+            title: 'Programming Fundamentals',
+            subject: 'Computer Science',
+            difficulty: 'Medium',
+            topics: ['Variables', 'Loops', 'Functions']
+          },
+          score: 20,
+          percentage: 80,
+          passed: true,
+          grade: 'B',
+          timeSpent: 35,
+          submittedAt: new Date('2024-01-08'),
+          correctAnswers: 20,
+          totalQuestions: 25
+        }
+      ]);
+    } else {
+      // Use mock data
+      res.json([
+        {
+          _id: 'practice-attempt-1',
+          practiceTest: {
+            _id: '1',
+            title: 'Basic Mathematics',
+            subject: 'Mathematics',
+            difficulty: 'Easy',
+            topics: ['Arithmetic', 'Basic Algebra', 'Geometry']
+          },
+          score: 18,
+          percentage: 90,
+          passed: true,
+          grade: 'A-',
+          timeSpent: 25,
+          submittedAt: new Date('2024-01-12'),
+          correctAnswers: 18,
+          totalQuestions: 20
+        }
+      ]);
+    }
+  } catch (error) {
+    console.error('Error fetching practice test attempts:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router;

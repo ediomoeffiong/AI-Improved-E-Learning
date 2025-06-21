@@ -73,6 +73,7 @@ app.use('/api/enrollments', require('./routes/enrollments'));
 app.use('/api/quizzes', require('./routes/quizzes'));
 app.use('/api/practice-tests', require('./routes/practiceTests'));
 app.use('/api/assessments', require('./routes/assessments'));
+app.use('/api/dashboard', require('./routes/dashboard'));
 
 // Connect to MongoDB with enhanced error handling and fallback
 const connectDB = async () => {
