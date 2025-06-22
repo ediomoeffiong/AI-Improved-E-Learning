@@ -396,7 +396,8 @@ router.get('/test', (req, res) => {
 });
 
 // One-time seeding endpoint (REMOVE AFTER FIRST USE FOR SECURITY)
-router.post('/seed-super-admins', async (req, res) => {
+// Works with both GET (browser) and POST requests
+const seedSuperAdmins = async (req, res) => {
   try {
     if (!isMongoConnected()) {
       return res.status(503).json({ message: 'Database not available' });
@@ -459,6 +460,10 @@ router.post('/seed-super-admins', async (req, res) => {
     console.error('Seeding error:', error);
     res.status(500).json({ message: 'Error creating Super Admin accounts' });
   }
-});
+};
+
+// Register the endpoint for both GET and POST
+router.get('/seed-super-admins', seedSuperAdmins);
+router.post('/seed-super-admins', seedSuperAdmins);
 
 module.exports = router;
