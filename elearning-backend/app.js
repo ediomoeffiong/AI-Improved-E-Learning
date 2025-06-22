@@ -1,28 +1,10 @@
-// Load environment-specific configuration
-const path = require('path');
-
-// Determine environment
-const isProduction = process.env.NODE_ENV === 'production' ||
-                    process.env.VERCEL ||
-                    process.env.RENDER ||
-                    process.env.RAILWAY ||
-                    process.env.HEROKU;
-
-// Load appropriate .env file
-const envFile = isProduction ? '.env.production' : '.env.development';
-const envPath = path.join(__dirname, envFile);
-
-require('dotenv').config({ path: envPath });
-
-// Fallback to default .env if specific env file doesn't exist
+// Load environment configuration
 require('dotenv').config();
 
 console.log('=== Environment Configuration ===');
-console.log(`NODE_ENV: ${process.env.NODE_ENV || 'undefined'}`);
-console.log(`Detected as: ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'}`);
-console.log(`Loading config from: ${envFile}`);
+console.log(`NODE_ENV: ${process.env.NODE_ENV || 'development'}`);
 console.log(`MongoDB URI: ${process.env.MONGODB_URI ? 'Configured' : 'Not configured'}`);
-console.log(`Port: ${process.env.PORT || 'Not configured'}`);
+console.log(`Port: ${process.env.PORT || 5000}`);
 console.log('================================');
 const express = require('express');
 const mongoose = require('mongoose');
@@ -74,6 +56,9 @@ app.use('/api/quizzes', require('./routes/quizzes'));
 app.use('/api/practice-tests', require('./routes/practiceTests'));
 app.use('/api/assessments', require('./routes/assessments'));
 app.use('/api/dashboard', require('./routes/dashboard'));
+app.use('/api/super-admin', require('./routes/superAdmin'));
+app.use('/api/institution-admin', require('./routes/institutionAdmin'));
+app.use('/api/institution-membership', require('./routes/institutionMembership'));
 
 // Connect to MongoDB with enhanced error handling and fallback
 const connectDB = async () => {
@@ -88,18 +73,10 @@ const connectDB = async () => {
     console.log(`📊 Connected to database: ${mongoose.connection.name}`);
   } catch (err) {
     console.error('❌ MongoDB connection failed:', err.message);
-
-    if (err.message.includes('authentication failed')) {
-      console.log('\n🔧 MongoDB Atlas Authentication Fix Required:');
-      console.log('1. Go to https://cloud.mongodb.com/');
-      console.log('2. Navigate to Database Access');
-      console.log('3. Verify user "ediomoemmaeffiong" exists');
-      console.log('4. If user doesn\'t exist, create it with password "Ed10m0Ed10m0"');
-      console.log('5. Ensure user has "Atlas admin" or "Read and write to any database" role');
-      console.log('6. Go to Network Access and add IP 0.0.0.0/0 (allow from anywhere)');
-      console.log('7. Wait 1-2 minutes for changes to propagate');
-    }
-
+    console.log('\n🔧 Local MongoDB Setup Required:');
+    console.log('1. Install MongoDB Community Server: https://www.mongodb.com/try/download/community');
+    console.log('2. Or use Docker: docker run -d -p 27017:27017 --name mongodb mongo:latest');
+    console.log('3. Ensure MongoDB is running on localhost:27017');
     console.log('\n⚠️  Running in development mode without database');
     console.log('📝 Note: Authentication will work with in-memory storage for development');
   }

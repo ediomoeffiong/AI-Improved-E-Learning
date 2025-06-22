@@ -94,7 +94,7 @@ function SuperAdminLogin() {
         role: formData.role
       });
 
-      setApiMessage('Login successful! Redirecting to Super Admin dashboard...');
+      setApiMessage(`${data.user.role} login successful! Redirecting to dashboard...`);
       setApiSuccess(true);
 
       // Store super admin token separately
@@ -108,9 +108,16 @@ function SuperAdminLogin() {
     } catch (err) {
       console.error('App Admin login error:', err);
 
-      // If backend endpoint doesn't exist (404), use demo mode
-      if (err.message.includes('404') || err.message.includes('HTTP error! status: 404')) {
-        setApiMessage('🔧 Backend endpoint not implemented yet. Using demo mode for app admin login...');
+      // Handle specific error cases
+      if (err.message.includes('Invalid credentials or insufficient privileges')) {
+        setApiMessage('❌ Invalid credentials or you do not have the required admin privileges for this role.');
+        setApiSuccess(false);
+      } else if (err.message.includes('Access denied: insufficient privileges')) {
+        setApiMessage('❌ Access denied. You do not have sufficient privileges to access the admin portal.');
+        setApiSuccess(false);
+      } else if (err.message.includes('404') || err.message.includes('HTTP error! status: 404')) {
+        // Fallback to demo mode only if backend is not available
+        setApiMessage('🔧 Backend service temporarily unavailable. Using demo mode...');
         setApiSuccess(true);
 
         // Create mock super admin data
@@ -118,11 +125,14 @@ function SuperAdminLogin() {
           token: 'mock-super-admin-token-' + Date.now(),
           user: {
             id: 'super-admin-demo',
-            name: 'Demo Super Admin',
+            name: `Demo ${formData.role}`,
             email: formData.email,
             role: formData.role,
             avatar: 'https://via.placeholder.com/150',
-            permissions: ['manage_users', 'manage_institutions', 'manage_platform', 'view_analytics']
+            permissions: formData.role === 'Super Admin'
+              ? ['manage_users', 'manage_institutions', 'manage_platform', 'view_analytics', 'approve_admins', 'create_secondary_admins']
+              : ['manage_institutions', 'view_analytics', 'approve_admins', 'approve_moderators'],
+            isSuperAdmin: formData.role === 'Super Admin'
           }
         };
 
@@ -134,11 +144,11 @@ function SuperAdminLogin() {
         setTimeout(() => {
           setApiMessage('Demo login successful! Redirecting...');
           setTimeout(() => {
-            navigate('/dashboard'); // Will show Super Admin dashboard due to role-based routing
+            navigate('/dashboard');
           }, 1000);
         }, 2000);
       } else {
-        setApiMessage(err.message || 'Login failed');
+        setApiMessage(err.message || 'Login failed. Please check your credentials and try again.');
         setApiSuccess(false);
       }
     } finally {
@@ -190,10 +200,10 @@ function SuperAdminLogin() {
               </select>
             </div>
 
-            {/* Email Field */}
+            {/* Email/Username Field */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Admin Email
+                Admin Email or Username
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -210,7 +220,7 @@ function SuperAdminLogin() {
                   className={`block w-full pl-10 pr-3 py-3 border rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 dark:bg-gray-700 dark:text-white dark:border-gray-600 ${
                     errors.email ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
                   } ${focusedField === 'email' ? 'ring-2 ring-red-500 border-red-500' : ''}`}
-                  placeholder="Enter your admin email"
+                  placeholder="Enter your admin email or username"
                   value={formData.email}
                   onChange={handleChange}
                   onFocus={() => setFocusedField('email')}

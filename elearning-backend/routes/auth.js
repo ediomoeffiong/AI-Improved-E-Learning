@@ -2,6 +2,9 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const Institution = require('../models/Institution');
+const UserApproval = require('../models/UserApproval');
+const InstitutionMembership = require('../models/InstitutionMembership');
 
 const router = express.Router();
 
@@ -33,6 +36,27 @@ let inMemoryUsers = [
     phoneNumber: '+1-555-0003',
     password: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password: 'password'
     role: 'Admin'
+  },
+  {
+    _id: '4',
+    name: 'Super Admin',
+    username: 'superadmin',
+    email: 'superadmin@app.com',
+    phoneNumber: '+1-555-0004',
+    password: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password: 'password'
+    role: 'Super Admin',
+    isSuperAdmin: true,
+    permissions: ['manage_users', 'manage_institutions', 'manage_platform', 'view_analytics', 'approve_admins']
+  },
+  {
+    _id: '5',
+    name: 'Super Moderator',
+    username: 'supermod',
+    email: 'supermod@app.com',
+    phoneNumber: '+1-555-0005',
+    password: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password: 'password'
+    role: 'Super Moderator',
+    permissions: ['manage_institutions', 'view_analytics', 'approve_admins', 'approve_moderators']
   }
 ];
 
@@ -271,6 +295,97 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// App Admin Login (Super Admin/Super Moderator)
+router.post('/app-admin-login', async (req, res) => {
+  try {
+    const { email, password, role } = req.body;
+
+    // Validation
+    if (!email || !password || !role) {
+      return res.status(400).json({ message: 'Email/username, password, and role are required' });
+    }
+
+    // Validate role is a super admin role
+    if (!['Super Admin', 'Super Moderator'].includes(role)) {
+      return res.status(400).json({ message: 'Invalid admin role specified' });
+    }
+
+    let user;
+
+    if (isMongoConnected()) {
+      // Use MongoDB - search by email or username for super admin roles only
+      user = await User.findOne({
+        $and: [
+          {
+            $or: [
+              { email: email },
+              { username: email.toLowerCase() }
+            ]
+          },
+          {
+            role: role // Must match the requested role exactly
+          }
+        ]
+      });
+    } else {
+      // Use in-memory storage for development
+      user = inMemoryUsers.find(u =>
+        (u.email === email || u.username === email.toLowerCase()) &&
+        u.role === role
+      );
+    }
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid credentials or insufficient privileges' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    // Additional security check for super admin roles
+    if (!['Super Admin', 'Super Moderator'].includes(user.role)) {
+      return res.status(403).json({ message: 'Access denied: insufficient privileges' });
+    }
+
+    // Update last login
+    if (isMongoConnected() && user._id) {
+      await User.findByIdAndUpdate(user._id, { lastLogin: new Date() });
+    }
+
+    const token = jwt.sign(
+      {
+        userId: user._id,
+        role: user.role,
+        isSuperAdmin: user.role === 'Super Admin',
+        permissions: user.permissions || []
+      },
+      process.env.JWT_SECRET || 'fallback-secret',
+      { expiresIn: '1d' }
+    );
+
+    res.json({
+      message: 'App Admin login successful',
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        username: user.username,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+        role: user.role,
+        permissions: user.permissions || [],
+        isSuperAdmin: user.role === 'Super Admin',
+        lastLogin: user.lastLogin
+      }
+    });
+  } catch (err) {
+    console.error('App Admin login error:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // Test route
 router.get('/test', (req, res) => {
   res.json({
@@ -278,6 +393,72 @@ router.get('/test', (req, res) => {
     mongoConnected: isMongoConnected(),
     availableUsers: isMongoConnected() ? 'Check MongoDB' : inMemoryUsers.map(u => ({ id: u._id, name: u.name, username: u.username, email: u.email, phoneNumber: u.phoneNumber, role: u.role }))
   });
+});
+
+// One-time seeding endpoint (REMOVE AFTER FIRST USE FOR SECURITY)
+router.post('/seed-super-admins', async (req, res) => {
+  try {
+    if (!isMongoConnected()) {
+      return res.status(503).json({ message: 'Database not available' });
+    }
+
+    // Check if already seeded
+    const existingAdmins = await User.countDocuments({
+      role: { $in: ['Super Admin', 'Super Moderator'] }
+    });
+
+    if (existingAdmins > 0) {
+      return res.json({
+        message: 'Super Admin accounts already exist',
+        count: existingAdmins,
+        note: 'No new accounts created. Remove this endpoint for security.'
+      });
+    }
+
+    // Create Super Admin accounts
+    const superAdminAccounts = [
+      {
+        name: 'Super Administrator',
+        username: 'superadmin',
+        email: 'superadmin@app.com',
+        phoneNumber: '+234-800-000-0001',
+        password: await bcrypt.hash('SuperAdmin123!', 12),
+        role: 'Super Admin',
+        isSuperAdmin: true,
+        isVerified: true,
+        verificationStatus: 'not_required',
+        permissions: ['manage_users', 'manage_institutions', 'manage_platform', 'view_analytics', 'approve_admins', 'approve_moderators', 'create_secondary_admins'],
+        isActive: true
+      },
+      {
+        name: 'Super Moderator',
+        username: 'supermod',
+        email: 'supermod@app.com',
+        phoneNumber: '+234-800-000-0002',
+        password: await bcrypt.hash('SuperMod123!', 12),
+        role: 'Super Moderator',
+        isSuperAdmin: false,
+        isVerified: true,
+        verificationStatus: 'not_required',
+        permissions: ['manage_institutions', 'view_analytics', 'approve_admins', 'approve_moderators'],
+        isActive: true
+      }
+    ];
+
+    await User.insertMany(superAdminAccounts);
+
+    res.json({
+      message: 'Super Admin accounts created successfully!',
+      accounts: [
+        'superadmin@app.com (Super Admin)',
+        'supermod@app.com (Super Moderator)'
+      ],
+      warning: 'IMPORTANT: Remove this endpoint from your code for security!'
+    });
+  } catch (error) {
+    console.error('Seeding error:', error);
+    res.status(500).json({ message: 'Error creating Super Admin accounts' });
+  }
 });
 
 module.exports = router;

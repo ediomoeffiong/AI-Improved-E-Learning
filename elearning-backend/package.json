@@ -9,6 +9,13 @@
     "dev:prod": "cross-env NODE_ENV=production nodemon app.js",
     "start:prod": "cross-env NODE_ENV=production node app.js",
     "test:env": "node -e \"require('./app.js'); setTimeout(() => process.exit(0), 2000);\"",
+    "seed:super-admins": "node scripts/seedSuperAdmins.js",
+    "seed:super-admins:update": "node scripts/seedSuperAdmins.js update",
+    "deploy": "node scripts/deploy.js",
+    "deploy:seed": "node scripts/deploy.js seed-only",
+    "deploy:indexes": "node scripts/deploy.js indexes-only",
+    "deploy:verify": "node scripts/deploy.js verify-only",
+    "seed:production": "node scripts/seedProductionAdmins.js",
     "build": "echo 'No build step required for Node.js'",
     "seed:quizzes": "node scripts/seedQuizzes.js"
   },
