@@ -115,6 +115,38 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     default: null
+  },
+  // Two-Factor Authentication fields
+  twoFactorAuth: {
+    enabled: {
+      type: Boolean,
+      default: false
+    },
+    secret: {
+      type: String,
+      default: null
+    },
+    backupCodes: [{
+      code: String,
+      used: { type: Boolean, default: false },
+      usedAt: { type: Date, default: null }
+    }],
+    enabledAt: {
+      type: Date,
+      default: null
+    },
+    lastVerifiedAt: {
+      type: Date,
+      default: null
+    },
+    failedAttempts: {
+      type: Number,
+      default: 0
+    },
+    lockedUntil: {
+      type: Date,
+      default: null
+    }
   }
 }, { timestamps: true });
 
@@ -151,6 +183,56 @@ userSchema.methods.canApprove = function(targetRole) {
 // Method to check if user has specific permission
 userSchema.methods.hasPermission = function(permission) {
   return this.permissions.includes(permission);
+};
+
+// Method to check if 2FA is available for this user (now available for all users)
+userSchema.methods.canUse2FA = function() {
+  return true; // 2FA is now available for all user types
+};
+
+// Method to check if 2FA is enabled for this user
+userSchema.methods.is2FAEnabled = function() {
+  return this.twoFactorAuth && this.twoFactorAuth.enabled;
+};
+
+// Method to check if 2FA account is locked
+userSchema.methods.is2FALocked = function() {
+  return this.twoFactorAuth.lockedUntil && this.twoFactorAuth.lockedUntil > Date.now();
+};
+
+// Method to increment failed 2FA attempts
+userSchema.methods.increment2FAFailedAttempts = function() {
+  this.twoFactorAuth.failedAttempts += 1;
+
+  // Lock account after 5 failed attempts for 15 minutes
+  if (this.twoFactorAuth.failedAttempts >= 5) {
+    this.twoFactorAuth.lockedUntil = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+  }
+
+  return this.save();
+};
+
+// Method to reset failed 2FA attempts
+userSchema.methods.reset2FAFailedAttempts = function() {
+  this.twoFactorAuth.failedAttempts = 0;
+  this.twoFactorAuth.lockedUntil = null;
+  this.twoFactorAuth.lastVerifiedAt = new Date();
+  return this.save();
+};
+
+// Method to use a backup code
+userSchema.methods.useBackupCode = function(code) {
+  const backupCode = this.twoFactorAuth.backupCodes.find(
+    bc => bc.code === code && !bc.used
+  );
+
+  if (backupCode) {
+    backupCode.used = true;
+    backupCode.usedAt = new Date();
+    return this.save().then(() => true);
+  }
+
+  return Promise.resolve(false);
 };
 
 module.exports = mongoose.model('User', userSchema);

@@ -3,6 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { authAPI } from '../../services/api';
 import { USER_ROLES, APP_ROLE_OPTIONS, ROLE_ICONS } from '../../constants/roles';
 import { isOnline } from '../../utils/pwa';
+import TwoFactorVerification from '../../components/auth/TwoFactorVerification';
+import SessionConflictWarning from '../../components/auth/SessionConflictWarning';
+import {
+  checkSuperAdminLoginConflict,
+  SESSION_TYPES
+} from '../../utils/sessionManager';
 
 function SuperAdminLogin() {
   const navigate = useNavigate();
@@ -17,6 +23,24 @@ function SuperAdminLogin() {
   const [apiSuccess, setApiSuccess] = useState(false);
   const [isOffline, setIsOffline] = useState(!isOnline());
   const [focusedField, setFocusedField] = useState(null);
+
+  // 2FA states
+  const [requires2FA, setRequires2FA] = useState(false);
+  const [tempToken, setTempToken] = useState('');
+  const [userInfo, setUserInfo] = useState(null);
+
+  // Session conflict states
+  const [sessionConflict, setSessionConflict] = useState(null);
+  const [showLoginForm, setShowLoginForm] = useState(true);
+
+  // Check for session conflicts on component mount
+  useEffect(() => {
+    const conflict = checkSuperAdminLoginConflict();
+    if (conflict.hasConflict) {
+      setSessionConflict(conflict);
+      setShowLoginForm(false);
+    }
+  }, []);
 
   useEffect(() => {
     const handleOnline = () => setIsOffline(false);
@@ -94,6 +118,17 @@ function SuperAdminLogin() {
         role: formData.role
       });
 
+      // Check if 2FA is required
+      if (data.requires2FA) {
+        setRequires2FA(true);
+        setTempToken(data.tempToken);
+        setUserInfo(data.user);
+        setApiMessage('Password verified. Please complete 2FA verification.');
+        setApiSuccess(true);
+        return;
+      }
+
+      // No 2FA required - complete login
       setApiMessage(`${data.user.role} login successful! Redirecting to dashboard...`);
       setApiSuccess(true);
 
@@ -156,6 +191,52 @@ function SuperAdminLogin() {
     }
   };
 
+  const handle2FASuccess = (data) => {
+    setApiMessage(`${data.user.role} login successful! Redirecting to dashboard...`);
+    setApiSuccess(true);
+
+    // Store super admin token
+    localStorage.setItem('appAdminToken', data.token);
+    localStorage.setItem('appAdminUser', JSON.stringify(data.user));
+
+    // Redirect to dashboard
+    setTimeout(() => {
+      navigate('/dashboard');
+    }, 1500);
+  };
+
+  const handle2FACancel = () => {
+    setRequires2FA(false);
+    setTempToken('');
+    setUserInfo(null);
+    setApiMessage(null);
+    setApiSuccess(false);
+  };
+
+  const handle2FAError = (error) => {
+    setApiMessage(error);
+    setApiSuccess(false);
+  };
+
+  // Handle session conflict resolution
+  const handleSessionConflictResolved = () => {
+    setSessionConflict(null);
+    setShowLoginForm(true);
+  };
+
+  // Show 2FA verification if required
+  if (requires2FA) {
+    return (
+      <TwoFactorVerification
+        tempToken={tempToken}
+        userInfo={userInfo}
+        onSuccess={handle2FASuccess}
+        onCancel={handle2FACancel}
+        onError={handle2FAError}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 dark:from-gray-900 dark:via-red-900 dark:to-orange-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="w-full max-w-md space-y-8">
@@ -177,7 +258,18 @@ function SuperAdminLogin() {
           </p>
         </div>
 
-        {/* Main Form Card */}
+        {/* Session Conflict Warning */}
+        {sessionConflict && (
+          <SessionConflictWarning
+            conflictType={sessionConflict.conflictType}
+            conflictUser={sessionConflict.conflictUser}
+            targetSessionType={SESSION_TYPES.SUPER_ADMIN}
+            onLogoutComplete={handleSessionConflictResolved}
+          />
+        )}
+
+        {/* Main Form Card - Only show if no session conflict */}
+        {showLoginForm && (
         <div className="bg-white dark:bg-gray-800 shadow-2xl rounded-2xl p-8 border border-gray-100 dark:border-gray-700">
           <form className="space-y-6" onSubmit={handleSubmit}>
             {/* Role Selection */}
@@ -339,8 +431,10 @@ function SuperAdminLogin() {
             )}
           </form>
         </div>
+        )}
 
-        {/* Security Notice */}
+        {/* Security Notice - Only show if no session conflict */}
+        {showLoginForm && (
         <div className="text-center">
           <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
             <div className="flex items-center justify-center mb-2">
@@ -354,6 +448,7 @@ function SuperAdminLogin() {
             </p>
           </div>
         </div>
+        )}
       </div>
     </div>
   );

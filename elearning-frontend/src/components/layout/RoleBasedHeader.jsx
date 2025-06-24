@@ -55,13 +55,23 @@ const RoleBasedHeader = () => {
 
   const getNavigationItems = () => {
     if (isSuperAdmin) {
-      return [
-        { name: 'Dashboard', href: '/dashboard', icon: '📊' },
-        { name: 'User Management', href: '/super-admin/users', icon: '👥' },
-        { name: 'Institutions', href: '/super-admin/institutions', icon: '🏫' },
-        { name: 'System Health', href: '/super-admin/system', icon: '⚙️' },
-        { name: 'Reports', href: '/super-admin/reports', icon: '📋' }
-      ];
+      if (isSuperAdmin.role === USER_ROLES.SUPER_ADMIN) {
+        return [
+          { name: 'Dashboard', href: '/dashboard', icon: '📊' },
+          { name: 'User Management', href: '/super-admin/users', icon: '👥' },
+          { name: 'Institutions', href: '/super-admin/institutions', icon: '🏫' },
+          { name: 'System Health', href: '/super-admin/system', icon: '⚙️' },
+          { name: 'Reports', href: '/super-admin/reports', icon: '📋' }
+        ];
+      } else if (isSuperAdmin.role === USER_ROLES.SUPER_MODERATOR) {
+        return [
+          { name: 'Dashboard', href: '/dashboard', icon: '📊' },
+          { name: 'Content Moderation', href: '/super-moderator/moderation', icon: '🛡️' },
+          { name: 'User Oversight', href: '/super-moderator/users', icon: '👥' },
+          { name: 'Institution Monitoring', href: '/super-moderator/institutions', icon: '🏛️' },
+          { name: 'Reports', href: '/super-moderator/reports', icon: '📈' }
+        ];
+      }
     }
 
     if (!user) return [];
@@ -83,13 +93,23 @@ const RoleBasedHeader = () => {
           { name: 'Activities', href: '/moderator/activities', icon: '📈' },
           { name: 'Flagged Items', href: '/moderator/flagged', icon: '🚩' }
         ];
-      
+
+      case USER_ROLES.INSTRUCTOR:
+        return [
+          { name: 'Dashboard', href: '/dashboard', icon: '📊' },
+          { name: 'My Courses', href: '/instructor/courses', icon: '📚' },
+          { name: 'Students', href: '/instructor/students', icon: '🎓' },
+          { name: 'Content Creation', href: '/instructor/create', icon: '✏️' },
+          { name: 'Analytics', href: '/instructor/analytics', icon: '📈' }
+        ];
+
+      case USER_ROLES.STUDENT:
       default:
         return [
           { name: 'Dashboard', href: '/dashboard', icon: '📊' },
           { name: 'Courses', href: '/courses', icon: '📚' },
           { name: 'Quizzes', href: '/quizzes', icon: '📝' },
-          { name: 'Discussions', href: '/discussions', icon: '💬' }
+          { name: 'Progress', href: '/progress', icon: '📈' }
         ];
     }
   };
@@ -106,6 +126,10 @@ const RoleBasedHeader = () => {
         return 'Institution Admin Portal';
       case USER_ROLES.MODERATOR:
         return 'Moderator Portal';
+      case USER_ROLES.INSTRUCTOR:
+        return 'Instructor Portal';
+      case USER_ROLES.STUDENT:
+        return 'Student Portal';
       default:
         return 'E-Learning Platform';
     }
@@ -139,7 +163,13 @@ const RoleBasedHeader = () => {
             <Link to="/dashboard" className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
                 <span className="text-2xl">
-                  {isSuperAdmin ? '⚡' : user?.role === USER_ROLES.ADMIN ? '👑' : user?.role === USER_ROLES.MODERATOR ? '🛡️' : '🎓'}
+                  {isSuperAdmin
+                    ? (isSuperAdmin.role === USER_ROLES.SUPER_ADMIN ? '⚡' : '🔧')
+                    : user?.role === USER_ROLES.ADMIN ? '👑'
+                    : user?.role === USER_ROLES.MODERATOR ? '🛡️'
+                    : user?.role === USER_ROLES.INSTRUCTOR ? '👨‍🏫'
+                    : '🎓'
+                  }
                 </span>
               </div>
               <div>
@@ -248,25 +278,42 @@ const RoleBasedHeader = () => {
                     </p>
                   </div>
                   <div className="py-2">
-                    <Link
-                      to="/profile"
-                      className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                    >
-                      👤 Profile
-                    </Link>
-                    <Link
-                      to="/settings"
-                      className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                    >
-                      ⚙️ Settings
-                    </Link>
-                    {isSuperAdmin && (
-                      <Link
-                        to="/super-admin/system"
-                        className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                      >
-                        🔧 System Settings
-                      </Link>
+                    {isSuperAdmin ? (
+                      <>
+                        <Link
+                          to="/super-admin/profile"
+                          className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        >
+                          👤 My Profile
+                        </Link>
+                        <Link
+                          to="/super-admin/settings"
+                          className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        >
+                          ⚙️ Settings
+                        </Link>
+                        <Link
+                          to="/super-admin/system"
+                          className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        >
+                          🔧 System Settings
+                        </Link>
+                      </>
+                    ) : (
+                      <>
+                        <Link
+                          to="/profile"
+                          className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        >
+                          👤 Profile
+                        </Link>
+                        <Link
+                          to="/settings"
+                          className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        >
+                          ⚙️ Settings
+                        </Link>
+                      </>
                     )}
                   </div>
                   <div className="border-t border-gray-200 dark:border-gray-700 py-2">

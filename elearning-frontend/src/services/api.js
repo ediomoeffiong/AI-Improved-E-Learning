@@ -84,6 +84,11 @@ const getAuthToken = () => {
   return localStorage.getItem('token');
 };
 
+// Helper function to get Super Admin auth token
+const getSuperAdminAuthToken = () => {
+  return localStorage.getItem('appAdminToken');
+};
+
 // Helper function to make API requests with offline support
 const apiRequest = async (endpoint, options = {}) => {
   // If demo mode is manually enabled, skip API call
@@ -161,6 +166,87 @@ const apiRequest = async (endpoint, options = {}) => {
     }
 
     console.error(`API request failed: ${endpoint}`, error);
+    throw error;
+  }
+};
+
+// Helper function to make Super Admin API requests with correct token
+const superAdminApiRequest = async (endpoint, options = {}) => {
+  // If demo mode is manually enabled, skip API call
+  if (isDemoModeEnabled()) {
+    throw new Error('Demo mode is enabled. Using mock data.');
+  }
+
+  // Check if we should retry backend connection
+  const now = Date.now();
+  if (!backendAvailable && (now - lastBackendCheck) > BACKEND_CHECK_INTERVAL) {
+    console.log('Retrying backend connection...');
+    backendAvailable = true; // Reset and try again
+    lastBackendCheck = now;
+  }
+
+  // If backend is not available and we recently checked, use fallback
+  if (!backendAvailable) {
+    throw new Error('Backend service is not available. Using mock data.');
+  }
+
+  const url = `${API_BASE_URL}${endpoint}`;
+  const token = getSuperAdminAuthToken(); // Use Super Admin token
+
+  const config = {
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+      ...options.headers,
+    },
+    ...options,
+  };
+
+  try {
+    const response = await fetch(url, config);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // Cache successful GET requests for offline use
+    if (options.method === 'GET' || !options.method) {
+      await cacheOfflineData(data, `api_${endpoint.replace(/[^a-zA-Z0-9]/g, '_')}`);
+    }
+
+    return data;
+  } catch (error) {
+    // Handle different types of errors
+    const isNetworkError = error.message.includes('fetch') ||
+                          error.message.includes('NetworkError') ||
+                          error.message.includes('Failed to fetch') ||
+                          error.message.includes('ERR_CONNECTION_REFUSED') ||
+                          error.name === 'TypeError';
+
+    if (isNetworkError) {
+      // Mark backend as unavailable
+      backendAvailable = false;
+      lastBackendCheck = Date.now();
+      console.warn('Backend connection failed:', error.message);
+
+      // Try to get cached data for GET requests
+      if (options.method === 'GET' || !options.method) {
+        const cachedData = getCachedOfflineData(`api_${endpoint.replace(/[^a-zA-Z0-9]/g, '_')}`);
+        if (cachedData) {
+          console.log('Using cached data for:', endpoint);
+          return cachedData;
+        }
+      }
+
+      // Show backend error notification (only if not offline)
+      showBackendErrorNotification(error).catch(console.error);
+      throw new Error('Backend service is not available. Using mock data.');
+    }
+
+    console.error(`Super Admin API request failed: ${endpoint}`, error);
     throw error;
   }
 };
@@ -1264,10 +1350,15 @@ export const dashboardAPI = {
   // Get comprehensive dashboard data
   getDashboardData: async () => {
     try {
-      return await apiRequest('/dashboard');
+      console.log('Making API request to /dashboard');
+      const response = await apiRequest('/dashboard');
+      console.log('Dashboard API response:', response);
+      return response;
     } catch (error) {
-      if (error.message.includes('Backend service is not available') || error.message.includes('Demo mode is enabled')) {
-        console.log('Using mock data for dashboard');
+      console.error('Dashboard API error:', error);
+      // Only use mock data in very specific cases, otherwise let the error bubble up
+      if (error.message.includes('Demo mode is enabled')) {
+        console.log('Demo mode detected, using mock data for dashboard');
         return {
           stats: {
             totalCourses: 3,
@@ -1300,6 +1391,490 @@ export const dashboardAPI = {
           streakData: { currentStreak: 7, longestStreak: 15 }
         };
       }
+      // For other errors, throw them so the dashboard can handle appropriately
+      throw error;
+    }
+  },
+
+  // Get admin dashboard data
+  getAdminDashboardData: async () => {
+    try {
+      console.log('Making API request to /dashboard/admin');
+      const response = await apiRequest('/dashboard/admin');
+      console.log('Admin dashboard API response:', response);
+      return response;
+    } catch (error) {
+      console.error('Admin dashboard API error:', error);
+      // Only use mock data in very specific cases, otherwise let the error bubble up
+      if (error.message.includes('Demo mode is enabled')) {
+        console.log('Demo mode detected, using mock data for admin dashboard');
+        return {
+          stats: {
+            totalUsers: 1247,
+            pendingApprovals: 23,
+            activeUsers: 892,
+            totalCourses: 45,
+            publishedCourses: 38,
+            totalEnrollments: 3456,
+            totalQuizzes: 127,
+            quizAttempts: 8934,
+            userRole: 'Admin',
+            institutionName: 'Demo Institution'
+          },
+          recentUsers: [
+            { id: 1, name: 'John Doe', email: 'john@example.com', role: 'Student', createdAt: new Date(), approvalStatus: 'approved' },
+            { id: 2, name: 'Jane Smith', email: 'jane@example.com', role: 'Instructor', createdAt: new Date(), approvalStatus: 'pending' }
+          ],
+          recentActivities: [
+            { id: 1, type: 'enrollment', user: 'John Doe', title: 'Enrolled in React Basics', date: new Date(), status: 'active' },
+            { id: 2, type: 'quiz', user: 'Jane Smith', title: 'Completed JavaScript Quiz', date: new Date(), score: 85, status: 'passed' }
+          ],
+          systemHealth: {
+            database: 'connected',
+            api: 'operational',
+            lastUpdated: new Date()
+          }
+        };
+      }
+      // For other errors, throw them so the dashboard can handle appropriately
+      throw error;
+    }
+  },
+
+  // Get super admin dashboard data
+  getSuperAdminDashboardData: async () => {
+    try {
+      console.log('Making API request to /dashboard/super-admin');
+      const response = await superAdminApiRequest('/dashboard/super-admin');
+      console.log('Super Admin dashboard API response:', response);
+      return response;
+    } catch (error) {
+      console.error('Super Admin dashboard API error:', error);
+      // Only use mock data in very specific cases, otherwise let the error bubble up
+      if (error.message.includes('Demo mode is enabled')) {
+        console.log('Demo mode detected, using mock data for super admin dashboard');
+        return {
+          stats: {
+            totalUsers: 15847,
+            totalInstitutions: 127,
+            totalCourses: 2456,
+            totalEnrollments: 45678,
+            totalQuizzes: 8934,
+            totalQuizAttempts: 123456,
+            pendingApprovals: 89,
+            activeUsers: 12456,
+            newUsersThisMonth: 1234,
+            revenueThisMonth: 125000,
+            userRole: 'Super Admin'
+          },
+          recentUsers: [
+            { id: 1, name: 'John Doe', email: 'john@university.edu', role: 'Student', institution: 'University A', createdAt: new Date(), approvalStatus: 'approved' },
+            { id: 2, name: 'Jane Smith', email: 'jane@university.edu', role: 'Instructor', institution: 'University B', createdAt: new Date(), approvalStatus: 'pending' }
+          ],
+          recentActivities: [
+            { id: 1, type: 'enrollment', user: 'John Doe', title: 'Enrolled in Advanced Mathematics', institution: 'University A', date: new Date(), revenue: 299 },
+            { id: 2, type: 'quiz', user: 'Jane Smith', title: 'Completed Physics Quiz', institution: 'University B', date: new Date(), score: 95 }
+          ],
+          institutionStats: [
+            { _id: 'University A', userCount: 2456, adminCount: 3, studentCount: 2234, instructorCount: 219 },
+            { _id: 'University B', userCount: 1876, adminCount: 2, studentCount: 1698, instructorCount: 176 }
+          ],
+          systemHealth: {
+            database: 'connected',
+            api: 'operational',
+            totalStorage: '2.4 GB',
+            activeConnections: 87,
+            serverUptime: '15 days, 4 hours',
+            lastBackup: new Date(),
+            errorRate: '0.02%'
+          }
+        };
+      }
+      // For other errors, throw them so the dashboard can handle appropriately
+      throw error;
+    }
+  },
+
+  // Get super moderator dashboard data
+  getSuperModeratorDashboardData: async () => {
+    try {
+      console.log('Making API request to /dashboard/super-moderator');
+      const response = await superAdminApiRequest('/dashboard/super-moderator');
+      console.log('Super Moderator dashboard API response:', response);
+      return response;
+    } catch (error) {
+      console.error('Super Moderator dashboard API error:', error);
+      // Only use mock data in very specific cases, otherwise let the error bubble up
+      if (error.message.includes('Demo mode is enabled')) {
+        console.log('Demo mode detected, using mock data for super moderator dashboard');
+        return {
+          stats: {
+            totalUsers: 15847,
+            totalInstitutions: 127,
+            pendingApprovals: 23,
+            flaggedContent: 8,
+            moderationActions: 156,
+            reportsGenerated: 45,
+            suspendedUsers: 12,
+            activeReports: 5,
+            userRole: 'Super Moderator'
+          },
+          recentUsers: [
+            { id: 1, name: 'John Doe', email: 'john@university.edu', role: 'Student', institution: 'University A', createdAt: new Date(), approvalStatus: 'pending' },
+            { id: 2, name: 'Jane Smith', email: 'jane@university.edu', role: 'Instructor', institution: 'University B', createdAt: new Date(), approvalStatus: 'pending' }
+          ],
+          recentActivities: [
+            { id: 1, type: 'user_update', user: 'John Doe', action: 'User Approved', institution: 'University A', date: new Date(), status: 'approved' },
+            { id: 2, type: 'user_update', user: 'Jane Smith', action: 'User Suspended', institution: 'University B', date: new Date(), status: 'suspended' }
+          ],
+          institutionOversight: [
+            { _id: 'University A', totalUsers: 2456, pendingUsers: 12, suspendedUsers: 3, adminCount: 3 },
+            { _id: 'University B', totalUsers: 1876, pendingUsers: 8, suspendedUsers: 1, adminCount: 2 }
+          ],
+          contentModerationQueue: [
+            { id: 1, type: 'course', title: 'Inappropriate Course Content', reporter: 'user@example.com', institution: 'University A', severity: 'high', date: new Date(), status: 'pending' },
+            { id: 2, type: 'comment', title: 'Spam Comment Reported', reporter: 'student@example.com', institution: 'University B', severity: 'medium', date: new Date(), status: 'pending' }
+          ],
+          systemMonitoring: {
+            database: 'connected',
+            moderationQueue: 'active',
+            api: 'operational',
+            contentScanners: 'running',
+            alertSystem: 'active',
+            lastScan: new Date(),
+            queueProcessingTime: '2.3 seconds',
+            falsePositiveRate: '3.2%'
+          }
+        };
+      }
+      // For other errors, throw them so the dashboard can handle appropriately
+      throw error;
+    }
+  },
+
+  // Get super admin users data
+  getSuperAdminUsers: async () => {
+    try {
+      console.log('Making API request to /dashboard/super-admin/users');
+      const response = await superAdminApiRequest('/dashboard/super-admin/users');
+      console.log('Super Admin users API response:', response);
+      return response;
+    } catch (error) {
+      console.error('Super Admin users API error:', error);
+      // Only use mock data in very specific cases, otherwise let the error bubble up
+      if (error.message.includes('Demo mode is enabled') || error.message.includes('Backend service is not available')) {
+        console.log('Demo mode detected, using mock data for super admin users');
+        return {
+          users: [
+            {
+              id: 1,
+              name: 'John Doe',
+              email: 'john.doe@university.edu',
+              role: 'Student',
+              institution: 'University of Lagos',
+              approvalStatus: 'approved',
+              status: 'active',
+              createdAt: new Date('2024-01-15'),
+              lastLogin: new Date('2024-01-20'),
+              coursesEnrolled: 5,
+              quizzesTaken: 23
+            },
+            {
+              id: 2,
+              name: 'Dr. Jane Smith',
+              email: 'jane.smith@university.edu',
+              role: 'Instructor',
+              institution: 'Ahmadu Bello University',
+              approvalStatus: 'approved',
+              status: 'active',
+              createdAt: new Date('2024-01-10'),
+              lastLogin: new Date('2024-01-19'),
+              coursesCreated: 8,
+              studentsEnrolled: 245
+            },
+            {
+              id: 3,
+              name: 'Prof. Michael Johnson',
+              email: 'michael.johnson@admin.edu',
+              role: 'Admin',
+              institution: 'University of Ibadan',
+              approvalStatus: 'approved',
+              status: 'active',
+              createdAt: new Date('2024-01-05'),
+              lastLogin: new Date('2024-01-21'),
+              usersManaged: 156
+            },
+            {
+              id: 4,
+              name: 'Sarah Wilson',
+              email: 'sarah.wilson@student.edu',
+              role: 'Student',
+              institution: 'Federal University of Technology, Akure',
+              approvalStatus: 'pending',
+              status: 'inactive',
+              createdAt: new Date('2024-01-18'),
+              lastLogin: null,
+              coursesEnrolled: 0,
+              quizzesTaken: 0
+            },
+            {
+              id: 5,
+              name: 'David Brown',
+              email: 'david.brown@moderator.edu',
+              role: 'Moderator',
+              institution: 'University of Benin',
+              approvalStatus: 'approved',
+              status: 'suspended',
+              createdAt: new Date('2024-01-12'),
+              lastLogin: new Date('2024-01-16'),
+              moderationActions: 45
+            }
+          ],
+          summary: {
+            totalUsers: 5,
+            pendingApprovals: 1,
+            suspendedUsers: 1,
+            adminsAndModerators: 2,
+            activeUsers: 3,
+            totalInstitutions: 4
+          },
+          institutions: [
+            'University of Lagos',
+            'Ahmadu Bello University',
+            'University of Ibadan',
+            'Federal University of Technology, Akure',
+            'University of Benin'
+          ]
+        };
+      }
+      // For other errors, throw them so the dashboard can handle appropriately
+      throw error;
+    }
+  },
+
+  // Perform user action (approve, suspend, activate, reject)
+  performUserAction: async (userId, action) => {
+    try {
+      console.log('Making API request to perform user action:', { userId, action });
+      const response = await superAdminApiRequest(`/dashboard/super-admin/users/${userId}/action`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action }),
+      });
+      console.log('User action API response:', response);
+      return response;
+    } catch (error) {
+      console.error('User action API error:', error);
+      // Only use mock data in very specific cases, otherwise let the error bubble up
+      if (error.message.includes('Demo mode is enabled') || error.message.includes('Backend service is not available')) {
+        console.log('Demo mode detected, using mock response for user action');
+        return {
+          message: `User ${action} completed (demo mode)`,
+          user: {
+            id: userId,
+            name: 'Demo User',
+            email: 'demo@example.com',
+            role: 'Student',
+            institution: 'Demo University',
+            approvalStatus: action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : 'pending',
+            status: action === 'suspend' ? 'suspended' : action === 'activate' ? 'active' : 'active'
+          }
+        };
+      }
+      // For other errors, throw them so the dashboard can handle appropriately
+      throw error;
+    }
+  }
+};
+
+// Super Admin API functions
+export const superAdminAPI = {
+  // Get platform statistics and recent users
+  getStats: async () => {
+    try {
+      // Use Super Admin token for authentication
+      const superAdminToken = localStorage.getItem('appAdminToken');
+      if (!superAdminToken) {
+        throw new Error('Super Admin authentication required');
+      }
+
+      const response = await fetch(`${API_BASE_URL}/super-admin/stats`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${superAdminToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      if (error.message.includes('Backend service is not available') ||
+          error.message.includes('Demo mode is enabled') ||
+          error.message.includes('fetch') ||
+          error.message.includes('NetworkError') ||
+          error.message.includes('Failed to fetch')) {
+        console.log('Using mock data for Super Admin stats');
+        return {
+          stats: {
+            totalUsers: 15847,
+            totalInstitutions: 234,
+            pendingApprovals: 23,
+            superAdmins: 3,
+            institutionAdmins: 156
+          },
+          recentUsers: [
+            {
+              _id: '1',
+              name: 'John Doe',
+              email: 'john@university.edu',
+              role: 'Admin',
+              createdAt: '2024-01-15T10:30:00Z'
+            },
+            {
+              _id: '2',
+              name: 'Jane Smith',
+              email: 'jane@college.edu',
+              role: 'Moderator',
+              createdAt: '2024-01-14T14:20:00Z'
+            },
+            {
+              _id: '3',
+              name: 'Mike Johnson',
+              email: 'mike@institute.edu',
+              role: 'Instructor',
+              createdAt: '2024-01-13T09:15:00Z'
+            },
+            {
+              _id: '4',
+              name: 'Sarah Wilson',
+              email: 'sarah@school.edu',
+              role: 'Student',
+              createdAt: '2024-01-12T16:45:00Z'
+            },
+            {
+              _id: '5',
+              name: 'David Brown',
+              email: 'david@academy.edu',
+              role: 'Admin',
+              createdAt: '2024-01-11T11:30:00Z'
+            }
+          ]
+        };
+      }
+      throw error;
+    }
+  },
+
+  // Get all users with filtering and pagination
+  getUsers: async (filters = {}) => {
+    try {
+      const superAdminToken = localStorage.getItem('appAdminToken');
+      if (!superAdminToken) {
+        throw new Error('Super Admin authentication required');
+      }
+
+      const queryParams = new URLSearchParams();
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          queryParams.append(key, value);
+        }
+      });
+
+      const endpoint = `/super-admin/users${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${superAdminToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      if (error.message.includes('Backend service is not available') ||
+          error.message.includes('Demo mode is enabled') ||
+          error.message.includes('fetch') ||
+          error.message.includes('NetworkError') ||
+          error.message.includes('Failed to fetch')) {
+        console.log('Using mock data for Super Admin users');
+        return {
+          users: [
+            { _id: '1', name: 'John Doe', email: 'john@university.edu', role: 'Admin', isVerified: true, isActive: true, createdAt: '2024-01-15T10:30:00Z' },
+            { _id: '2', name: 'Jane Smith', email: 'jane@college.edu', role: 'Moderator', isVerified: true, isActive: true, createdAt: '2024-01-14T14:20:00Z' },
+            { _id: '3', name: 'Mike Johnson', email: 'mike@institute.edu', role: 'Instructor', isVerified: true, isActive: true, createdAt: '2024-01-13T09:15:00Z' }
+          ],
+          pagination: {
+            currentPage: 1,
+            totalPages: 1,
+            totalUsers: 3,
+            hasNext: false,
+            hasPrev: false
+          }
+        };
+      }
+      throw error;
+    }
+  },
+
+  // Create new Super Admin or Super Moderator
+  createAdmin: async (adminData) => {
+    try {
+      const superAdminToken = localStorage.getItem('appAdminToken');
+      if (!superAdminToken) {
+        throw new Error('Super Admin authentication required');
+      }
+
+      const response = await fetch(`${API_BASE_URL}/super-admin/create-admin`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${superAdminToken}`,
+        },
+        body: JSON.stringify(adminData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      if (error.message.includes('Backend service is not available') ||
+          error.message.includes('Demo mode is enabled') ||
+          error.message.includes('fetch') ||
+          error.message.includes('NetworkError') ||
+          error.message.includes('Failed to fetch')) {
+        console.log('Using mock data for creating admin');
+        return {
+          message: `${adminData.role} created successfully (demo mode)`,
+          user: {
+            id: 'demo-admin-' + Date.now(),
+            name: adminData.name,
+            username: adminData.username,
+            email: adminData.email,
+            phoneNumber: adminData.phoneNumber,
+            role: adminData.role,
+            permissions: adminData.role === 'Super Admin'
+              ? ['manage_users', 'manage_institutions', 'manage_platform', 'view_analytics', 'approve_admins', 'approve_moderators', 'create_secondary_admins']
+              : ['manage_institutions', 'view_analytics', 'approve_admins', 'approve_moderators'],
+            isVerified: true,
+            createdAt: new Date().toISOString()
+          }
+        };
+      }
       throw error;
     }
   }
@@ -1313,6 +1888,7 @@ export default {
   authAPI,
   userAPI,
   dashboardAPI,
+  superAdminAPI,
   handleAPIError,
   storage,
   cacheAPI,

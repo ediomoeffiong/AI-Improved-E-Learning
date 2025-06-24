@@ -26,55 +26,71 @@ function Dashboard() {
 
       try {
         setLoading(true);
+        console.log('Fetching dashboard data...');
         const data = await dashboardAPI.getDashboardData();
-        setDashboardData(data);
+        console.log('Dashboard data received:', data);
 
-        // Update gamification context with real streak data
-        if (data.streakData && updateUserStats) {
-          updateUserStats(prevStats => ({
-            ...prevStats,
-            currentStreak: data.streakData.currentStreak,
-            longestStreak: data.streakData.longestStreak,
-            lastActivityDate: new Date().toISOString().split('T')[0]
-          }));
+        // Check if we received real data or mock data
+        const isRealData = data && (
+          (data.stats && typeof data.stats.totalCourses === 'number') ||
+          (data.courseProgress && Array.isArray(data.courseProgress)) ||
+          (data.recentActivities && Array.isArray(data.recentActivities))
+        );
+
+        if (isRealData) {
+          console.log('Using real dashboard data');
+          setDashboardData(data);
+
+          // Check if backend returned an error message
+          if (data.error) {
+            setError(data.error);
+          } else {
+            setError(null);
+          }
+
+          // Update gamification context with real streak data
+          if (data.streakData && updateUserStats) {
+            updateUserStats(prevStats => ({
+              ...prevStats,
+              currentStreak: data.streakData.currentStreak || 0,
+              longestStreak: data.streakData.longestStreak || 0,
+              lastActivityDate: new Date().toISOString().split('T')[0]
+            }));
+          }
+        } else {
+          console.log('Received empty or invalid data, using fallback');
+          throw new Error('Invalid data received from server');
         }
-
-        setError(null);
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
-        setError('Failed to load dashboard data');
+        setError('Unable to load real-time data. Showing demo data.');
 
-        // Fallback to mock data
-        setDashboardData({
+        // Enhanced fallback with more realistic demo data
+        const demoData = {
           stats: {
-            totalCourses: 3,
-            completedCourses: 1,
-            inProgressCourses: 2,
-            averageProgress: 70,
-            totalQuizzes: 5,
-            averageQuizScore: 85,
-            totalAssessments: 2,
-            averageAssessmentScore: 78,
-            totalTimeSpent: 240,
-            currentStreak: 7,
-            longestStreak: 15,
-            activeDaysThisWeek: 5,
-            totalActivities: 12
+            totalCourses: 0,
+            completedCourses: 0,
+            inProgressCourses: 0,
+            averageProgress: 0,
+            totalQuizzes: 0,
+            averageQuizScore: 0,
+            totalAssessments: 0,
+            averageAssessmentScore: 0,
+            totalTimeSpent: 0,
+            currentStreak: 0,
+            longestStreak: 0,
+            activeDaysThisWeek: 0,
+            totalActivities: 0
           },
-          courseProgress: [
-            { id: 1, name: 'Introduction to React', instructor: 'John Doe', progress: 75, status: 'in-progress', lastAccessed: new Date(), category: 'Programming' },
-            { id: 2, name: 'Advanced JavaScript', instructor: 'Jane Smith', progress: 45, status: 'in-progress', lastAccessed: new Date(), category: 'Programming' },
-            { id: 3, name: 'UI/UX Design Principles', instructor: 'Mike Johnson', progress: 100, status: 'completed', lastAccessed: new Date(), category: 'Design' }
-          ],
-          recentActivities: [
-            { id: 1, type: 'quiz', title: 'JavaScript Fundamentals', score: 85, status: 'Passed', date: new Date(), timeSpent: 15 },
-            { id: 2, type: 'course', title: 'React Basics', progress: 75, status: 'in-progress', date: new Date(), timeSpent: 45 },
-            { id: 3, type: 'assessment', title: 'Web Development Assessment', score: 78, status: 'Passed', date: new Date(), timeSpent: 30 }
-          ],
-          upcomingEvents: [
-            { id: 1, title: 'Complete React Course', type: 'course_deadline', date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), priority: 'high' }
-          ]
-        });
+          courseProgress: [],
+          recentActivities: [],
+          upcomingEvents: [],
+          streakData: { currentStreak: 0, longestStreak: 0 },
+          weeklyActivity: []
+        };
+
+        console.log('Using empty data structure for new user');
+        setDashboardData(demoData);
       } finally {
         setLoading(false);
       }
@@ -116,11 +132,29 @@ function Dashboard() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Dashboard</h1>
+        <div>
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Dashboard</h1>
+          {error && (
+            <div className="mt-2 flex items-center space-x-2 text-sm">
+              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+              <span className="text-yellow-600 dark:text-yellow-400">{error}</span>
+            </div>
+          )}
+        </div>
         <div className="flex space-x-4">
-          <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-            Start Learning
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center space-x-2"
+            title="Refresh dashboard data"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            <span>Refresh</span>
           </button>
+          <Link to="/courses/available" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+            Start Learning
+          </Link>
         </div>
       </div>
 
@@ -230,7 +264,10 @@ function Dashboard() {
             <div>
               <h3 className="text-lg font-semibold mb-1">Learning Stats</h3>
               <p className="text-orange-100 text-sm">
-                {dashboardData?.stats?.inProgressCourses || 0} courses in progress
+                {dashboardData?.stats?.totalCourses > 0
+                  ? `${dashboardData.stats.inProgressCourses || 0} of ${dashboardData.stats.totalCourses} courses in progress`
+                  : 'No courses enrolled yet'
+                }
               </p>
             </div>
             <div className="bg-white/20 rounded-lg p-2">
@@ -243,8 +280,15 @@ function Dashboard() {
             <span className="text-2xl font-bold">{dashboardData?.stats?.averageProgress || 0}%</span>
             <span className="text-orange-100 text-sm ml-1">avg progress</span>
           </div>
-          <div className="mt-2 text-xs text-orange-100">
-            🔥 {dashboardData?.stats?.currentStreak || 0} day streak
+          <div className="mt-2 flex items-center justify-between">
+            <div className="text-xs text-orange-100">
+              🔥 {dashboardData?.stats?.currentStreak || 0} day streak
+            </div>
+            {dashboardData?.stats?.totalQuizzes > 0 && (
+              <div className="text-xs text-orange-100">
+                📝 {dashboardData.stats.totalQuizzes} quizzes taken
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -316,11 +360,22 @@ function Dashboard() {
                     </div>
                   ))
                 ) : (
-                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                    <p>No courses enrolled yet.</p>
-                    <Link to="/courses/available" className="text-blue-600 hover:text-blue-800 dark:text-blue-400 text-sm font-medium mt-2 inline-block">
-                      Browse available courses →
-                    </Link>
+                  <div className="text-center py-8">
+                    <div className="mb-4">
+                      <svg className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Start Your Learning Journey</h3>
+                    <p className="text-gray-500 dark:text-gray-400 mb-4">You haven't enrolled in any courses yet. Explore our course catalog to begin learning!</p>
+                    <div className="space-y-2">
+                      <Link to="/courses/available" className="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                        Browse Courses
+                      </Link>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                        or <Link to="/quiz/dashboard" className="text-blue-600 hover:text-blue-800 dark:text-blue-400 font-medium">try a quiz</Link> to test your knowledge
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -374,9 +429,14 @@ function Dashboard() {
                       </div>
                     ))
                   ) : (
-                    <div className="text-center py-4 text-gray-500 dark:text-gray-400">
-                      <p>No recent activities.</p>
-                      <p className="text-sm mt-1">Start learning to see your progress here!</p>
+                    <div className="text-center py-6">
+                      <div className="mb-3">
+                        <svg className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                      </div>
+                      <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-1">No Activities Yet</h4>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Your learning activities will appear here as you progress through courses and quizzes.</p>
                     </div>
                   )}
                 </div>

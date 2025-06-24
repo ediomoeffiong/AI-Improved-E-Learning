@@ -5,6 +5,7 @@ const User = require('../models/User');
 const Institution = require('../models/Institution');
 const UserApproval = require('../models/UserApproval');
 const InstitutionMembership = require('../models/InstitutionMembership');
+const { loginRateLimit, twoFactorRateLimit } = require('../middleware/rateLimiter');
 
 const router = express.Router();
 
@@ -271,24 +272,45 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    const token = jwt.sign(
-      { userId: user._id, role: user.role },
-      process.env.JWT_SECRET || 'fallback-secret',
-      { expiresIn: '1d' }
-    );
+    // Check if 2FA is enabled for this user
+    const requires2FA = user.twoFactorAuth && user.twoFactorAuth.enabled;
 
-    res.json({
-      message: 'Login successful',
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        username: user.username,
-        email: user.email,
-        phoneNumber: user.phoneNumber,
-        role: user.role
+    if (requires2FA) {
+      // Check if account is locked due to failed 2FA attempts
+      if (user.is2FALocked()) {
+        const lockTimeRemaining = Math.ceil((user.twoFactorAuth.lockedUntil - Date.now()) / 60000);
+        return res.status(423).json({
+          message: `Account locked due to failed 2FA attempts. Try again in ${lockTimeRemaining} minutes.`
+        });
       }
-    });
+
+      // Return partial success - password verified, now need 2FA
+      const tempToken = jwt.sign(
+        {
+          userId: user._id,
+          role: user.role,
+          step: 'password_verified',
+          requires2FA: true
+        },
+        process.env.JWT_SECRET || 'fallback-secret',
+        { expiresIn: '10m' } // Short-lived token for 2FA step
+      );
+
+      return res.json({
+        message: 'Password verified. 2FA verification required.',
+        requires2FA: true,
+        tempToken,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role
+        }
+      });
+    }
+
+    // No 2FA required or not enabled - complete login
+    await completeRegularLogin(user, res);
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ message: err.message });
@@ -296,7 +318,7 @@ router.post('/login', async (req, res) => {
 });
 
 // App Admin Login (Super Admin/Super Moderator)
-router.post('/app-admin-login', async (req, res) => {
+router.post('/app-admin-login', loginRateLimit, async (req, res) => {
   try {
     const { email, password, role } = req.body;
 
@@ -349,40 +371,256 @@ router.post('/app-admin-login', async (req, res) => {
       return res.status(403).json({ message: 'Access denied: insufficient privileges' });
     }
 
-    // Update last login
-    if (isMongoConnected() && user._id) {
-      await User.findByIdAndUpdate(user._id, { lastLogin: new Date() });
+    // Check if 2FA is enabled for this user
+    const requires2FA = user.twoFactorAuth && user.twoFactorAuth.enabled;
+
+    if (requires2FA) {
+      // Check if account is locked due to failed 2FA attempts
+      if (user.is2FALocked()) {
+        const lockTimeRemaining = Math.ceil((user.twoFactorAuth.lockedUntil - Date.now()) / 60000);
+        return res.status(423).json({
+          message: `Account locked due to failed 2FA attempts. Try again in ${lockTimeRemaining} minutes.`
+        });
+      }
+
+      // Return partial success - password verified, now need 2FA
+      const tempToken = jwt.sign(
+        {
+          userId: user._id,
+          role: user.role,
+          step: 'password_verified',
+          requires2FA: true
+        },
+        process.env.JWT_SECRET || 'fallback-secret',
+        { expiresIn: '10m' } // Short-lived token for 2FA step
+      );
+
+      return res.json({
+        message: 'Password verified. 2FA verification required.',
+        requires2FA: true,
+        tempToken,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role
+        }
+      });
     }
 
-    const token = jwt.sign(
-      {
-        userId: user._id,
-        role: user.role,
-        isSuperAdmin: user.role === 'Super Admin',
-        permissions: user.permissions || []
-      },
-      process.env.JWT_SECRET || 'fallback-secret',
-      { expiresIn: '1d' }
-    );
-
-    res.json({
-      message: 'App Admin login successful',
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        username: user.username,
-        email: user.email,
-        phoneNumber: user.phoneNumber,
-        role: user.role,
-        permissions: user.permissions || [],
-        isSuperAdmin: user.role === 'Super Admin',
-        lastLogin: user.lastLogin
-      }
-    });
+    // No 2FA required or not enabled - complete login
+    await completeLogin(user, res);
   } catch (err) {
     console.error('App Admin login error:', err);
     res.status(500).json({ message: err.message });
+  }
+});
+
+// Complete regular user login helper function
+async function completeRegularLogin(user, res) {
+  // Update last login
+  if (isMongoConnected() && user._id) {
+    await User.findByIdAndUpdate(user._id, { lastLogin: new Date() });
+  }
+
+  const token = jwt.sign(
+    {
+      userId: user._id,
+      role: user.role,
+      permissions: user.permissions || [],
+      twoFactorVerified: user.twoFactorAuth?.enabled || false
+    },
+    process.env.JWT_SECRET || 'fallback-secret',
+    { expiresIn: '1d' }
+  );
+
+  res.json({
+    message: 'Login successful',
+    token,
+    user: {
+      id: user._id,
+      name: user.name,
+      username: user.username,
+      email: user.email,
+      phoneNumber: user.phoneNumber,
+      role: user.role,
+      permissions: user.permissions || [],
+      lastLogin: user.lastLogin,
+      twoFactorEnabled: user.twoFactorAuth?.enabled || false
+    }
+  });
+}
+
+// Complete login helper function
+async function completeLogin(user, res) {
+  // Update last login
+  if (isMongoConnected() && user._id) {
+    await User.findByIdAndUpdate(user._id, { lastLogin: new Date() });
+  }
+
+  const token = jwt.sign(
+    {
+      userId: user._id,
+      role: user.role,
+      isSuperAdmin: user.role === 'Super Admin',
+      permissions: user.permissions || [],
+      twoFactorVerified: user.twoFactorAuth?.enabled || false
+    },
+    process.env.JWT_SECRET || 'fallback-secret',
+    { expiresIn: '1d' }
+  );
+
+  res.json({
+    message: `${user.role} login successful`,
+    token,
+    user: {
+      id: user._id,
+      name: user.name,
+      username: user.username,
+      email: user.email,
+      phoneNumber: user.phoneNumber,
+      role: user.role,
+      permissions: user.permissions || [],
+      isSuperAdmin: user.role === 'Super Admin',
+      lastLogin: user.lastLogin,
+      twoFactorEnabled: user.twoFactorAuth?.enabled || false
+    }
+  });
+}
+
+// Verify 2FA and complete login
+router.post('/app-admin-verify-2fa', twoFactorRateLimit, async (req, res) => {
+  try {
+    const { tempToken, token, isBackupCode = false } = req.body;
+
+    if (!tempToken || !token) {
+      return res.status(400).json({ message: 'Temporary token and 2FA token are required' });
+    }
+
+    // Verify temporary token
+    const decoded = jwt.verify(tempToken, process.env.JWT_SECRET || 'fallback-secret');
+
+    if (decoded.step !== 'password_verified' || !decoded.requires2FA) {
+      return res.status(400).json({ message: 'Invalid temporary token' });
+    }
+
+    if (!isMongoConnected()) {
+      return res.status(503).json({ message: 'Database not available' });
+    }
+
+    const user = await User.findById(decoded.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check if account is locked
+    if (user.is2FALocked()) {
+      const lockTimeRemaining = Math.ceil((user.twoFactorAuth.lockedUntil - Date.now()) / 60000);
+      return res.status(423).json({
+        message: `Account locked due to too many failed attempts. Try again in ${lockTimeRemaining} minutes.`
+      });
+    }
+
+    let verified = false;
+
+    if (isBackupCode) {
+      // Verify backup code
+      verified = await user.useBackupCode(token.toUpperCase());
+    } else {
+      // Verify TOTP token
+      const speakeasy = require('speakeasy');
+      verified = speakeasy.totp.verify({
+        secret: user.twoFactorAuth.secret,
+        encoding: 'base32',
+        token: token,
+        window: 2
+      });
+    }
+
+    if (verified) {
+      await user.reset2FAFailedAttempts();
+      await completeLogin(user, res);
+    } else {
+      await user.increment2FAFailedAttempts();
+      res.status(400).json({
+        message: 'Invalid 2FA token',
+        attemptsRemaining: Math.max(0, 5 - user.twoFactorAuth.failedAttempts)
+      });
+    }
+  } catch (err) {
+    console.error('2FA verification error:', err);
+    if (err.name === 'JsonWebTokenError') {
+      return res.status(400).json({ message: 'Invalid temporary token' });
+    }
+    res.status(500).json({ message: 'Error verifying 2FA' });
+  }
+});
+
+// Verify 2FA for regular user login
+router.post('/verify-2fa', twoFactorRateLimit, async (req, res) => {
+  try {
+    const { tempToken, token, isBackupCode = false } = req.body;
+
+    if (!tempToken || !token) {
+      return res.status(400).json({ message: 'Temporary token and 2FA token are required' });
+    }
+
+    // Verify temporary token
+    const decoded = jwt.verify(tempToken, process.env.JWT_SECRET || 'fallback-secret');
+
+    if (decoded.step !== 'password_verified' || !decoded.requires2FA) {
+      return res.status(400).json({ message: 'Invalid temporary token' });
+    }
+
+    if (!isMongoConnected()) {
+      return res.status(503).json({ message: 'Database not available' });
+    }
+
+    const user = await User.findById(decoded.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check if account is locked
+    if (user.is2FALocked()) {
+      const lockTimeRemaining = Math.ceil((user.twoFactorAuth.lockedUntil - Date.now()) / 60000);
+      return res.status(423).json({
+        message: `Account locked due to too many failed attempts. Try again in ${lockTimeRemaining} minutes.`
+      });
+    }
+
+    let verified = false;
+
+    if (isBackupCode) {
+      // Verify backup code
+      verified = await user.useBackupCode(token.toUpperCase());
+    } else {
+      // Verify TOTP token
+      const speakeasy = require('speakeasy');
+      verified = speakeasy.totp.verify({
+        secret: user.twoFactorAuth.secret,
+        encoding: 'base32',
+        token: token,
+        window: 2
+      });
+    }
+
+    if (verified) {
+      await user.reset2FAFailedAttempts();
+      await completeRegularLogin(user, res);
+    } else {
+      await user.increment2FAFailedAttempts();
+      res.status(400).json({
+        message: 'Invalid 2FA token',
+        attemptsRemaining: Math.max(0, 5 - user.twoFactorAuth.failedAttempts)
+      });
+    }
+  } catch (err) {
+    console.error('2FA verification error:', err);
+    if (err.name === 'JsonWebTokenError') {
+      return res.status(400).json({ message: 'Invalid temporary token' });
+    }
+    res.status(500).json({ message: 'Error verifying 2FA' });
   }
 });
 

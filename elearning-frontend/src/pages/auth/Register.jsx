@@ -4,6 +4,11 @@ import { authAPI } from '../../services/api';
 import { ROLE_OPTIONS, DEFAULT_ROLE, ROLE_ICONS } from '../../constants/roles';
 import { isOnline } from '../../utils/pwa';
 import PhoneNumberInput from '../../components/PhoneNumberInput';
+import SessionConflictWarning from '../../components/auth/SessionConflictWarning';
+import {
+  checkNormalUserLoginConflict,
+  SESSION_TYPES
+} from '../../utils/sessionManager';
 
 function Register() {
   const navigate = useNavigate();
@@ -28,6 +33,19 @@ function Register() {
   const [focusedField, setFocusedField] = useState(null);
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [isOffline, setIsOffline] = useState(false);
+
+  // Session conflict states
+  const [sessionConflict, setSessionConflict] = useState(null);
+  const [showRegistrationForm, setShowRegistrationForm] = useState(true);
+
+  // Check for session conflicts on component mount
+  useEffect(() => {
+    const conflict = checkNormalUserLoginConflict();
+    if (conflict.hasConflict) {
+      setSessionConflict(conflict);
+      setShowRegistrationForm(false);
+    }
+  }, []);
 
   // Check online status
   useEffect(() => {
@@ -237,6 +255,12 @@ function Register() {
     }
   };
 
+  // Handle session conflict resolution
+  const handleSessionConflictResolved = () => {
+    setSessionConflict(null);
+    setShowRegistrationForm(true);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-100 dark:from-gray-900 dark:via-gray-800 dark:to-indigo-900 flex items-center justify-center py-8 px-4 sm:px-6 lg:px-8">
       <div className="w-full max-w-2xl space-y-8">
@@ -260,7 +284,19 @@ function Register() {
             </Link>
           </p>
         </div>
-        {/* Main Form Card */}
+
+        {/* Session Conflict Warning */}
+        {sessionConflict && (
+          <SessionConflictWarning
+            conflictType={sessionConflict.conflictType}
+            conflictUser={sessionConflict.conflictUser}
+            targetSessionType={SESSION_TYPES.NORMAL_USER}
+            onLogoutComplete={handleSessionConflictResolved}
+          />
+        )}
+
+        {/* Main Form Card - Only show if no session conflict */}
+        {showRegistrationForm && (
         <div className="bg-white/80 dark:bg-gray-800/90 backdrop-blur-xl shadow-2xl rounded-3xl p-8 border border-white/20 dark:border-gray-600/30 relative overflow-hidden">
           {/* Decorative Elements */}
           <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full -translate-y-16 translate-x-16"></div>
@@ -788,6 +824,7 @@ function Register() {
             </div>
           )}
         </div>
+        )}
       </div>
     </div>
   );

@@ -4,10 +4,12 @@ import { USER_ROLES } from '../../constants/roles';
 
 // Import all dashboard components
 import AppAdminDashboard from '../../pages/admin/AppAdminDashboard';
+import SuperModeratorDashboard from '../../pages/admin/SuperModeratorDashboard';
 import InstitutionAdminDashboard from '../../pages/admin/InstitutionAdminDashboard';
 import InstitutionModeratorDashboard from '../../pages/admin/InstitutionModeratorDashboard';
 import LimitedAccessDashboard from './LimitedAccessDashboard';
-import Dashboard from '../../pages/dashboard/Dashboard'; // Regular user dashboard
+import InstructorDashboard from '../../pages/dashboard/InstructorDashboard';
+import Dashboard from '../../pages/dashboard/Dashboard'; // Student dashboard
 
 const RoleBasedDashboard = () => {
   const { user } = useAuth();
@@ -27,9 +29,13 @@ const RoleBasedDashboard = () => {
     }
   }
 
-  // If super admin is logged in, show super admin dashboard
+  // If super admin/moderator is logged in, show appropriate dashboard
   if (isSuperAdmin && (isSuperAdmin.role === USER_ROLES.SUPER_ADMIN || isSuperAdmin.role === USER_ROLES.SUPER_MODERATOR)) {
-    return <AppAdminDashboard />;
+    if (isSuperAdmin.role === USER_ROLES.SUPER_ADMIN) {
+      return <AppAdminDashboard />;
+    } else if (isSuperAdmin.role === USER_ROLES.SUPER_MODERATOR) {
+      return <SuperModeratorDashboard />;
+    }
   }
 
   // If no regular user is logged in AND no super admin is logged in, redirect to login
@@ -62,9 +68,13 @@ const RoleBasedDashboard = () => {
     );
   }
 
-  // If super admin is logged in but user is null, that's fine - continue with super admin flow
+  // If super admin/moderator is logged in but user is null, that's fine - continue with appropriate flow
   if (isSuperAdmin && !user) {
-    return <AppAdminDashboard />;
+    if (isSuperAdmin.role === USER_ROLES.SUPER_ADMIN) {
+      return <AppAdminDashboard />;
+    } else if (isSuperAdmin.role === USER_ROLES.SUPER_MODERATOR) {
+      return <SuperModeratorDashboard />;
+    }
   }
 
   // Check if user needs verification
@@ -84,8 +94,10 @@ const RoleBasedDashboard = () => {
     case USER_ROLES.MODERATOR:
       return <InstitutionModeratorDashboard />;
 
-    case USER_ROLES.STUDENT:
     case USER_ROLES.INSTRUCTOR:
+      return <InstructorDashboard />;
+
+    case USER_ROLES.STUDENT:
     default:
       return <Dashboard />;
   }

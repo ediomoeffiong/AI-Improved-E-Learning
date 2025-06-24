@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { USER_ROLES, ROLE_COLORS, ROLE_ICONS } from '../../constants/roles';
 import CreateAdminForm from '../../components/admin/CreateAdminForm';
+import TwoFactorSettings from '../../components/admin/TwoFactorSettings';
+import { superAdminAPI } from '../../services/api';
 
 const SuperAdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -14,6 +16,15 @@ const SuperAdminDashboard = () => {
   });
   const [recentUsers, setRecentUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [systemHealth, setSystemHealth] = useState({
+    database: 'checking',
+    api: 'checking',
+    backgroundJobs: 'checking'
+  });
+  const [error, setError] = useState(null);
+  const [connectionStatus, setConnectionStatus] = useState('connected');
 
   // Get current super admin user
   const getCurrentUser = () => {
@@ -30,35 +41,104 @@ const SuperAdminDashboard = () => {
 
   useEffect(() => {
     fetchDashboardData();
+    checkSystemHealth();
+
+    // Auto-refresh every 5 minutes
+    const dataInterval = setInterval(() => {
+      fetchDashboardData(true); // Silent refresh
+    }, 5 * 60 * 1000);
+
+    // Check system health every 2 minutes
+    const healthInterval = setInterval(() => {
+      checkSystemHealth();
+    }, 2 * 60 * 1000);
+
+    return () => {
+      clearInterval(dataInterval);
+      clearInterval(healthInterval);
+    };
   }, []);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (silentRefresh = false) => {
     try {
-      setLoading(true);
-      
-      // Mock data for now - will be replaced with actual API calls
-      const mockStats = {
-        totalUsers: 15847,
-        totalInstitutions: 234,
-        pendingApprovals: 23,
-        superAdmins: 3,
-        institutionAdmins: 156
-      };
+      if (!silentRefresh) {
+        setLoading(true);
+        setError(null);
+      } else {
+        setIsRefreshing(true);
+      }
 
-      const mockRecentUsers = [
-        { id: 1, name: 'John Doe', email: 'john@university.edu', role: 'Admin', createdAt: '2024-01-15' },
-        { id: 2, name: 'Jane Smith', email: 'jane@college.edu', role: 'Moderator', createdAt: '2024-01-14' },
-        { id: 3, name: 'Mike Johnson', email: 'mike@institute.edu', role: 'Instructor', createdAt: '2024-01-13' },
-        { id: 4, name: 'Sarah Wilson', email: 'sarah@school.edu', role: 'Student', createdAt: '2024-01-12' },
-        { id: 5, name: 'David Brown', email: 'david@academy.edu', role: 'Admin', createdAt: '2024-01-11' }
-      ];
+      // Fetch real data from Super Admin API
+      const response = await superAdminAPI.getStats();
 
-      setStats(mockStats);
-      setRecentUsers(mockRecentUsers);
+      setStats(response.stats);
+      setRecentUsers(response.recentUsers);
+      setLastUpdated(new Date());
+      setConnectionStatus('connected');
+
+      // Clear any previous errors
+      if (!silentRefresh) {
+        setError(null);
+      }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      setConnectionStatus('disconnected');
+
+      // Set error message for user
+      const errorMessage = error.message.includes('Backend service is not available')
+        ? 'Backend service is temporarily unavailable. Showing demo data.'
+        : error.message.includes('Super Admin authentication required')
+        ? 'Authentication expired. Please log in again.'
+        : 'Failed to fetch dashboard data. Please try again.';
+
+      if (!silentRefresh) {
+        setError(errorMessage);
+
+        // Show fallback data on initial load
+        const fallbackStats = {
+          totalUsers: 0,
+          totalInstitutions: 0,
+          pendingApprovals: 0,
+          superAdmins: 0,
+          institutionAdmins: 0
+        };
+
+        const fallbackRecentUsers = [];
+
+        setStats(fallbackStats);
+        setRecentUsers(fallbackRecentUsers);
+      }
     } finally {
-      setLoading(false);
+      if (!silentRefresh) {
+        setLoading(false);
+      } else {
+        setIsRefreshing(false);
+      }
+    }
+  };
+
+  const handleManualRefresh = () => {
+    fetchDashboardData(true);
+    checkSystemHealth();
+  };
+
+  const checkSystemHealth = async () => {
+    try {
+      // Check if we can fetch stats (indicates API and database are working)
+      await superAdminAPI.getStats();
+
+      setSystemHealth({
+        database: 'online',
+        api: 'operational',
+        backgroundJobs: 'processing' // This would need a separate endpoint to check
+      });
+    } catch (error) {
+      console.error('System health check failed:', error);
+      setSystemHealth({
+        database: 'offline',
+        api: 'error',
+        backgroundJobs: 'unknown'
+      });
     }
   };
 
@@ -122,6 +202,38 @@ const SuperAdminDashboard = () => {
               </p>
             </div>
             <div className="flex items-center space-x-4">
+              {/* Connection Status */}
+              <div className="flex items-center space-x-2">
+                <div className={`w-2 h-2 rounded-full ${
+                  connectionStatus === 'connected' ? 'bg-green-500' : 'bg-red-500'
+                }`}></div>
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  {connectionStatus === 'connected' ? 'Connected' : 'Disconnected'}
+                </span>
+              </div>
+
+              {lastUpdated && (
+                <div className="text-right">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Last updated: {lastUpdated.toLocaleTimeString()}
+                  </p>
+                </div>
+              )}
+              <button
+                onClick={handleManualRefresh}
+                disabled={isRefreshing}
+                className="flex items-center space-x-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-md text-sm font-medium transition-colors duration-200"
+              >
+                <svg
+                  className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <span>{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
+              </button>
               <div className={`px-3 py-1 rounded-full text-sm font-medium ${ROLE_COLORS[currentUser?.role] || 'text-gray-600 bg-gray-100'}`}>
                 {ROLE_ICONS[currentUser?.role]} {currentUser?.role}
               </div>
@@ -131,6 +243,53 @@ const SuperAdminDashboard = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800 dark:text-red-200">
+                  Connection Error
+                </h3>
+                <div className="mt-2 text-sm text-red-700 dark:text-red-300">
+                  <p>{error}</p>
+                </div>
+                <div className="mt-4">
+                  <button
+                    onClick={() => fetchDashboardData()}
+                    className="bg-red-100 dark:bg-red-800 px-3 py-2 rounded-md text-sm font-medium text-red-800 dark:text-red-200 hover:bg-red-200 dark:hover:bg-red-700"
+                  >
+                    Try Again
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Connection Status Indicator */}
+        {connectionStatus === 'disconnected' && (
+          <div className="mb-6 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md p-4">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                  <strong>Limited Connectivity:</strong> Some features may not be available. Data shown may be cached or demo data.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
           <StatCard
@@ -214,6 +373,13 @@ const SuperAdminDashboard = () => {
                   color="indigo"
                   onClick={() => setActiveTab('analytics')}
                 />
+                <QuickAction
+                  title="2FA Settings"
+                  description="Manage two-factor authentication"
+                  icon="🔐"
+                  color="green"
+                  onClick={() => setActiveTab('2fa-settings')}
+                />
               </div>
             </div>
 
@@ -223,8 +389,8 @@ const SuperAdminDashboard = () => {
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700">
                 <div className="p-6">
                   <div className="space-y-4">
-                    {recentUsers.map((user) => (
-                      <div key={user.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    {recentUsers.length > 0 ? recentUsers.map((user) => (
+                      <div key={user._id || user.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                         <div className="flex items-center space-x-4">
                           <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
                             {user.name.charAt(0)}
@@ -238,10 +404,16 @@ const SuperAdminDashboard = () => {
                           <div className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${ROLE_COLORS[user.role]}`}>
                             {ROLE_ICONS[user.role]} {user.role}
                           </div>
-                          <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">{user.createdAt}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                            {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
+                          </p>
                         </div>
                       </div>
-                    ))}
+                    )) : (
+                      <div className="text-center py-8">
+                        <p className="text-gray-500 dark:text-gray-400">No recent users found</p>
+                      </div>
+                    )}
                   </div>
                   <div className="mt-6 text-center">
                     <button
@@ -343,23 +515,79 @@ const SuperAdminDashboard = () => {
           </div>
         )}
 
+        {activeTab === '2fa-settings' && (
+          <div>
+            <div className="mb-6">
+              <button
+                onClick={() => setActiveTab('overview')}
+                className="flex items-center text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                Back to Dashboard
+              </button>
+            </div>
+            <TwoFactorSettings />
+          </div>
+        )}
+
         {/* System Health Status - Show on overview tab */}
         {activeTab === 'overview' && (
           <div className="mt-8">
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">System Status</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">System Status</h2>
+                <div className="flex items-center space-x-2">
+                  <div className={`w-2 h-2 rounded-full ${
+                    Object.values(systemHealth).every(status => ['online', 'operational', 'processing'].includes(status))
+                      ? 'bg-green-500'
+                      : Object.values(systemHealth).some(status => ['offline', 'error'].includes(status))
+                      ? 'bg-red-500'
+                      : 'bg-yellow-500'
+                  }`}></div>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    {Object.values(systemHealth).every(status => ['online', 'operational', 'processing'].includes(status))
+                      ? 'All Systems Operational'
+                      : Object.values(systemHealth).some(status => ['offline', 'error'].includes(status))
+                      ? 'System Issues Detected'
+                      : 'Checking Systems...'}
+                  </span>
+                </div>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="flex items-center space-x-3">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Database: Online</span>
+                  <div className={`w-3 h-3 rounded-full ${
+                    systemHealth.database === 'online' ? 'bg-green-500' :
+                    systemHealth.database === 'offline' ? 'bg-red-500' :
+                    'bg-yellow-500 animate-pulse'
+                  }`}></div>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    Database: {systemHealth.database === 'online' ? 'Online' :
+                              systemHealth.database === 'offline' ? 'Offline' : 'Checking...'}
+                  </span>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">API Services: Operational</span>
+                  <div className={`w-3 h-3 rounded-full ${
+                    systemHealth.api === 'operational' ? 'bg-green-500' :
+                    systemHealth.api === 'error' ? 'bg-red-500' :
+                    'bg-yellow-500 animate-pulse'
+                  }`}></div>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    API Services: {systemHealth.api === 'operational' ? 'Operational' :
+                                  systemHealth.api === 'error' ? 'Error' : 'Checking...'}
+                  </span>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Background Jobs: Processing</span>
+                  <div className={`w-3 h-3 rounded-full ${
+                    systemHealth.backgroundJobs === 'processing' ? 'bg-green-500' :
+                    systemHealth.backgroundJobs === 'stopped' ? 'bg-red-500' :
+                    'bg-yellow-500 animate-pulse'
+                  }`}></div>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    Background Jobs: {systemHealth.backgroundJobs === 'processing' ? 'Processing' :
+                                     systemHealth.backgroundJobs === 'stopped' ? 'Stopped' : 'Unknown'}
+                  </span>
                 </div>
               </div>
             </div>

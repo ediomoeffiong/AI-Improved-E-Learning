@@ -14,6 +14,7 @@ import PhoneNumberInput from '../../components/PhoneNumberInput';
 import ToggleSwitch from '../../components/common/ToggleSwitch';
 import ConfirmationModal from '../../components/common/ConfirmationModal';
 import MessageModal from '../../components/common/MessageModal';
+import TwoFactorSettings from '../../components/admin/TwoFactorSettings';
 
 function Settings() {
   const { getUserName, getUserEmail, getUserPhoneNumber, user, login, getInstitutionData } = useAuth();
@@ -1239,34 +1240,26 @@ function Settings() {
           {/* Security Tab */}
           {activeTab === 'security' && (
             <div className="space-y-8">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Security Settings</h3>
-                
-                <div className="space-y-4">
-                  <ToggleSwitch
-                    checked={settings.twoFactorAuth}
-                    onChange={(checked) => handleSettingChange('twoFactorAuth', checked)}
-                    label="Two-Factor Authentication"
-                    description="Add an extra layer of security"
-                    color="red"
-                    id="two-factor-auth"
-                  />
+              {/* Two-Factor Authentication */}
+              <TwoFactorSettings />
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Session Timeout (minutes)
-                    </label>
-                    <select
-                      value={settings.sessionTimeout}
-                      onChange={(e) => handleSettingChange('sessionTimeout', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    >
-                      <option value="15">15 minutes</option>
-                      <option value="30">30 minutes</option>
-                      <option value="60">1 hour</option>
-                      <option value="120">2 hours</option>
-                    </select>
-                  </div>
+              {/* Session Settings */}
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Session Settings</h3>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Session Timeout (minutes)
+                  </label>
+                  <select
+                    value={settings.sessionTimeout}
+                    onChange={(e) => handleSettingChange('sessionTimeout', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  >
+                    <option value="15">15 minutes</option>
+                    <option value="30">30 minutes</option>
+                    <option value="60">1 hour</option>
+                    <option value="120">2 hours</option>
+                  </select>
                 </div>
               </div>
 

@@ -5,6 +5,12 @@ import { useAuth } from '../../contexts/AuthContext';
 import { isOnline } from '../../utils/pwa';
 import ConfirmationModal from '../common/ConfirmationModal';
 import MessageModal from '../common/MessageModal';
+import {
+  hasSuperAdminSession,
+  getCurrentSessionUser,
+  clearSuperAdminSession,
+  clearNormalUserSession
+} from '../../utils/sessionManager';
 
 const Navbar = ({ isScrolled = false }) => {
   const navigate = useNavigate();
@@ -17,6 +23,30 @@ const Navbar = ({ isScrolled = false }) => {
   const navRef = useRef(null);
   const { scrollToTop } = useScrollToTop();
   const { isAuthenticated, logout, getUserName, getUserEmail, hasInstitutionFunctions } = useAuth();
+
+  // Check for super admin session
+  const [isSuperAdminLoggedIn, setIsSuperAdminLoggedIn] = useState(false);
+  const [superAdminUser, setSuperAdminUser] = useState(null);
+
+  useEffect(() => {
+    const checkSuperAdminSession = () => {
+      const hasSuperAdmin = hasSuperAdminSession();
+      setIsSuperAdminLoggedIn(hasSuperAdmin);
+      if (hasSuperAdmin) {
+        setSuperAdminUser(getCurrentSessionUser());
+      } else {
+        setSuperAdminUser(null);
+      }
+    };
+
+    // Initial check
+    checkSuperAdminSession();
+
+    // Check periodically for session changes
+    const interval = setInterval(checkSuperAdminSession, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Check demo mode status
   useEffect(() => {
@@ -233,16 +263,24 @@ const Navbar = ({ isScrolled = false }) => {
   const handleLogoutMessageClose = () => {
     setShowLogoutMessage(false);
 
-    // Perform actual logout
-    logout();
+    // Perform actual logout based on session type
+    if (isSuperAdminLoggedIn) {
+      // Clear super admin session
+      clearSuperAdminSession();
+      setIsSuperAdminLoggedIn(false);
+      setSuperAdminUser(null);
+      navigate('/super-admin-login');
+    } else {
+      // Clear normal user session
+      logout();
+      navigate('/');
+    }
+
     setOpenDropdown(null);
     setMobileMenuOpen(false);
 
-    // Add a small delay to ensure logout state is processed before navigation
+    // Scroll to top after logout
     setTimeout(() => {
-      navigate('/');
-
-      // Scroll to top after logout
       scrollToTop({
         behavior: 'smooth',
         delay: 100
@@ -302,7 +340,7 @@ const Navbar = ({ isScrolled = false }) => {
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center space-x-6">
             {/* Home - Only show to non-authenticated users */}
-            {!isAuthenticated() && (
+            {(!isAuthenticated() && !isSuperAdminLoggedIn) && (
               <Link
                 to="/"
                 onClick={handleLinkClick}
@@ -316,8 +354,8 @@ const Navbar = ({ isScrolled = false }) => {
               </Link>
             )}
 
-            {/* Dashboard - Only show to authenticated users */}
-            {isAuthenticated() && (
+            {/* Dashboard - Only show to authenticated users (including super admins) */}
+            {(isAuthenticated() || isSuperAdminLoggedIn) && (
               <Link
                 to="/dashboard"
                 onClick={handleLinkClick}
@@ -361,7 +399,7 @@ const Navbar = ({ isScrolled = false }) => {
               {openDropdown === 'courses' && (
                 <div className="absolute z-50 mt-2 w-64 bg-white rounded-xl shadow-2xl py-2 border border-gray-100 animate-in slide-in-from-top-2 duration-200">
                   {/* Protected content - Dashboard first for authenticated users */}
-                  {isAuthenticated() ? (
+                  {(isAuthenticated() || isSuperAdminLoggedIn) ? (
                     <>
                       <Link
                         to="/courses/dashboard"
@@ -397,7 +435,7 @@ const Navbar = ({ isScrolled = false }) => {
                   </Link>
 
                   {/* Additional protected content - only show to authenticated users */}
-                  {isAuthenticated() ? (
+                  {(isAuthenticated() || isSuperAdminLoggedIn) ? (
                     <>
                       <Link
                         to="/courses/my-courses"
@@ -453,7 +491,7 @@ const Navbar = ({ isScrolled = false }) => {
             </div>
             
             {/* Quiz Direct Link - Show to all users */}
-            {isAuthenticated() ? (
+            {(isAuthenticated() || isSuperAdminLoggedIn) ? (
               <Link
                 to="/quiz/dashboard"
                 onClick={handleLinkClick}
@@ -480,7 +518,7 @@ const Navbar = ({ isScrolled = false }) => {
             )}
 
             {/* Classroom Dropdown - Only show to authenticated users with institution functions */}
-            {isAuthenticated() && hasInstitutionFunctions() && (
+            {(isAuthenticated() || isSuperAdminLoggedIn) && hasInstitutionFunctions() && (
               <div className="relative">
               <button
                 onClick={() => toggleDropdown('classroom')}
@@ -578,7 +616,7 @@ const Navbar = ({ isScrolled = false }) => {
             )}
 
             {/* Progress Dropdown - Only show to authenticated users */}
-            {isAuthenticated() && (
+            {(isAuthenticated() || isSuperAdminLoggedIn) && (
               <div className="relative">
               <button
                 onClick={() => toggleDropdown('progress')}
@@ -660,7 +698,7 @@ const Navbar = ({ isScrolled = false }) => {
           </div>
           
           <div className="flex items-center">
-            {isAuthenticated() ? (
+            {(isAuthenticated() || isSuperAdminLoggedIn) ? (
               <div className="flex items-center space-x-4">
                 {/* User Dropdown */}
                 <div className="relative">
@@ -696,7 +734,10 @@ const Navbar = ({ isScrolled = false }) => {
                         ? 'text-gray-700 dark:text-gray-300'
                         : 'text-white'
                     }`}>
-                      Welcome, {getUserName()?.split(' ')[0] || 'User'}
+                      Welcome, {isSuperAdminLoggedIn
+                        ? (superAdminUser?.name?.split(' ')[0] || 'Admin')
+                        : (getUserName()?.split(' ')[0] || 'User')
+                      }
                     </span>
 
                     <svg
@@ -715,8 +756,23 @@ const Navbar = ({ isScrolled = false }) => {
                     <div className="absolute right-0 top-full z-[60] mt-2 w-56 bg-white rounded-xl shadow-2xl py-2 border border-gray-100">
                       {/* User Info Header */}
                       <div className="px-4 py-3 border-b border-gray-100">
-                        <p className="text-sm font-medium text-gray-900">{getUserName() || 'User'}</p>
-                        <p className="text-sm text-gray-500 truncate">{getUserEmail() || 'user@example.com'}</p>
+                        <p className="text-sm font-medium text-gray-900">
+                          {isSuperAdminLoggedIn
+                            ? (superAdminUser?.name || 'Admin')
+                            : (getUserName() || 'User')
+                          }
+                        </p>
+                        <p className="text-sm text-gray-500 truncate">
+                          {isSuperAdminLoggedIn
+                            ? (superAdminUser?.email || 'admin@example.com')
+                            : (getUserEmail() || 'user@example.com')
+                          }
+                        </p>
+                        {isSuperAdminLoggedIn && (
+                          <p className="text-xs text-blue-600 font-medium mt-1">
+                            {superAdminUser?.role || 'Super Admin'}
+                          </p>
+                        )}
                       </div>
 
                       {/* Menu Items */}
@@ -981,7 +1037,7 @@ const Navbar = ({ isScrolled = false }) => {
         <div className="md:hidden bg-gradient-to-b from-blue-600 to-blue-700 border-t border-blue-500 shadow-lg">
           <div className="px-2 pt-2 pb-3 space-y-1">
             {/* Home - Only show to non-authenticated users */}
-            {!isAuthenticated() && (
+            {(!isAuthenticated() && !isSuperAdminLoggedIn) && (
               <Link
                 to="/"
                 onClick={handleLinkClick}
@@ -992,7 +1048,7 @@ const Navbar = ({ isScrolled = false }) => {
             )}
 
             {/* Dashboard - Only show to authenticated users */}
-            {isAuthenticated() && (
+            {(isAuthenticated() || isSuperAdminLoggedIn) && (
               <Link
                 to="/dashboard"
                 onClick={handleLinkClick}
@@ -1015,7 +1071,7 @@ const Navbar = ({ isScrolled = false }) => {
             {openDropdown === 'mobile-courses' && (
               <div className="pl-4 space-y-1 bg-blue-700/30 rounded-md mx-2 py-2">
                 {/* Protected content - Dashboard first for authenticated users */}
-                {isAuthenticated() ? (
+                {(isAuthenticated() || isSuperAdminLoggedIn) ? (
                   <>
                     <Link
                       to="/courses/dashboard"
@@ -1038,7 +1094,7 @@ const Navbar = ({ isScrolled = false }) => {
                 </Link>
 
                 {/* Additional protected content - only show to authenticated users */}
-                {isAuthenticated() ? (
+                {(isAuthenticated() || isSuperAdminLoggedIn) ? (
                   <>
                     <Link
                       to="/courses/my-courses"
@@ -1074,7 +1130,7 @@ const Navbar = ({ isScrolled = false }) => {
             )}
             
             {/* Mobile Quiz Direct Link - Show to all users */}
-            {isAuthenticated() ? (
+            {(isAuthenticated() || isSuperAdminLoggedIn) ? (
               <Link
                 to="/quiz/dashboard"
                 onClick={handleLinkClick}
@@ -1093,7 +1149,7 @@ const Navbar = ({ isScrolled = false }) => {
             )}
 
             {/* Mobile Classroom Menu - Only show to authenticated users with institution functions */}
-            {isAuthenticated() && hasInstitutionFunctions() && (
+            {(isAuthenticated() || isSuperAdminLoggedIn) && hasInstitutionFunctions() && (
               <button
                 onClick={() => toggleDropdown('mobile-classroom')}
                 className="w-full text-left px-3 py-2 text-white hover:bg-blue-700 rounded-md flex justify-between items-center"
@@ -1104,7 +1160,7 @@ const Navbar = ({ isScrolled = false }) => {
                 </svg>
               </button>
             )}
-            {isAuthenticated() && hasInstitutionFunctions() && openDropdown === 'mobile-classroom' && (
+            {(isAuthenticated() || isSuperAdminLoggedIn) && hasInstitutionFunctions() && openDropdown === 'mobile-classroom' && (
               <div className="pl-4 space-y-1 bg-blue-700/30 rounded-md mx-2 py-2">
                 <Link to="/classroom/dashboard" onClick={handleLinkClick} className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">🏫 Dashboard</Link>
                 <div className="px-3 py-1 text-xs text-blue-200 font-semibold uppercase tracking-wide">CBT System</div>
@@ -1116,7 +1172,7 @@ const Navbar = ({ isScrolled = false }) => {
             )}
 
             {/* Mobile Progress Menu - Only show to authenticated users */}
-            {isAuthenticated() && (
+            {(isAuthenticated() || isSuperAdminLoggedIn) && (
               <button
                 onClick={() => toggleDropdown('mobile-progress')}
                 className="w-full text-left px-3 py-2 text-white hover:bg-blue-700 rounded-md flex justify-between items-center"
@@ -1127,7 +1183,7 @@ const Navbar = ({ isScrolled = false }) => {
                 </svg>
               </button>
             )}
-            {isAuthenticated() && openDropdown === 'mobile-progress' && (
+            {(isAuthenticated() || isSuperAdminLoggedIn) && openDropdown === 'mobile-progress' && (
               <div className="pl-4">
                 <Link to="/progress/dashboard" onClick={handleLinkClick} className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Dashboard</Link>
                 <Link to="/progress/reports" onClick={handleLinkClick} className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Performance Reports</Link>
@@ -1138,7 +1194,7 @@ const Navbar = ({ isScrolled = false }) => {
 
             {/* Mobile Authentication Section for non-authenticated users */}
             <div className="border-t border-blue-500 mt-4 pt-4">
-              {!isAuthenticated() && (
+              {(!isAuthenticated() && !isSuperAdminLoggedIn) && (
                 <Link
                   to="/login"
                   onClick={handleLinkClick}

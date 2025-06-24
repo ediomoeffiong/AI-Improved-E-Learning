@@ -4,6 +4,12 @@ import { useAuth } from '../../contexts/AuthContext';
 import { authAPI } from '../../services/api';
 import { ROLE_ICONS } from '../../constants/roles';
 import { isOnline } from '../../utils/pwa';
+import TwoFactorVerification from '../../components/auth/TwoFactorVerification';
+import SessionConflictWarning from '../../components/auth/SessionConflictWarning';
+import {
+  checkNormalUserLoginConflict,
+  SESSION_TYPES
+} from '../../utils/sessionManager';
 
 function Login() {
   const navigate = useNavigate();
@@ -26,6 +32,24 @@ function Login() {
   const [errors, setErrors] = useState({});
   const [focusedField, setFocusedField] = useState(null);
   const [isOffline, setIsOffline] = useState(false);
+
+  // 2FA states
+  const [requires2FA, setRequires2FA] = useState(false);
+  const [tempToken, setTempToken] = useState('');
+  const [userInfo, setUserInfo] = useState(null);
+
+  // Session conflict states
+  const [sessionConflict, setSessionConflict] = useState(null);
+  const [showLoginForm, setShowLoginForm] = useState(true);
+
+  // Check for session conflicts on component mount
+  useEffect(() => {
+    const conflict = checkNormalUserLoginConflict();
+    if (conflict.hasConflict) {
+      setSessionConflict(conflict);
+      setShowLoginForm(false);
+    }
+  }, []);
 
   // Check online status
   useEffect(() => {
@@ -146,6 +170,17 @@ function Login() {
         password: formData.password
       });
 
+      // Check if 2FA is required
+      if (data.requires2FA) {
+        setRequires2FA(true);
+        setTempToken(data.tempToken);
+        setUserInfo(data.user);
+        setApiMessage('Password verified. Please complete 2FA verification.');
+        setApiSuccess(true);
+        return;
+      }
+
+      // No 2FA required - complete login
       setApiMessage('Login successful! Redirecting...');
       setApiSuccess(true);
 
@@ -194,6 +229,52 @@ function Login() {
     }
   };
 
+  const handle2FASuccess = (data) => {
+    setApiMessage('Login successful! Redirecting...');
+    setApiSuccess(true);
+
+    // Use AuthContext to handle login
+    login(data.user, data.token);
+
+    // Redirect to intended destination or dashboard
+    setTimeout(() => {
+      navigate(from, { replace: true });
+    }, 1500);
+  };
+
+  const handle2FACancel = () => {
+    setRequires2FA(false);
+    setTempToken('');
+    setUserInfo(null);
+    setApiMessage(null);
+    setApiSuccess(false);
+  };
+
+  const handle2FAError = (error) => {
+    setApiMessage(error);
+    setApiSuccess(false);
+  };
+
+  // Handle session conflict resolution
+  const handleSessionConflictResolved = () => {
+    setSessionConflict(null);
+    setShowLoginForm(true);
+  };
+
+  // Show 2FA verification if required
+  if (requires2FA) {
+    return (
+      <TwoFactorVerification
+        tempToken={tempToken}
+        userInfo={userInfo}
+        onSuccess={handle2FASuccess}
+        onCancel={handle2FACancel}
+        onError={handle2FAError}
+        apiEndpoint="/api/auth/verify-2fa"
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="w-full max-w-md space-y-8">
@@ -217,7 +298,18 @@ function Login() {
             </Link>
           </p>
         </div>
-        {/* Main Form Card */}
+
+        {/* Session Conflict Warning */}
+        {sessionConflict && (
+          <SessionConflictWarning
+            conflictType={sessionConflict.conflictType}
+            conflictUser={sessionConflict.conflictUser}
+            targetSessionType={SESSION_TYPES.NORMAL_USER}
+            onLogoutComplete={handleSessionConflictResolved}
+          />
+        )}
+        {/* Main Form Card - Only show if no session conflict */}
+        {showLoginForm && (
         <div className="bg-white dark:bg-gray-800 shadow-2xl rounded-2xl p-8 border border-gray-100 dark:border-gray-700">
           <form className="space-y-6" onSubmit={handleSubmit}>
             {/* Email Field */}
@@ -391,7 +483,10 @@ function Login() {
             </div>
           )}
         </div>
-        {/* Demo Credentials */}
+        )}
+
+        {/* Demo Credentials - Only show if no session conflict */}
+        {showLoginForm && (
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl p-6 border border-blue-100 dark:border-blue-800">
           <div className="text-center mb-4">
             <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-2">
@@ -446,6 +541,7 @@ function Login() {
             </p>
           </div>
         </div>
+        )}
       </div>
     </div>
   );

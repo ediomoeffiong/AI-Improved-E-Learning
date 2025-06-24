@@ -69,6 +69,10 @@ import PersonalizedRecommendations from './pages/progress/PersonalizedRecommenda
 import Profile from './pages/user/Profile';
 import Settings from './pages/user/Settings';
 
+// Super Admin pages
+import SuperAdminProfile from './pages/admin/SuperAdminProfile';
+import SuperAdminSettings from './pages/admin/SuperAdminSettings';
+
 // Support pages
 import Support from './pages/support/Support';
 
@@ -91,6 +95,9 @@ import UserApprovalSystem from './pages/admin/UserApprovalSystem';
 import UniversityVerificationSystem from './pages/admin/UniversityVerificationSystem';
 import AdminVerificationSystem from './pages/admin/AdminVerificationSystem';
 import ModeratorVerificationSystem from './pages/admin/ModeratorVerificationSystem';
+import SuperAdminUserManagement from './pages/admin/SuperAdminUserManagement';
+import SuperAdminInstitutionManagement from './pages/admin/SuperAdminInstitutionManagement';
+import ErrorBoundary from './components/common/ErrorBoundary';
 import InstitutionJoinRequest from './pages/user/InstitutionJoinRequest';
 
 function App() {
@@ -129,6 +136,8 @@ function App() {
               <Route path="/admin/moderators" element={<ProtectedRoute><ModeratorVerificationSystem /></ProtectedRoute>} />
 
               {/* Super Admin Protected Routes */}
+              <Route path="/super-admin/users" element={<SuperAdminProtectedRoute><ErrorBoundary><SuperAdminUserManagement /></ErrorBoundary></SuperAdminProtectedRoute>} />
+              <Route path="/super-admin/institutions" element={<SuperAdminProtectedRoute><SuperAdminInstitutionManagement /></SuperAdminProtectedRoute>} />
               <Route path="/super-admin/universities" element={<SuperAdminProtectedRoute><UniversityVerificationSystem /></SuperAdminProtectedRoute>} />
               <Route path="/super-admin/admins" element={<SuperAdminProtectedRoute><AdminVerificationSystem /></SuperAdminProtectedRoute>} />
 
@@ -178,6 +187,10 @@ function App() {
               {/* Protected User Routes */}
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+
+              {/* Super Admin Profile and Settings Routes */}
+              <Route path="/super-admin/profile" element={<SuperAdminProtectedRoute><SuperAdminProfile /></SuperAdminProtectedRoute>} />
+              <Route path="/super-admin/settings" element={<SuperAdminProtectedRoute><SuperAdminSettings /></SuperAdminProtectedRoute>} />
             </Routes>
           </div>
         </main>
