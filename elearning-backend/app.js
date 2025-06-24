@@ -12,6 +12,14 @@ const cors = require('cors');
 
 const app = express();
 
+// Trust proxy for production deployment (Render, Heroku, etc.)
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1); // Trust first proxy
+  console.log('🔒 Trust proxy enabled for production');
+} else {
+  console.log('🔒 Trust proxy disabled for development');
+}
+
 // CORS configuration
 const corsOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
