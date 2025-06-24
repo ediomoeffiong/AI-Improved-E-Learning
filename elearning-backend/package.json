@@ -17,8 +17,10 @@
     "deploy:institutions": "node scripts/deploy.js institutions-only",
     "deploy:indexes": "node scripts/deploy.js indexes-only",
     "deploy:verify": "node scripts/deploy.js verify-only",
+    "verify:production": "node scripts/verifyProductionReadiness.js",
     "seed:production": "node scripts/seedProductionAdmins.js",
-    "build": "echo 'No build step required for Node.js'",
+    "build": "npm run deploy",
+    "postinstall": "node -e \"if (process.env.NODE_ENV === 'production') require('./scripts/deploy.js')\"",
     "seed:quizzes": "node scripts/seedQuizzes.js"
   },
   "engines": {
