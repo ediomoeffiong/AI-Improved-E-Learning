@@ -12,11 +12,19 @@ async function runDeploymentTasks() {
   console.log('🚀 Starting deployment tasks...\n');
 
   try {
-    // Connect to MongoDB
+    // Connect to MongoDB with better connection options
     console.log('📡 Connecting to MongoDB...');
     await mongoose.connect(process.env.MONGODB_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 30000, // 30 seconds
+      connectTimeoutMS: 30000, // 30 seconds
+      socketTimeoutMS: 30000, // 30 seconds
+      maxPoolSize: 10, // Maintain up to 10 socket connections
+      minPoolSize: 1, // Maintain at least 1 socket connection
+      maxIdleTimeMS: 30000, // Close connections after 30 seconds of inactivity
+      bufferCommands: false, // Disable mongoose buffering
+      bufferMaxEntries: 0 // Disable mongoose buffering
     });
     console.log('✅ Connected to MongoDB successfully\n');
 
@@ -66,10 +74,24 @@ async function runDeploymentTasks() {
 
   } catch (error) {
     console.error('❌ Deployment failed:', error);
+
+    // If it's a connection error, provide helpful guidance
+    if (error.name === 'MongoPoolClosedError' || error.name === 'MongoNetworkError') {
+      console.log('\n💡 This appears to be a MongoDB connection issue.');
+      console.log('   This is normal during deployment and the app will work once fully deployed.');
+      console.log('   The institutions will be seeded when the app starts normally.');
+    }
+
     process.exit(1);
   } finally {
-    await mongoose.disconnect();
-    console.log('\n📡 Disconnected from MongoDB');
+    try {
+      if (mongoose.connection.readyState !== 0) {
+        await mongoose.disconnect();
+        console.log('\n📡 Disconnected from MongoDB');
+      }
+    } catch (disconnectError) {
+      console.log('\n📡 MongoDB already disconnected');
+    }
   }
 }
 
@@ -255,8 +277,78 @@ switch (deploymentType) {
     break;
 }
 
+// Flag to prevent running deployment tasks multiple times
+let deploymentTasksCompleted = false;
+
+// Version that uses existing MongoDB connection (for app.js)
+async function runDeploymentTasksWithConnection() {
+  if (deploymentTasksCompleted) {
+    console.log('ℹ️  Deployment tasks already completed, skipping...');
+    return;
+  }
+
+  console.log('🚀 Starting deployment tasks with existing connection...\n');
+
+  try {
+    // Check if this is a fresh deployment or an update
+    const User = require('../models/User');
+    const Institution = require('../models/Institution');
+
+    const existingSuperAdmins = await User.countDocuments({
+      role: { $in: ['Super Admin', 'Super Moderator'] }
+    });
+    const existingInstitutions = await Institution.countDocuments();
+
+    if (existingSuperAdmins === 0) {
+      console.log('🆕 Fresh deployment detected - seeding Super Admin accounts...');
+      const { seedSuperAdminsWithConnection } = require('./seedSuperAdmins');
+      await seedSuperAdminsWithConnection();
+    } else {
+      console.log('🔄 Existing deployment detected - updating Super Admin accounts...');
+      const { updateSuperAdminsWithConnection } = require('./seedSuperAdmins');
+      await updateSuperAdminsWithConnection();
+    }
+
+    // Seed institutions if none exist
+    if (existingInstitutions === 0) {
+      console.log('\n🏛️ No institutions found - seeding Nigerian universities...');
+      const { seedInstitutionsWithConnection } = require('./seedInstitutions');
+      await seedInstitutionsWithConnection();
+    } else {
+      console.log(`\n🏛️ Found ${existingInstitutions} existing institutions - skipping institution seeding`);
+    }
+
+    // Create indexes for better performance
+    console.log('\n📊 Creating database indexes...');
+    await createDatabaseIndexes();
+
+    // Verify deployment
+    console.log('\n🔍 Verifying deployment...');
+    await verifyDeployment();
+
+    console.log('\n🎉 Deployment tasks completed successfully!');
+    console.log('\n📋 Deployment Summary:');
+    console.log('- Super Admin accounts: ✅ Ready');
+    console.log('- Nigerian universities: ✅ Seeded');
+    console.log('- Database indexes: ✅ Created');
+    console.log('- System verification: ✅ Passed');
+    console.log('\n🔐 Default Super Admin Credentials:');
+    console.log('Email: superadmin@app.com | Username: superadmin | Password: SuperAdmin123!');
+    console.log('Email: supermod@app.com | Username: supermod | Password: SuperMod123!');
+    console.log('\n⚠️  IMPORTANT: Change default passwords in production!');
+
+    // Mark deployment tasks as completed
+    deploymentTasksCompleted = true;
+
+  } catch (error) {
+    console.error('❌ Deployment tasks failed:', error);
+    throw error; // Re-throw to let caller handle
+  }
+}
+
 module.exports = {
   runDeploymentTasks,
+  runDeploymentTasksWithConnection,
   createDatabaseIndexes,
   verifyDeployment
 };

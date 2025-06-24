@@ -19,8 +19,7 @@
     "deploy:verify": "node scripts/deploy.js verify-only",
     "verify:production": "node scripts/verifyProductionReadiness.js",
     "seed:production": "node scripts/seedProductionAdmins.js",
-    "build": "npm run deploy",
-    "postinstall": "node -e \"if (process.env.NODE_ENV === 'production') require('./scripts/deploy.js')\"",
+    "build": "echo 'Build completed - deployment tasks will run on app start'",
     "seed:quizzes": "node scripts/seedQuizzes.js"
   },
   "engines": {
