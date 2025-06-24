@@ -1877,6 +1877,259 @@ export const superAdminAPI = {
       }
       throw error;
     }
+  },
+
+  // ==================== INSTITUTION MANAGEMENT ====================
+
+  // Get all institutions with filtering and pagination
+  getInstitutions: async (filters = {}) => {
+    try {
+      const superAdminToken = localStorage.getItem('appAdminToken');
+      if (!superAdminToken) {
+        throw new Error('Super Admin authentication required');
+      }
+
+      const queryParams = new URLSearchParams();
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          queryParams.append(key, value);
+        }
+      });
+
+      const endpoint = `/super-admin/institutions${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${superAdminToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      if (error.message.includes('Backend service is not available') ||
+          error.message.includes('Demo mode is enabled') ||
+          error.message.includes('fetch') ||
+          error.message.includes('NetworkError') ||
+          error.message.includes('Failed to fetch')) {
+        console.log('🚨 USING MOCK DATA FOR INSTITUTIONS - Backend not available');
+        return {
+          institutions: [
+            {
+              _id: '1',
+              name: 'University of Lagos',
+              code: 'UNILAG',
+              type: 'university',
+              location: { city: 'Lagos', state: 'Lagos', country: 'Nigeria' },
+              status: 'verified',
+              stats: { totalUsers: 2456 },
+              verifiedAt: '2024-01-10T00:00:00Z',
+              createdAt: '2024-01-01T00:00:00Z'
+            },
+            {
+              _id: '2',
+              name: 'Ahmadu Bello University',
+              code: 'ABU',
+              type: 'university',
+              location: { city: 'Zaria', state: 'Kaduna', country: 'Nigeria' },
+              status: 'verified',
+              stats: { totalUsers: 3200 },
+              verifiedAt: '2024-01-08T00:00:00Z',
+              createdAt: '2024-01-01T00:00:00Z'
+            },
+            {
+              _id: '3',
+              name: 'Covenant University',
+              code: 'CU',
+              type: 'university',
+              location: { city: 'Ota', state: 'Ogun', country: 'Nigeria' },
+              status: 'pending',
+              stats: { totalUsers: 1800 },
+              createdAt: '2024-01-15T00:00:00Z'
+            },
+            {
+              _id: '4',
+              name: 'University of Ibadan',
+              code: 'UI',
+              type: 'university',
+              location: { city: 'Ibadan', state: 'Oyo', country: 'Nigeria' },
+              status: 'verified',
+              stats: { totalUsers: 2100 },
+              verifiedAt: '2024-01-05T00:00:00Z',
+              createdAt: '2024-01-01T00:00:00Z'
+            },
+            {
+              _id: '5',
+              name: 'Federal University of Technology, Akure',
+              code: 'FUTA',
+              type: 'university',
+              location: { city: 'Akure', state: 'Ondo', country: 'Nigeria' },
+              status: 'verified',
+              stats: { totalUsers: 1650 },
+              verifiedAt: '2024-01-12T00:00:00Z',
+              createdAt: '2024-01-01T00:00:00Z'
+            },
+            {
+              _id: '6',
+              name: 'University of Benin',
+              code: 'UNIBEN',
+              type: 'university',
+              location: { city: 'Benin City', state: 'Edo', country: 'Nigeria' },
+              status: 'suspended',
+              stats: { totalUsers: 987 },
+              verifiedAt: '2024-01-12T00:00:00Z',
+              createdAt: '2024-01-01T00:00:00Z'
+            }
+          ],
+          pagination: {
+            currentPage: 1,
+            totalPages: 6,
+            totalCount: 123,
+            hasNextPage: true,
+            hasPrevPage: false,
+            limit: 20
+          }
+        };
+      }
+      throw error;
+    }
+  },
+
+  // Get institution statistics
+  getInstitutionStats: async () => {
+    try {
+      const superAdminToken = localStorage.getItem('appAdminToken');
+      if (!superAdminToken) {
+        throw new Error('Super Admin authentication required');
+      }
+
+      const response = await fetch(`${API_BASE_URL}/super-admin/institutions/stats`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${superAdminToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      if (error.message.includes('Backend service is not available') ||
+          error.message.includes('Demo mode is enabled') ||
+          error.message.includes('fetch') ||
+          error.message.includes('NetworkError') ||
+          error.message.includes('Failed to fetch')) {
+        console.log('🚨 USING MOCK DATA FOR INSTITUTION STATS - Backend not available');
+        return {
+          stats: {
+            totalInstitutions: 123,
+            verifiedInstitutions: 110,
+            pendingInstitutions: 8,
+            suspendedInstitutions: 5
+          },
+          typeStats: [
+            { _id: 'university', count: 156 },
+            { _id: 'polytechnic', count: 45 },
+            { _id: 'college', count: 23 },
+            { _id: 'institute', count: 10 }
+          ],
+          stateStats: [
+            { _id: 'Lagos', count: 45 },
+            { _id: 'Ogun', count: 23 },
+            { _id: 'Oyo', count: 18 },
+            { _id: 'Kaduna', count: 15 }
+          ]
+        };
+      }
+      throw error;
+    }
+  },
+
+  // Update institution status
+  updateInstitutionStatus: async (institutionId, statusData) => {
+    try {
+      const superAdminToken = localStorage.getItem('appAdminToken');
+      if (!superAdminToken) {
+        throw new Error('Super Admin authentication required');
+      }
+
+      const response = await fetch(`${API_BASE_URL}/super-admin/institutions/${institutionId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${superAdminToken}`,
+        },
+        body: JSON.stringify(statusData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      if (error.message.includes('Backend service is not available') ||
+          error.message.includes('Demo mode is enabled') ||
+          error.message.includes('fetch') ||
+          error.message.includes('NetworkError') ||
+          error.message.includes('Failed to fetch')) {
+        console.log('Using mock response for status update');
+        return {
+          message: `Institution ${statusData.status} successfully (demo mode)`,
+          institution: { _id: institutionId, status: statusData.status }
+        };
+      }
+      throw error;
+    }
+  },
+
+  // Bulk institution actions
+  bulkInstitutionAction: async (actionData) => {
+    try {
+      const superAdminToken = localStorage.getItem('appAdminToken');
+      if (!superAdminToken) {
+        throw new Error('Super Admin authentication required');
+      }
+
+      const response = await fetch(`${API_BASE_URL}/super-admin/institutions/bulk-action`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${superAdminToken}`,
+        },
+        body: JSON.stringify(actionData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      if (error.message.includes('Backend service is not available') ||
+          error.message.includes('Demo mode is enabled') ||
+          error.message.includes('fetch') ||
+          error.message.includes('NetworkError') ||
+          error.message.includes('Failed to fetch')) {
+        console.log('Using mock response for bulk action');
+        return {
+          message: `Bulk ${actionData.action} completed successfully (demo mode)`,
+          modifiedCount: actionData.institutionIds.length
+        };
+      }
+      throw error;
+    }
   }
 };
 

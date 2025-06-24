@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { USER_ROLES, ROLE_COLORS, ROLE_ICONS } from '../../constants/roles';
 import CreateAdminForm from '../../components/admin/CreateAdminForm';
 import TwoFactorSettings from '../../components/admin/TwoFactorSettings';
+import InstitutionManagement from '../../components/admin/InstitutionManagement';
 import { superAdminAPI } from '../../services/api';
 
 const SuperAdminDashboard = () => {
@@ -486,18 +487,7 @@ const SuperAdminDashboard = () => {
         )}
 
         {activeTab === 'institutions' && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Institution Management</h2>
-              <button
-                onClick={() => setActiveTab('overview')}
-                className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
-              >
-                ← Back to Dashboard
-              </button>
-            </div>
-            <p className="text-gray-600 dark:text-gray-400">Institution management interface coming soon...</p>
-          </div>
+          <InstitutionManagement onBack={() => setActiveTab('overview')} />
         )}
 
         {activeTab === 'analytics' && (

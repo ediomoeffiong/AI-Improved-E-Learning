@@ -6,6 +6,7 @@ services:
     rootDir: elearning-backend
     buildCommand: npm install
     startCommand: npm start
+    postDeployCommand: npm run deploy
     envVars:
       - key: NODE_ENV
         value: production

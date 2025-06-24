@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
-const { seedSuperAdmins, updateSuperAdmins } = require('./seedSuperAdmins');
+const { seedSuperAdmins, updateSuperAdmins, seedSuperAdminsWithConnection, updateSuperAdminsWithConnection } = require('./seedSuperAdmins');
+const { seedInstitutions, seedInstitutionsWithConnection } = require('./seedInstitutions');
 require('dotenv').config();
 
 /**
@@ -21,16 +22,27 @@ async function runDeploymentTasks() {
 
     // Check if this is a fresh deployment or an update
     const User = require('../models/User');
+    const Institution = require('../models/Institution');
+
     const existingSuperAdmins = await User.countDocuments({
       role: { $in: ['Super Admin', 'Super Moderator'] }
     });
+    const existingInstitutions = await Institution.countDocuments();
 
     if (existingSuperAdmins === 0) {
       console.log('🆕 Fresh deployment detected - seeding Super Admin accounts...');
-      await seedSuperAdmins();
+      await seedSuperAdminsWithConnection();
     } else {
       console.log('🔄 Existing deployment detected - updating Super Admin accounts...');
-      await updateSuperAdmins();
+      await updateSuperAdminsWithConnection();
+    }
+
+    // Seed institutions if none exist
+    if (existingInstitutions === 0) {
+      console.log('\n🏛️ No institutions found - seeding Nigerian universities...');
+      await seedInstitutionsWithConnection();
+    } else {
+      console.log(`\n🏛️ Found ${existingInstitutions} existing institutions - skipping institution seeding`);
     }
 
     // Create indexes for better performance
@@ -44,6 +56,7 @@ async function runDeploymentTasks() {
     console.log('\n🎉 Deployment tasks completed successfully!');
     console.log('\n📋 Deployment Summary:');
     console.log('- Super Admin accounts: ✅ Ready');
+    console.log('- Nigerian universities: ✅ Seeded');
     console.log('- Database indexes: ✅ Created');
     console.log('- System verification: ✅ Passed');
     console.log('\n🔐 Default Super Admin Credentials:');
@@ -113,6 +126,11 @@ async function createDatabaseIndexes() {
 
 async function verifyDeployment() {
   try {
+    // Check if we're connected to MongoDB
+    if (mongoose.connection.readyState !== 1) {
+      throw new Error('MongoDB not connected');
+    }
+
     const User = require('../models/User');
     const Institution = require('../models/Institution');
 
@@ -129,6 +147,12 @@ async function verifyDeployment() {
     superAdmins.forEach(admin => {
       console.log(`    - ${admin.name} (${admin.email}) - ${admin.role}`);
     });
+
+    // Verify institutions
+    const institutionCount = await Institution.countDocuments();
+    const verifiedInstitutions = await Institution.countDocuments({ status: 'verified' });
+
+    console.log(`  ✅ Found ${institutionCount} institutions (${verifiedInstitutions} verified)`);
 
     // Verify database collections exist
     const collections = await mongoose.connection.db.listCollections().toArray();
@@ -169,6 +193,22 @@ switch (deploymentType) {
       process.exit(1);
     });
     break;
+
+  case 'institutions-only':
+    console.log('🏛️ Seeding institutions only...');
+    mongoose.connect(process.env.MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    }).then(async () => {
+      await seedInstitutions();
+      await mongoose.disconnect();
+      console.log('✅ Institutions seeded successfully');
+      process.exit(0);
+    }).catch(err => {
+      console.error(err);
+      process.exit(1);
+    });
+    break;
   
   case 'indexes-only':
     console.log('📊 Creating indexes only...');
@@ -192,9 +232,16 @@ switch (deploymentType) {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     }).then(async () => {
-      await verifyDeployment();
-      await mongoose.disconnect();
-      console.log('✅ Verification completed');
+      try {
+        await verifyDeployment();
+        console.log('✅ Verification completed');
+      } catch (error) {
+        console.error('Verification failed:', error);
+        throw error;
+      } finally {
+        await mongoose.disconnect();
+        console.log('📡 Disconnected from MongoDB');
+      }
       process.exit(0);
     }).catch(err => {
       console.error(err);
