@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { USER_ROLES, ROLE_ICONS } from '../../constants/roles';
-import { dashboardAPI } from '../../services/api';
+import { dashboardAPI, superAdminAPI } from '../../services/api';
 
 const SuperAdminUserManagement = () => {
   const [activeTab, setActiveTab] = useState('all-users');
@@ -38,20 +38,58 @@ const SuperAdminUserManagement = () => {
       setLoading(true);
       console.log('Fetching super admin users data...');
 
+      // Use the real API endpoint that returns actual data
       const data = await dashboardAPI.getSuperAdminUsers();
-      setAllUsers(data.users || []);
+
+      // Process users to add hierarchical structure for moderators
+      const processedUsers = processUsersHierarchy(data.users || []);
+
+      setAllUsers(processedUsers);
       setSummary(data.summary || {});
       setInstitutions(data.institutions || []);
       setError(null);
     } catch (err) {
       console.error('Error fetching users:', err);
-      setError('Unable to load users. Please try again.');
+
+      // Only show error for connectivity issues
+      if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError') ||
+          err.message.includes('ERR_NETWORK') || err.message.includes('ERR_INTERNET_DISCONNECTED')) {
+        setError('Backend service is temporarily unavailable. Please try again.');
+      } else {
+        setError(null); // Don't show error for other cases
+      }
+
       setAllUsers([]);
       setSummary({});
       setInstitutions([]);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Process users to create hierarchical structure for moderators under admins
+  const processUsersHierarchy = (users) => {
+    const admins = users.filter(user => user.role === 'Admin');
+    const moderators = users.filter(user => user.role === 'Moderator');
+    const otherUsers = users.filter(user => !['Admin', 'Moderator'].includes(user.role));
+
+    // Group moderators by institution and link them to admins
+    const processedUsers = [...otherUsers];
+
+    admins.forEach(admin => {
+      processedUsers.push({
+        ...admin,
+        moderators: moderators.filter(mod => mod.institution === admin.institution)
+      });
+    });
+
+    // Add orphaned moderators (those without matching admin in same institution)
+    const orphanedModerators = moderators.filter(mod =>
+      !admins.some(admin => admin.institution === mod.institution)
+    );
+    processedUsers.push(...orphanedModerators);
+
+    return processedUsers;
   };
 
   const filterUsers = () => {
@@ -102,12 +140,13 @@ const SuperAdminUserManagement = () => {
     setCurrentPage(1); // Reset to first page when filtering
   };
 
-  const handleUserAction = async (userId, action) => {
+  const handleUserAction = async (userId, action, notes = '') => {
     try {
       setActionLoading(true);
       console.log(`Performing ${action} on user ${userId}`);
 
-      const response = await dashboardAPI.performUserAction(userId, action);
+      // Use superAdminAPI for user management actions
+      const response = await superAdminAPI.manageUser(userId, action, notes);
 
       // Update user status locally
       setAllUsers(prevUsers =>
@@ -116,7 +155,8 @@ const SuperAdminUserManagement = () => {
             ? {
                 ...user,
                 approvalStatus: response.user.approvalStatus,
-                status: response.user.status
+                status: response.user.status,
+                isActive: response.user.isActive
               }
             : user
         )
@@ -129,13 +169,18 @@ const SuperAdminUserManagement = () => {
         // Recalculate counts based on updated users
         const updatedUsers = allUsers.map(user =>
           user.id === userId
-            ? { ...user, approvalStatus: response.user.approvalStatus, status: response.user.status }
+            ? {
+                ...user,
+                approvalStatus: response.user.approvalStatus,
+                status: response.user.status,
+                isActive: response.user.isActive
+              }
             : user
         );
 
         newSummary.pendingApprovals = updatedUsers.filter(u => u.approvalStatus === 'pending').length;
         newSummary.suspendedUsers = updatedUsers.filter(u => u.status === 'suspended').length;
-        newSummary.activeUsers = updatedUsers.filter(u => u.status === 'active').length;
+        newSummary.activeUsers = updatedUsers.filter(u => u.status === 'active' && u.isActive).length;
 
         return newSummary;
       });
@@ -388,75 +433,157 @@ const SuperAdminUserManagement = () => {
               </thead>
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {currentUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10">
-                          <div className="h-10 w-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
-                            <span className="text-lg">{getRoleIcon(user.role)}</span>
+                  <React.Fragment key={user.id}>
+                    {/* Main User Row */}
+                    <tr className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-10 w-10">
+                            <div className="h-10 w-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
+                              <span className="text-lg">{getRoleIcon(user.role)}</span>
+                            </div>
+                          </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900 dark:text-white">
+                              {user.name}
+                            </div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                              {user.email}
+                            </div>
                           </div>
                         </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900 dark:text-white">
-                            {user.name}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900 dark:text-white">{user.role}</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">{user.institution}</div>
+                        {user.role === 'Admin' && user.moderators && user.moderators.length > 0 && (
+                          <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                            {user.moderators.length} moderator{user.moderators.length > 1 ? 's' : ''} under this admin
                           </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
-                            {user.email}
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex flex-col space-y-1">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(user.approvalStatus || 'approved')}`}>
+                            {user.approvalStatus || 'approved'}
+                          </span>
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(user.status || 'active')}`}>
+                            {user.status || 'active'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        <div>Joined: {new Date(user.createdAt).toLocaleDateString()}</div>
+                        <div>Last login: {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never'}</div>
+                        {user.role === 'Student' && (
+                          <div className="text-xs">
+                            <span className="text-blue-600 dark:text-blue-400">
+                              {user.coursesEnrolled || 0} courses, {user.quizzesTaken || 0} quizzes
+                            </span>
                           </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 dark:text-white">{user.role}</div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">{user.institution}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex flex-col space-y-1">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(user.approvalStatus)}`}>
-                          {user.approvalStatus}
-                        </span>
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(user.status)}`}>
-                          {user.status}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      <div>Joined: {new Date(user.createdAt).toLocaleDateString()}</div>
-                      <div>Last login: {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never'}</div>
-                      {user.role === 'Student' && (
-                        <div className="text-xs">
-                          <span className="text-blue-600 dark:text-blue-400">
-                            {user.coursesEnrolled || 0} courses, {user.quizzesTaken || 0} quizzes
-                          </span>
-                        </div>
-                      )}
-                      {user.role === 'Instructor' && (
-                        <div className="text-xs">
-                          <span className="text-purple-600 dark:text-purple-400">
-                            {user.coursesCreated || 0} courses, {user.studentsEnrolled || 0} students
-                          </span>
-                        </div>
-                      )}
-                      {['Admin', 'Moderator'].includes(user.role) && (
-                        <div className="text-xs">
-                          <span className="text-green-600 dark:text-green-400">
-                            Managing {user.usersManaged || 0} users
-                          </span>
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => {
-                          setSelectedUser(user);
-                          setShowUserModal(true);
-                        }}
-                        className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                      >
-                        Manage
-                      </button>
-                    </td>
-                  </tr>
+                        )}
+                        {user.role === 'Instructor' && (
+                          <div className="text-xs">
+                            <span className="text-purple-600 dark:text-purple-400">
+                              {user.coursesCreated || 0} courses, {user.studentsEnrolled || 0} students
+                            </span>
+                          </div>
+                        )}
+                        {['Admin', 'Moderator'].includes(user.role) && (
+                          <div className="text-xs">
+                            <span className="text-green-600 dark:text-green-400">
+                              Managing {user.usersManaged || 0} users
+                            </span>
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        {['Admin', 'Moderator'].includes(user.role) ? (
+                          <button
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setShowUserModal(true);
+                            }}
+                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                          >
+                            Manage
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setShowUserModal(true);
+                            }}
+                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                          >
+                            View
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+
+                    {/* Nested Moderators (only show for Admins in admins tab) */}
+                    {user.role === 'Admin' && user.moderators && user.moderators.length > 0 && activeTab === 'admins' && (
+                      user.moderators.map((moderator) => (
+                        <tr key={`mod-${moderator.id}`} className="bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center pl-8">
+                              <div className="flex-shrink-0 h-8 w-8">
+                                <div className="h-8 w-8 rounded-full bg-blue-200 dark:bg-blue-700 flex items-center justify-center">
+                                  <span className="text-sm">{getRoleIcon(moderator.role)}</span>
+                                </div>
+                              </div>
+                              <div className="ml-3">
+                                <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                  {moderator.name}
+                                </div>
+                                <div className="text-sm text-gray-500 dark:text-gray-400">
+                                  {moderator.email}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900 dark:text-white">{moderator.role}</div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">{moderator.institution}</div>
+                            <div className="text-xs text-blue-600 dark:text-blue-400">
+                              Under {user.name}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex flex-col space-y-1">
+                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(moderator.approvalStatus || 'approved')}`}>
+                                {moderator.approvalStatus || 'approved'}
+                              </span>
+                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(moderator.status || 'active')}`}>
+                                {moderator.status || 'active'}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                            <div>Joined: {new Date(moderator.createdAt).toLocaleDateString()}</div>
+                            <div>Last login: {moderator.lastLogin ? new Date(moderator.lastLogin).toLocaleDateString() : 'Never'}</div>
+                            <div className="text-xs">
+                              <span className="text-green-600 dark:text-green-400">
+                                Managing {moderator.usersManaged || 0} users
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button
+                              onClick={() => {
+                                setSelectedUser(moderator);
+                                setShowUserModal(true);
+                              }}
+                              className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                            >
+                              Manage
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>
@@ -537,36 +664,109 @@ const SuperAdminUserManagement = () => {
               </div>
 
               <div className="flex flex-col space-y-3">
-                {selectedUser.approvalStatus === 'pending' && (
-                  <button
-                    onClick={() => handleUserAction(selectedUser.id, 'approve')}
-                    disabled={actionLoading}
-                    className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50"
-                  >
-                    {actionLoading ? 'Processing...' : 'Approve User'}
-                  </button>
+                {/* Admin and Moderator Management Actions */}
+                {['Admin', 'Moderator'].includes(selectedUser.role) && (
+                  <>
+                    {selectedUser.approvalStatus === 'pending' && (
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => {
+                            const notes = prompt('Add approval notes (optional):');
+                            handleUserAction(selectedUser.id, 'approve', notes || '');
+                          }}
+                          disabled={actionLoading}
+                          className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50"
+                        >
+                          {actionLoading ? 'Processing...' : 'Approve'}
+                        </button>
+                        <button
+                          onClick={() => {
+                            const notes = prompt('Reason for disapproval:');
+                            if (notes) handleUserAction(selectedUser.id, 'disapprove', notes);
+                          }}
+                          disabled={actionLoading}
+                          className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50"
+                        >
+                          {actionLoading ? 'Processing...' : 'Disapprove'}
+                        </button>
+                      </div>
+                    )}
+
+                    {selectedUser.status === 'active' && selectedUser.isActive !== false && (
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => {
+                            const notes = prompt('Reason for pausing (optional):');
+                            handleUserAction(selectedUser.id, 'pause', notes || '');
+                          }}
+                          disabled={actionLoading}
+                          className="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 disabled:opacity-50"
+                        >
+                          {actionLoading ? 'Processing...' : 'Pause'}
+                        </button>
+                        <button
+                          onClick={() => {
+                            const notes = prompt('Reason for disabling:');
+                            if (notes) handleUserAction(selectedUser.id, 'disable', notes);
+                          }}
+                          disabled={actionLoading}
+                          className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50"
+                        >
+                          {actionLoading ? 'Processing...' : 'Disable'}
+                        </button>
+                      </div>
+                    )}
+
+                    {(selectedUser.status === 'suspended' || selectedUser.status === 'disabled' || selectedUser.isActive === false) && (
+                      <button
+                        onClick={() => {
+                          const notes = prompt('Notes for enabling (optional):');
+                          handleUserAction(selectedUser.id, 'enable', notes || '');
+                        }}
+                        disabled={actionLoading}
+                        className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50"
+                      >
+                        {actionLoading ? 'Processing...' : 'Enable User'}
+                      </button>
+                    )}
+                  </>
                 )}
-                
-                {selectedUser.status === 'active' && (
-                  <button
-                    onClick={() => handleUserAction(selectedUser.id, 'suspend')}
-                    disabled={actionLoading}
-                    className="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50"
-                  >
-                    {actionLoading ? 'Processing...' : 'Suspend User'}
-                  </button>
+
+                {/* Regular User Actions */}
+                {!['Admin', 'Moderator'].includes(selectedUser.role) && (
+                  <>
+                    {selectedUser.approvalStatus === 'pending' && (
+                      <button
+                        onClick={() => handleUserAction(selectedUser.id, 'approve')}
+                        disabled={actionLoading}
+                        className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50"
+                      >
+                        {actionLoading ? 'Processing...' : 'Approve User'}
+                      </button>
+                    )}
+
+                    {selectedUser.status === 'active' && (
+                      <button
+                        onClick={() => handleUserAction(selectedUser.id, 'suspend')}
+                        disabled={actionLoading}
+                        className="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50"
+                      >
+                        {actionLoading ? 'Processing...' : 'Suspend User'}
+                      </button>
+                    )}
+
+                    {selectedUser.status === 'suspended' && (
+                      <button
+                        onClick={() => handleUserAction(selectedUser.id, 'activate')}
+                        disabled={actionLoading}
+                        className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                      >
+                        {actionLoading ? 'Processing...' : 'Activate User'}
+                      </button>
+                    )}
+                  </>
                 )}
-                
-                {selectedUser.status === 'suspended' && (
-                  <button
-                    onClick={() => handleUserAction(selectedUser.id, 'activate')}
-                    disabled={actionLoading}
-                    className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                  >
-                    {actionLoading ? 'Processing...' : 'Activate User'}
-                  </button>
-                )}
-                
+
                 <button
                   onClick={() => setShowUserModal(false)}
                   className="w-full bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700"

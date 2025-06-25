@@ -1114,4 +1114,123 @@ router.post('/institutions', auth, requireSuperAdmin, async (req, res) => {
   }
 });
 
+// Manage user actions (approve, disapprove, pause, disable)
+router.post('/manage-user/:userId', auth, requireSuperAdmin, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { action, notes } = req.body;
+
+    if (!isMongoConnected()) {
+      return res.status(503).json({ message: 'Database not available' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Only allow management of Admin and Moderator roles
+    if (!['Admin', 'Moderator'].includes(user.role)) {
+      return res.status(400).json({ message: 'Can only manage Admin and Moderator users' });
+    }
+
+    let updateData = {};
+    let message = '';
+
+    switch (action) {
+      case 'approve':
+        updateData = {
+          approvalStatus: 'approved',
+          isVerified: true,
+          verifiedBy: req.user.userId,
+          verifiedAt: new Date(),
+          status: 'active',
+          isActive: true
+        };
+        message = `${user.role} ${user.name} has been approved`;
+        break;
+
+      case 'disapprove':
+        updateData = {
+          approvalStatus: 'rejected',
+          isVerified: false,
+          status: 'inactive',
+          isActive: false,
+          rejectedBy: req.user.userId,
+          rejectedAt: new Date(),
+          rejectionReason: notes
+        };
+        message = `${user.role} ${user.name} has been disapproved`;
+        break;
+
+      case 'pause':
+        updateData = {
+          status: 'suspended',
+          isActive: false,
+          suspendedBy: req.user.userId,
+          suspendedAt: new Date(),
+          suspensionReason: notes
+        };
+        message = `${user.role} ${user.name} has been paused/suspended`;
+        break;
+
+      case 'disable':
+        updateData = {
+          isActive: false,
+          status: 'disabled',
+          disabledBy: req.user.userId,
+          disabledAt: new Date(),
+          disableReason: notes
+        };
+        message = `${user.role} ${user.name} has been disabled`;
+        break;
+
+      case 'enable':
+        updateData = {
+          isActive: true,
+          status: 'active',
+          enabledBy: req.user.userId,
+          enabledAt: new Date()
+        };
+        message = `${user.role} ${user.name} has been enabled`;
+        break;
+
+      default:
+        return res.status(400).json({ message: 'Invalid action' });
+    }
+
+    // Add management notes if provided
+    if (notes) {
+      updateData.managementNotes = notes;
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      updateData,
+      { new: true }
+    ).select('-password');
+
+    // Log the action for audit trail
+    console.log(`Super Admin ${req.user.userId} performed ${action} on user ${userId}: ${message}`);
+
+    res.json({
+      message,
+      user: {
+        id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        approvalStatus: updatedUser.approvalStatus,
+        status: updatedUser.status,
+        isActive: updatedUser.isActive,
+        updatedAt: updatedUser.updatedAt
+      }
+    });
+
+  } catch (error) {
+    console.error('Error managing user:', error);
+    res.status(500).json({ message: 'Error managing user' });
+  }
+});
+
 module.exports = router;

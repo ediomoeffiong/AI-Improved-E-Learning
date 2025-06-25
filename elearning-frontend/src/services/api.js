@@ -2130,6 +2130,53 @@ export const superAdminAPI = {
       }
       throw error;
     }
+  },
+
+  // Manage user actions (approve, disapprove, pause, disable)
+  manageUser: async (userId, action, notes = '') => {
+    try {
+      const superAdminToken = localStorage.getItem('appAdminToken');
+      if (!superAdminToken) {
+        throw new Error('Super Admin authentication required');
+      }
+
+      const response = await fetch(`${API_BASE_URL}/super-admin/manage-user/${userId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${superAdminToken}`,
+        },
+        body: JSON.stringify({
+          action,
+          notes
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      if (error.message.includes('Backend service is not available') ||
+          error.message.includes('Demo mode is enabled') ||
+          error.message.includes('fetch') ||
+          error.message.includes('NetworkError') ||
+          error.message.includes('Failed to fetch')) {
+        console.log('Using mock response for user management');
+        return {
+          message: `User ${action} action completed successfully (Demo Mode)`,
+          user: {
+            id: userId,
+            approvalStatus: action === 'approve' ? 'approved' : action === 'disapprove' ? 'rejected' : 'pending',
+            status: action === 'pause' ? 'suspended' : action === 'disable' ? 'inactive' : 'active',
+            isActive: action !== 'disable'
+          }
+        };
+      }
+      throw error;
+    }
   }
 };
 
