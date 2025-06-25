@@ -1,10 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
 import { USER_ROLES, ADMIN_TYPES } from '../../constants/roles';
 
 const SuperAdminUserApprovals = () => {
-  const { user } = useAuth();
+  // Get Super Admin user from localStorage (separate from regular auth)
+  const getSuperAdminUser = () => {
+    try {
+      const superAdminUser = localStorage.getItem('appAdminUser');
+      return superAdminUser ? JSON.parse(superAdminUser) : null;
+    } catch (error) {
+      console.error('Error parsing super admin user:', error);
+      return null;
+    }
+  };
+
+  const user = getSuperAdminUser();
   const [approvals, setApprovals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
