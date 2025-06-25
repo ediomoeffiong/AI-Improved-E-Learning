@@ -72,7 +72,14 @@ app.use('/api/2fa', require('./routes/twoFactorAuth'));
 // Connect to MongoDB with enhanced error handling and fallback
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI, {
+    // Replace the database name in the URI to use 'elearning' instead of 'myFirstDatabase'
+    let mongoUri = process.env.MONGODB_URI;
+    if (mongoUri && mongoUri.includes('myFirstDatabase')) {
+      mongoUri = mongoUri.replace('myFirstDatabase', 'elearning');
+      console.log('📝 Using database: elearning (replaced myFirstDatabase)');
+    }
+
+    await mongoose.connect(mongoUri, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
       serverSelectionTimeoutMS: 10000,

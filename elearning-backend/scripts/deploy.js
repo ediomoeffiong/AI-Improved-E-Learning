@@ -13,7 +13,15 @@ async function runDeploymentTasks() {
   try {
     // Connect to MongoDB with better connection options
     console.log('📡 Connecting to MongoDB...');
-    await mongoose.connect(process.env.MONGODB_URI, {
+
+    // Replace the database name in the URI to use 'elearning' instead of 'myFirstDatabase'
+    let mongoUri = process.env.MONGODB_URI;
+    if (mongoUri && mongoUri.includes('myFirstDatabase')) {
+      mongoUri = mongoUri.replace('myFirstDatabase', 'elearning');
+      console.log('📝 Using database: elearning (replaced myFirstDatabase)');
+    }
+
+    await mongoose.connect(mongoUri, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
       serverSelectionTimeoutMS: 30000, // 30 seconds
