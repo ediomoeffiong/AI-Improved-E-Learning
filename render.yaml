@@ -13,9 +13,9 @@ services:
       - key: PORT
         value: 10000
       - key: MONGODB_URI
-        value: mongodb+srv://admin:adm1n@appbackend.encifsv.mongodb.net/elearning?retryWrites=true&w=majority
+        value: mongodb+srv://ediomoemmaeffiong:Ed10m0Ed10m0@elearninggbackend.44far0a.mongodb.net/?retryWrites=true&w=majority&appName=ELearningGBackend
       - key: JWT_SECRET
-        value: ai-elearning-production-jwt-secret-2025-secure-key
+        value: your-production-jwt-secret-here
       - key: CORS_ORIGIN
         value: https://ai-improved-e-learning.vercel.app
     healthCheckPath: /

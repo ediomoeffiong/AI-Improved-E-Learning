@@ -148,9 +148,6 @@ async function verifyDeployment() {
       throw new Error('MongoDB not connected');
     }
 
-    // Wait a moment for the connection to be fully established
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
     const User = require('../models/User');
     const Institution = require('../models/Institution');
 
@@ -160,13 +157,13 @@ async function verifyDeployment() {
     }).select('name email role');
 
     if (superAdmins.length === 0) {
-      console.log('  ⚠️  No Super Admin accounts found - this is expected on first deployment');
-    } else {
-      console.log(`  ✅ Found ${superAdmins.length} Super Admin accounts:`);
-      superAdmins.forEach(admin => {
-        console.log(`    - ${admin.name} (${admin.email}) - ${admin.role}`);
-      });
+      throw new Error('No Super Admin accounts found after seeding');
     }
+
+    console.log(`  ✅ Found ${superAdmins.length} Super Admin accounts:`);
+    superAdmins.forEach(admin => {
+      console.log(`    - ${admin.name} (${admin.email}) - ${admin.role}`);
+    });
 
     // Verify institutions
     const institutionCount = await Institution.countDocuments();
@@ -174,43 +171,31 @@ async function verifyDeployment() {
 
     console.log(`  ✅ Found ${institutionCount} institutions (${verifiedInstitutions} verified)`);
 
-    // Verify database collections exist with better error handling
-    try {
-      const collections = await mongoose.connection.db.listCollections().toArray();
-      const collectionNames = collections.map(c => c.name);
-
-      const requiredCollections = ['users', 'institutions', 'userapprovals', 'institutionmemberships'];
-      const missingCollections = requiredCollections.filter(name => !collectionNames.includes(name));
-
-      if (missingCollections.length > 0) {
-        console.log(`  ⚠️  Missing collections: ${missingCollections.join(', ')}`);
-        console.log('    These will be created automatically when first used.');
-      } else {
-        console.log('  ✅ All required collections exist');
-      }
-    } catch (listError) {
-      console.log('  ⚠️  Could not list collections (this is normal during deployment)');
-      console.log('    Collections will be created automatically when first used.');
+    // Verify database collections exist
+    const collections = await mongoose.connection.db.listCollections().toArray();
+    const collectionNames = collections.map(c => c.name);
+    
+    const requiredCollections = ['users', 'institutions', 'userapprovals', 'institutionmemberships'];
+    const missingCollections = requiredCollections.filter(name => !collectionNames.includes(name));
+    
+    if (missingCollections.length > 0) {
+      console.log(`  ⚠️  Missing collections: ${missingCollections.join(', ')}`);
+      console.log('    These will be created automatically when first used.');
+    } else {
+      console.log('  ✅ All required collections exist');
     }
 
-    // Test basic database operations with better error handling
-    try {
-      const testUser = await User.findOne({ role: 'Super Admin' });
-      if (!testUser) {
-        console.log('  ⚠️  No Super Admin user found - this is expected on first deployment');
-      } else {
-        console.log('  ✅ Database operations verified');
-      }
-    } catch (dbError) {
-      console.log('  ⚠️  Database operation test skipped (this is normal during deployment)');
+    // Test basic database operations
+    const testUser = await User.findOne({ role: 'Super Admin' });
+    if (!testUser) {
+      throw new Error('Cannot find Super Admin user for verification');
     }
 
-    console.log('  ✅ Verification completed');
+    console.log('  ✅ Database operations verified');
 
   } catch (error) {
     console.error('Verification failed:', error);
-    // Don't throw the error - just log it and continue
-    console.log('  ⚠️  Verification had issues but deployment can continue');
+    throw error;
   }
 }
 
@@ -300,46 +285,24 @@ async function runDeploymentTasksWithConnection() {
   console.log('🚀 Starting deployment tasks with existing connection...\n');
 
   try {
-    // Wait for connection to be fully established
-    if (mongoose.connection.readyState !== 1) {
-      console.log('⏳ Waiting for MongoDB connection...');
-      await new Promise(resolve => setTimeout(resolve, 2000));
-    }
-
-    // Check deployment status with error handling
+    // Check deployment status
     const Institution = require('../models/Institution');
-    let existingInstitutions = 0;
-
-    try {
-      existingInstitutions = await Institution.countDocuments();
-    } catch (countError) {
-      console.log('⚠️  Could not count institutions, assuming none exist');
-      existingInstitutions = 0;
-    }
+    const existingInstitutions = await Institution.countDocuments();
 
     console.log('ℹ️  Skipping Super Admin account seeding (manual setup required)');
 
     // Seed institutions if none exist
     if (existingInstitutions === 0) {
       console.log('\n🏛️ No institutions found - seeding Nigerian universities...');
-      try {
-        const { seedInstitutionsWithConnection } = require('./seedInstitutions');
-        await seedInstitutionsWithConnection();
-      } catch (seedError) {
-        console.log('⚠️  Institution seeding failed, but deployment will continue');
-        console.log('   Institutions can be seeded manually later');
-      }
+      const { seedInstitutionsWithConnection } = require('./seedInstitutions');
+      await seedInstitutionsWithConnection();
     } else {
       console.log(`\n🏛️ Found ${existingInstitutions} existing institutions - skipping institution seeding`);
     }
 
     // Create indexes for better performance
     console.log('\n📊 Creating database indexes...');
-    try {
-      await createDatabaseIndexes();
-    } catch (indexError) {
-      console.log('⚠️  Index creation failed, but deployment will continue');
-    }
+    await createDatabaseIndexes();
 
     // Verify deployment
     console.log('\n🔍 Verifying deployment...');
@@ -360,14 +323,7 @@ async function runDeploymentTasksWithConnection() {
 
   } catch (error) {
     console.error('❌ Deployment tasks failed:', error);
-
-    // Don't throw the error - just log it and continue
-    // This prevents the app from crashing during deployment
-    console.log('⚠️  Deployment tasks had issues but app will continue to start');
-    console.log('   You can run deployment tasks manually later if needed');
-
-    // Mark as completed to prevent retries
-    deploymentTasksCompleted = true;
+    throw error; // Re-throw to let caller handle
   }
 }
 
