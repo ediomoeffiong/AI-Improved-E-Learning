@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
-const { seedInstitutionsWithConnection } = require('./seedInstitutions');
+const { seedSuperAdmins, updateSuperAdmins, seedSuperAdminsWithConnection, updateSuperAdminsWithConnection } = require('./seedSuperAdmins');
+const { seedInstitutions, seedInstitutionsWithConnection } = require('./seedInstitutions');
 require('dotenv').config();
 
 /**
@@ -27,11 +28,22 @@ async function runDeploymentTasks() {
     });
     console.log('✅ Connected to MongoDB successfully\n');
 
-    // Check deployment status
+    // Check if this is a fresh deployment or an update
+    const User = require('../models/User');
     const Institution = require('../models/Institution');
+
+    const existingSuperAdmins = await User.countDocuments({
+      role: { $in: ['Super Admin', 'Super Moderator'] }
+    });
     const existingInstitutions = await Institution.countDocuments();
 
-    console.log('ℹ️  Skipping Super Admin account seeding (manual setup required)');
+    if (existingSuperAdmins === 0) {
+      console.log('🆕 Fresh deployment detected - seeding Super Admin accounts...');
+      await seedSuperAdminsWithConnection();
+    } else {
+      console.log('🔄 Existing deployment detected - updating Super Admin accounts...');
+      await updateSuperAdminsWithConnection();
+    }
 
     // Seed institutions if none exist
     if (existingInstitutions === 0) {
@@ -51,13 +63,14 @@ async function runDeploymentTasks() {
 
     console.log('\n🎉 Deployment tasks completed successfully!');
     console.log('\n📋 Deployment Summary:');
-    console.log('- Super Admin accounts: ⚠️  Manual setup required');
+    console.log('- Super Admin accounts: ✅ Ready');
     console.log('- Nigerian universities: ✅ Seeded');
     console.log('- Database indexes: ✅ Created');
     console.log('- System verification: ✅ Passed');
-    console.log('\n📝 Next Steps:');
-    console.log('1. Create Super Admin accounts manually using the admin panel or API');
-    console.log('2. Or run: npm run seed:super-admins (if needed)');
+    console.log('\n🔐 Default Super Admin Credentials:');
+    console.log('Email: superadmin@app.com | Username: superadmin | Password: SuperAdmin123!');
+    console.log('Email: supermod@app.com | Username: supermod | Password: SuperMod123!');
+    console.log('\n⚠️  IMPORTANT: Change default passwords in production!');
 
   } catch (error) {
     console.error('❌ Deployment failed:', error);
@@ -277,11 +290,24 @@ async function runDeploymentTasksWithConnection() {
   console.log('🚀 Starting deployment tasks with existing connection...\n');
 
   try {
-    // Check deployment status
+    // Check if this is a fresh deployment or an update
+    const User = require('../models/User');
     const Institution = require('../models/Institution');
+
+    const existingSuperAdmins = await User.countDocuments({
+      role: { $in: ['Super Admin', 'Super Moderator'] }
+    });
     const existingInstitutions = await Institution.countDocuments();
 
-    console.log('ℹ️  Skipping Super Admin account seeding (manual setup required)');
+    if (existingSuperAdmins === 0) {
+      console.log('🆕 Fresh deployment detected - seeding Super Admin accounts...');
+      const { seedSuperAdminsWithConnection } = require('./seedSuperAdmins');
+      await seedSuperAdminsWithConnection();
+    } else {
+      console.log('🔄 Existing deployment detected - updating Super Admin accounts...');
+      const { updateSuperAdminsWithConnection } = require('./seedSuperAdmins');
+      await updateSuperAdminsWithConnection();
+    }
 
     // Seed institutions if none exist
     if (existingInstitutions === 0) {
@@ -302,13 +328,14 @@ async function runDeploymentTasksWithConnection() {
 
     console.log('\n🎉 Deployment tasks completed successfully!');
     console.log('\n📋 Deployment Summary:');
-    console.log('- Super Admin accounts: ⚠️  Manual setup required');
+    console.log('- Super Admin accounts: ✅ Ready');
     console.log('- Nigerian universities: ✅ Seeded');
     console.log('- Database indexes: ✅ Created');
     console.log('- System verification: ✅ Passed');
-    console.log('\n📝 Next Steps:');
-    console.log('1. Create Super Admin accounts manually using the admin panel or API');
-    console.log('2. Or run: npm run seed:super-admins (if needed)');
+    console.log('\n🔐 Default Super Admin Credentials:');
+    console.log('Email: superadmin@app.com | Username: superadmin | Password: SuperAdmin123!');
+    console.log('Email: supermod@app.com | Username: supermod | Password: SuperMod123!');
+    console.log('\n⚠️  IMPORTANT: Change default passwords in production!');
 
     // Mark deployment tasks as completed
     deploymentTasksCompleted = true;
