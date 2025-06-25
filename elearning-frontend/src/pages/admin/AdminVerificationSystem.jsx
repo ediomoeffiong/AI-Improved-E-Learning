@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { USER_ROLES } from '../../constants/roles';
+import { superAdminAPI } from '../../services/api';
 
 const AdminVerificationSystem = () => {
   const [adminApprovals, setAdminApprovals] = useState([]);
@@ -62,6 +63,12 @@ const AdminVerificationSystem = () => {
       });
 
       if (!response.ok) {
+        if (response.status === 404) {
+          // No data found - this is normal, not an error
+          setAdminApprovals([]);
+          setPagination({});
+          return;
+        }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
@@ -70,9 +77,13 @@ const AdminVerificationSystem = () => {
       setPagination(data.pagination || {});
     } catch (error) {
       console.error('Error fetching admin approvals:', error);
-      setError(error.message);
 
-      // Fallback to demo data if API fails
+      // Only show error and demo data for actual connectivity issues
+      if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError') ||
+          error.message.includes('ERR_NETWORK') || error.message.includes('ERR_INTERNET_DISCONNECTED')) {
+        setError('Backend service is temporarily unavailable. Showing demo data for testing purposes.');
+
+        // Fallback to demo data only for connectivity issues
       const mockAdminApprovals = [
         {
           _id: 'demo-1',
@@ -137,86 +148,68 @@ const AdminVerificationSystem = () => {
           }
         }
       ];
-      setAdminApprovals(mockAdminApprovals);
+        setAdminApprovals(mockAdminApprovals);
+      } else {
+        // For other errors (like 401, 403, 500), just show empty state
+        setAdminApprovals([]);
+        setError(null); // Don't show error for these cases
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch all admins for the "All Admins" tab
+  // Fetch all admins for the "All Admins" tab using proper API
   const fetchAllAdmins = async () => {
     try {
-      const token = localStorage.getItem('appAdminToken');
-      if (!token) return;
-
-      const queryParams = new URLSearchParams({
+      const adminFilters = {
         role: 'Admin',
-        page: filters.page.toString(),
-        limit: filters.limit.toString(),
-        search: filters.search,
-        institution: filters.institution !== 'all' ? filters.institution : '',
-        adminType: filters.adminType !== 'all' ? filters.adminType : ''
-      });
+        page: filters.page,
+        limit: filters.limit,
+        ...(filters.search && { search: filters.search }),
+        ...(filters.institution !== 'all' && { institution: filters.institution }),
+        ...(filters.adminType !== 'all' && { adminType: filters.adminType })
+      };
 
-      // Remove empty parameters
-      for (const [key, value] of [...queryParams.entries()]) {
-        if (!value) queryParams.delete(key);
-      }
-
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/super-admin/users?${queryParams}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setAllAdmins(data.users || []);
-      }
+      const response = await superAdminAPI.getUsers(adminFilters);
+      setAllAdmins(response.users || []);
     } catch (error) {
       console.error('Error fetching all admins:', error);
-      // Set fallback data
-      setAllAdmins([
-        {
-          _id: 'admin-1',
-          name: 'John Admin',
-          email: 'john@unilag.edu.ng',
-          role: 'Admin',
-          adminType: 'primary',
-          institution: { name: 'University of Lagos', code: 'UNILAG' },
-          isVerified: true,
-          createdAt: new Date().toISOString()
-        }
-      ]);
+
+      // Only show demo data for connectivity issues
+      if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError') ||
+          error.message.includes('ERR_NETWORK') || error.message.includes('ERR_INTERNET_DISCONNECTED') ||
+          error.message.includes('Backend service is not available')) {
+        // Set fallback data only for connectivity issues
+        setAllAdmins([
+          {
+            _id: 'admin-1',
+            name: 'John Admin',
+            email: 'john@unilag.edu.ng',
+            role: 'Admin',
+            adminType: 'primary',
+            institution: { name: 'University of Lagos', code: 'UNILAG' },
+            isVerified: true,
+            createdAt: new Date().toISOString()
+          }
+        ]);
+      } else {
+        // For other errors, just show empty state
+        setAllAdmins([]);
+      }
     }
   };
 
-  // Fetch statistics
+  // Fetch statistics using the proper API
   const fetchStats = async () => {
     try {
-      const token = localStorage.getItem('appAdminToken');
-      if (!token) return;
-
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/super-admin/stats`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setStats(data.stats || {});
-      }
+      const response = await superAdminAPI.getStats();
+      setStats(response.stats || {});
     } catch (error) {
       console.error('Error fetching stats:', error);
-      // Set fallback stats
-      setStats({
-        pendingApprovals: 2,
-        institutionAdmins: 15,
-        totalUsers: 1250
-      });
+      // The superAdminAPI.getStats() already handles demo data properly
+      // Just set empty stats for other errors
+      setStats({});
     }
   };
 
@@ -375,7 +368,7 @@ const AdminVerificationSystem = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Error Message */}
+        {/* Error Message - Only show for connectivity issues */}
         {error && (
           <div className="bg-yellow-50 dark:bg-yellow-900 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4 mb-6">
             <div className="flex">
@@ -384,11 +377,11 @@ const AdminVerificationSystem = () => {
               </div>
               <div className="ml-3">
                 <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
-                  API Connection Issue
+                  Backend Connection Issue
                 </h3>
                 <div className="mt-2 text-sm text-yellow-700 dark:text-yellow-300">
-                  <p>Unable to connect to the backend. Showing demo data for testing purposes.</p>
-                  <p className="mt-1">Error: {error}</p>
+                  <p>{error}</p>
+                  <p className="mt-1">Demo data is being shown for testing purposes.</p>
                 </div>
               </div>
             </div>

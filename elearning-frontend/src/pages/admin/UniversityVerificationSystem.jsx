@@ -109,6 +109,12 @@ const UniversityVerificationSystem = () => {
       });
 
       if (!response.ok) {
+        if (response.status === 404) {
+          // No institutions found - this is normal, not an error
+          setInstitutions([]);
+          setPagination({});
+          return;
+        }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
@@ -117,9 +123,13 @@ const UniversityVerificationSystem = () => {
       setPagination(data.pagination || {});
     } catch (error) {
       console.error('Error fetching institutions:', error);
-      setError(error.message);
 
-      // Fallback to demo data if API fails
+      // Only show error and demo data for actual connectivity issues
+      if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError') ||
+          error.message.includes('ERR_NETWORK') || error.message.includes('ERR_INTERNET_DISCONNECTED')) {
+        setError('Backend service is temporarily unavailable. Showing demo data for testing purposes.');
+
+        // Fallback to demo data only for connectivity issues
       const mockInstitutions = [
         {
           _id: 'demo-1',
@@ -184,7 +194,12 @@ const UniversityVerificationSystem = () => {
           }
         }
       ];
-      setInstitutions(mockInstitutions);
+        setInstitutions(mockInstitutions);
+      } else {
+        // For other errors (like 401, 403, 500), just show empty state
+        setInstitutions([]);
+        setError(null); // Don't show error for these cases
+      }
     } finally {
       setLoading(false);
     }
@@ -203,19 +218,34 @@ const UniversityVerificationSystem = () => {
         }
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setStats(data.stats || {});
+      if (!response.ok) {
+        if (response.status === 404) {
+          // No stats available - set empty stats
+          setStats({});
+          return;
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+
+      const data = await response.json();
+      setStats(data.stats || {});
     } catch (error) {
       console.error('Error fetching stats:', error);
-      // Set fallback stats
-      setStats({
-        totalInstitutions: 25,
-        verifiedInstitutions: 20,
-        pendingInstitutions: 3,
-        suspendedInstitutions: 2
-      });
+
+      // Only show demo data for connectivity issues
+      if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError') ||
+          error.message.includes('ERR_NETWORK') || error.message.includes('ERR_INTERNET_DISCONNECTED')) {
+        // Set fallback stats only for connectivity issues
+        setStats({
+          totalInstitutions: 25,
+          verifiedInstitutions: 20,
+          pendingInstitutions: 3,
+          suspendedInstitutions: 2
+        });
+      } else {
+        // For other errors, just show empty stats
+        setStats({});
+      }
     }
   };
 
@@ -353,7 +383,7 @@ const UniversityVerificationSystem = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Error Message */}
+        {/* Error Message - Only show for connectivity issues */}
         {error && (
           <div className="bg-yellow-50 dark:bg-yellow-900 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4 mb-6">
             <div className="flex">
@@ -362,11 +392,11 @@ const UniversityVerificationSystem = () => {
               </div>
               <div className="ml-3">
                 <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
-                  API Connection Issue
+                  Backend Connection Issue
                 </h3>
                 <div className="mt-2 text-sm text-yellow-700 dark:text-yellow-300">
-                  <p>Unable to connect to the backend. Showing demo data for testing purposes.</p>
-                  <p className="mt-1">Error: {error}</p>
+                  <p>{error}</p>
+                  <p className="mt-1">Demo data is being shown for testing purposes.</p>
                 </div>
               </div>
             </div>

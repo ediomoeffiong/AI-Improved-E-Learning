@@ -54,6 +54,12 @@ const SuperAdminUserApprovals = () => {
       });
 
       if (!response.ok) {
+        if (response.status === 404) {
+          // No approvals found - this is normal, not an error
+          setApprovals([]);
+          setPagination({});
+          return;
+        }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
@@ -62,9 +68,13 @@ const SuperAdminUserApprovals = () => {
       setPagination(data.pagination || {});
     } catch (error) {
       console.error('Error fetching approvals:', error);
-      setError(error.message);
-      
-      // Fallback to demo data if API fails
+
+      // Only show error and demo data for actual connectivity issues
+      if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError') ||
+          error.message.includes('ERR_NETWORK') || error.message.includes('ERR_INTERNET_DISCONNECTED')) {
+        setError('Backend service is temporarily unavailable. Showing demo data for testing purposes.');
+
+        // Fallback to demo data only for connectivity issues
       setApprovals([
         {
           _id: 'demo-1',
@@ -116,6 +126,11 @@ const SuperAdminUserApprovals = () => {
           ageInDays: 1
         }
       ]);
+      } else {
+        // For other errors (like 401, 403, 500), just show empty state
+        setApprovals([]);
+        setError(null); // Don't show error for these cases
+      }
     } finally {
       setLoading(false);
     }
@@ -304,7 +319,7 @@ const SuperAdminUserApprovals = () => {
           </div>
         </div>
 
-        {/* Error Message */}
+        {/* Error Message - Only show for connectivity issues */}
         {error && (
           <div className="bg-yellow-50 dark:bg-yellow-900 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4 mb-6">
             <div className="flex">
@@ -313,11 +328,11 @@ const SuperAdminUserApprovals = () => {
               </div>
               <div className="ml-3">
                 <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
-                  API Connection Issue
+                  Backend Connection Issue
                 </h3>
                 <div className="mt-2 text-sm text-yellow-700 dark:text-yellow-300">
-                  <p>Unable to connect to the backend. Showing demo data for testing purposes.</p>
-                  <p className="mt-1">Error: {error}</p>
+                  <p>{error}</p>
+                  <p className="mt-1">Demo data is being shown for testing purposes.</p>
                 </div>
               </div>
             </div>
