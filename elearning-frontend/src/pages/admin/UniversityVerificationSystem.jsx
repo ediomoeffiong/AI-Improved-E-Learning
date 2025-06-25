@@ -1,21 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { NIGERIAN_UNIVERSITIES } from '../../constants/institutions';
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 
 const UniversityVerificationSystem = () => {
-  const [pendingUniversities, setPendingUniversities] = useState([]);
-  const [verifiedUniversities, setVerifiedUniversities] = useState([]);
+  const [institutions, setInstitutions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('pending');
-  const [newUniversityForm, setNewUniversityForm] = useState({
-    name: '',
-    location: '',
-    state: '',
-    type: 'public',
-    website: '',
-    contactEmail: '',
-    requestedBy: '',
-    documents: []
+  const [error, setError] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [filters, setFilters] = useState({
+    status: 'pending',
+    type: 'all',
+    state: 'all',
+    search: '',
+    page: 1,
+    limit: 20,
+    sortBy: 'createdAt',
+    sortOrder: 'desc'
   });
+  const [pagination, setPagination] = useState({});
+  const [stats, setStats] = useState({});
+  const [selectedInstitution, setSelectedInstitution] = useState(null);
 
   useEffect(() => {
     // Mock data for pending university verification requests
@@ -64,58 +67,223 @@ const UniversityVerificationSystem = () => {
       }
     ];
 
-    // Mock verified universities (subset of existing list)
-    const mockVerifiedUniversities = NIGERIAN_UNIVERSITIES.slice(0, 10).map((uni, index) => ({
-      id: index + 100,
-      ...uni,
-      verifiedAt: '2024-01-01 00:00:00',
-      verifiedBy: 'System Admin',
-      status: 'verified',
-      adminCount: Math.floor(Math.random() * 3), // 0-2 admins
-      userCount: Math.floor(Math.random() * 1000) + 100,
-      verificationLevel: index % 2 === 0 ? 'enhanced' : 'basic'
-    }));
 
-    setPendingUniversities(mockPendingUniversities);
-    setVerifiedUniversities(mockVerifiedUniversities);
+
+    // This will be replaced with real API calls
+    setInstitutions(mockPendingUniversities);
     setLoading(false);
   }, []);
 
-  const handleVerification = async (universityId, action, notes = '') => {
+  // Fetch institutions from API
+  const fetchInstitutions = async () => {
     try {
-      const university = pendingUniversities.find(u => u.id === universityId);
-      
-      if (action === 'approve') {
-        // Move to verified list
-        const verifiedUniversity = {
-          ...university,
-          status: 'verified',
-          verifiedAt: new Date().toISOString(),
-          verifiedBy: 'App Admin',
-          adminNotes: notes,
-          adminCount: 0,
-          userCount: 0
-        };
-        
-        setVerifiedUniversities(prev => [...prev, verifiedUniversity]);
-        setPendingUniversities(prev => prev.filter(u => u.id !== universityId));
-        
-        alert(`✅ ${university.name} has been verified and added to the platform`);
-      } else {
-        // Reject university
-        setPendingUniversities(prev => 
-          prev.map(u => 
-            u.id === universityId 
-              ? { ...u, status: 'rejected', adminNotes: notes }
-              : u
-          )
-        );
-        
-        alert(`❌ ${university.name} verification has been rejected`);
+      setLoading(true);
+      setError(null);
+
+      const token = localStorage.getItem('appAdminToken');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const queryParams = new URLSearchParams({
+        status: filters.status,
+        type: filters.type !== 'all' ? filters.type : '',
+        state: filters.state !== 'all' ? filters.state : '',
+        search: filters.search,
+        page: filters.page.toString(),
+        limit: filters.limit.toString(),
+        sortBy: filters.sortBy,
+        sortOrder: filters.sortOrder
+      });
+
+      // Remove empty parameters
+      for (const [key, value] of [...queryParams.entries()]) {
+        if (!value) queryParams.delete(key);
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/super-admin/institutions?${queryParams}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setInstitutions(data.institutions || []);
+      setPagination(data.pagination || {});
+    } catch (error) {
+      console.error('Error fetching institutions:', error);
+      setError(error.message);
+
+      // Fallback to demo data if API fails
+      const mockInstitutions = [
+        {
+          _id: 'demo-1',
+          name: 'Federal University of Technology, Bauchi',
+          code: 'FUTBAUCHI',
+          type: 'university',
+          location: {
+            state: 'Bauchi',
+            city: 'Bauchi',
+            country: 'Nigeria'
+          },
+          contact: {
+            email: 'info@futbauchi.edu.ng',
+            phone: '+234-803-123-4567',
+            website: 'https://futbauchi.edu.ng'
+          },
+          status: filters.status,
+          createdAt: new Date().toISOString(),
+          stats: {
+            totalUsers: 150,
+            totalAdmins: 1,
+            totalModerators: 3,
+            totalStudents: 120,
+            totalInstructors: 25
+          },
+          settings: {
+            maxAdmins: 2,
+            maxModerators: 5,
+            enableCBT: true,
+            enableClassroom: false
+          }
+        },
+        {
+          _id: 'demo-2',
+          name: 'Kano State Polytechnic',
+          code: 'KANOPOLY',
+          type: 'polytechnic',
+          location: {
+            state: 'Kano',
+            city: 'Kano',
+            country: 'Nigeria'
+          },
+          contact: {
+            email: 'info@kanopoly.edu.ng',
+            phone: '+234-802-234-5678',
+            website: 'https://kanopoly.edu.ng'
+          },
+          status: filters.status,
+          createdAt: new Date(Date.now() - 86400000).toISOString(),
+          stats: {
+            totalUsers: 89,
+            totalAdmins: 2,
+            totalModerators: 2,
+            totalStudents: 75,
+            totalInstructors: 10
+          },
+          settings: {
+            maxAdmins: 2,
+            maxModerators: 5,
+            enableCBT: false,
+            enableClassroom: true
+          }
+        }
+      ];
+      setInstitutions(mockInstitutions);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch institution statistics
+  const fetchStats = async () => {
+    try {
+      const token = localStorage.getItem('appAdminToken');
+      if (!token) return;
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/super-admin/institutions/stats`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setStats(data.stats || {});
       }
     } catch (error) {
+      console.error('Error fetching stats:', error);
+      // Set fallback stats
+      setStats({
+        totalInstitutions: 25,
+        verifiedInstitutions: 20,
+        pendingInstitutions: 3,
+        suspendedInstitutions: 2
+      });
+    }
+  };
+
+  // Update useEffect to use new functions
+  useEffect(() => {
+    fetchInstitutions();
+  }, [filters]);
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  // Handle institution verification/rejection
+  const handleVerification = async (institutionId, action, notes = '') => {
+    try {
+      setActionLoading(true);
+
+      const token = localStorage.getItem('appAdminToken');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const institution = institutions.find(inst => inst._id === institutionId);
+      if (!institution) {
+        throw new Error('Institution not found');
+      }
+
+      const status = action === 'approve' ? 'verified' : 'rejected';
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/super-admin/institutions/${institutionId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          status,
+          notes
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      // Update local state
+      setInstitutions(prev =>
+        prev.map(inst =>
+          inst._id === institutionId
+            ? { ...inst, status, adminNotes: notes, verifiedAt: new Date().toISOString() }
+            : inst
+        )
+      );
+
+      // Close modal if open
+      setSelectedInstitution(null);
+
+      // Refresh data to get updated counts
+      fetchStats();
+
+      alert(`✅ ${data.message}`);
+    } catch (error) {
       console.error('Error processing verification:', error);
-      alert('Error processing verification. Please try again.');
+      alert(`❌ Error: ${error.message}`);
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -150,262 +318,592 @@ const UniversityVerificationSystem = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">University Verification System</h2>
-          <p className="text-gray-600 dark:text-gray-400">
-            Review and verify new university requests for platform inclusion
-          </p>
-        </div>
-      </div>
-
-      {/* Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-          <div className="flex items-center">
-            <div className="p-2 bg-yellow-100 dark:bg-yellow-900 rounded-lg">
-              <span className="text-xl">⏳</span>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-gray-600 dark:text-gray-400">Pending Verification</p>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">{pendingUniversities.length}</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-          <div className="flex items-center">
-            <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
-              <span className="text-xl">✅</span>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-gray-600 dark:text-gray-400">Verified Universities</p>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">{verifiedUniversities.length}</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-          <div className="flex items-center">
-            <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
-              <span className="text-xl">👥</span>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Users</p>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">
-                {verifiedUniversities.reduce((sum, uni) => sum + uni.userCount, 0).toLocaleString()}
+      <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6">
+            <div>
+              <h1 className="text-3xl font-bold text-red-600 dark:text-red-400">
+                🏛️ Institution Verification System
+              </h1>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Review and verify institution requests for platform inclusion
               </p>
             </div>
+            <div className="flex items-center space-x-4">
+              <Link
+                to="/dashboard"
+                className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                ← Back to Dashboard
+              </Link>
+              <button
+                onClick={() => {
+                  fetchInstitutions();
+                  fetchStats();
+                }}
+                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+              >
+                🔄 Refresh
+              </button>
+            </div>
           </div>
         </div>
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-          <div className="flex items-center">
-            <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
-              <span className="text-xl">👑</span>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Error Message */}
+        {error && (
+          <div className="bg-yellow-50 dark:bg-yellow-900 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4 mb-6">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <span className="text-yellow-400">⚠️</span>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                  API Connection Issue
+                </h3>
+                <div className="mt-2 text-sm text-yellow-700 dark:text-yellow-300">
+                  <p>Unable to connect to the backend. Showing demo data for testing purposes.</p>
+                  <p className="mt-1">Error: {error}</p>
+                </div>
+              </div>
             </div>
-            <div className="ml-3">
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Admins</p>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">
-                {verifiedUniversities.reduce((sum, uni) => sum + uni.adminCount, 0)}
+          </div>
+        )}
+
+        {/* Statistics */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+            <div className="flex items-center">
+              <div className="p-2 bg-yellow-100 dark:bg-yellow-900 rounded-lg">
+                <span className="text-xl">⏳</span>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-gray-600 dark:text-gray-400">Pending Verification</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">
+                  {stats.pendingInstitutions || institutions.filter(inst => inst.status === 'pending').length}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+            <div className="flex items-center">
+              <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
+                <span className="text-xl">✅</span>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-gray-600 dark:text-gray-400">Verified Institutions</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">
+                  {stats.verifiedInstitutions || institutions.filter(inst => inst.status === 'verified').length}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+            <div className="flex items-center">
+              <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                <span className="text-xl">🏛️</span>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-gray-600 dark:text-gray-400">Total Institutions</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">
+                  {stats.totalInstitutions || institutions.length}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+            <div className="flex items-center">
+              <div className="p-2 bg-red-100 dark:bg-red-900 rounded-lg">
+                <span className="text-xl">⛔</span>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-gray-600 dark:text-gray-400">Suspended</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">
+                  {stats.suspendedInstitutions || institutions.filter(inst => inst.status === 'suspended').length}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Status
+              </label>
+              <select
+                value={filters.status}
+                onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value, page: 1 }))}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="pending">Pending</option>
+                <option value="verified">Verified</option>
+                <option value="rejected">Rejected</option>
+                <option value="suspended">Suspended</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Type
+              </label>
+              <select
+                value={filters.type}
+                onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value, page: 1 }))}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="all">All Types</option>
+                <option value="university">University</option>
+                <option value="polytechnic">Polytechnic</option>
+                <option value="college">College</option>
+                <option value="institute">Institute</option>
+                <option value="school">School</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Search
+              </label>
+              <input
+                type="text"
+                value={filters.search}
+                onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value, page: 1 }))}
+                placeholder="Search institutions..."
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Items per page
+              </label>
+              <select
+                value={filters.limit}
+                onChange={(e) => setFilters(prev => ({ ...prev, limit: parseInt(e.target.value), page: 1 }))}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 dark:bg-gray-700 dark:text-white"
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
+
+            <div className="flex items-end">
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                Total: {pagination.totalCount || institutions.length} institutions
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Institutions List */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+          {institutions.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">🏛️</div>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                No institutions found
+              </h3>
+              <p className="text-gray-500 dark:text-gray-400">
+                There are no {filters.status} institutions at the moment.
               </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="border-b border-gray-200 dark:border-gray-700">
-        <nav className="flex space-x-8">
-          <button
-            onClick={() => setActiveTab('pending')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'pending'
-                ? 'border-red-500 text-red-600 dark:text-red-400'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400'
-            }`}
-          >
-            Pending Verification ({pendingUniversities.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('verified')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'verified'
-                ? 'border-red-500 text-red-600 dark:text-red-400'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400'
-            }`}
-          >
-            Verified Universities ({verifiedUniversities.length})
-          </button>
-        </nav>
-      </div>
-
-      {/* Content */}
-      {activeTab === 'pending' && (
-        <div className="space-y-6">
-          {pendingUniversities.length === 0 ? (
-            <div className="text-center py-8">
-              <span className="text-4xl mb-4 block">📭</span>
-              <p className="text-gray-500 dark:text-gray-400">No pending university verification requests</p>
             </div>
           ) : (
-            pendingUniversities.map((university) => (
-              <div key={university.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
-                      <span className="text-2xl">{getTypeIcon(university.type)}</span>
-                    </div>
-                    <div>
-                      <h4 className="text-lg font-medium text-gray-900 dark:text-white">{university.name}</h4>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">{university.location}, {university.state}</p>
-                      <div className="flex items-center space-x-2 mt-1">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(university.status)}`}>
-                          {university.status.toUpperCase()}
-                        </span>
-                        <span className="px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full text-xs font-medium">
-                          {university.type.toUpperCase()}
-                        </span>
-                        <span className="px-2 py-1 bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 rounded-full text-xs font-medium">
-                          {university.verificationLevel.toUpperCase()}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Submitted</p>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">{university.submittedAt}</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Website</p>
-                    <a href={university.website} target="_blank" rel="noopener noreferrer" 
-                       className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
-                      {university.website}
-                    </a>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Contact Email</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{university.contactEmail}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Requested By</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {university.requestedBy} ({university.requestedByRole})
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Requester Email</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{university.requestedByEmail}</p>
-                  </div>
-                </div>
-
-                <div className="mb-4">
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Verification Documents</p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {university.documents.map((doc, index) => (
-                      <div key={index} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded">
-                        <span className="text-sm text-gray-700 dark:text-gray-300">{doc.name}</span>
-                        <div className="flex items-center space-x-2">
-                          {doc.verified ? (
-                            <span className="text-green-600 dark:text-green-400">✅</span>
-                          ) : (
-                            <span className="text-yellow-600 dark:text-yellow-400">⏳</span>
-                          )}
-                          <button className="text-blue-600 dark:text-blue-400 hover:underline text-xs">
-                            Review
-                          </button>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-700">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Institution
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Type & Location
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Contact
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Users
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Created
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  {institutions.map((institution) => (
+                    <tr key={institution._id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-10 w-10">
+                            <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-900 flex items-center justify-center">
+                              <span className="text-sm font-medium text-red-600 dark:text-red-400">
+                                {getTypeIcon(institution.type)}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900 dark:text-white">
+                              {institution.name}
+                            </div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                              {institution.code}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {university.adminNotes && (
-                  <div className="mb-4">
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Admin Notes</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 p-3 rounded">
-                      {university.adminNotes}
-                    </p>
-                  </div>
-                )}
-
-                {university.status === 'pending' && (
-                  <div className="flex space-x-3">
-                    <button
-                      onClick={() => {
-                        const notes = prompt('Add verification notes (optional):');
-                        handleVerification(university.id, 'approve', notes || '');
-                      }}
-                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                    >
-                      Verify & Approve
-                    </button>
-                    <button
-                      onClick={() => {
-                        const notes = prompt('Reason for rejection:');
-                        if (notes) handleVerification(university.id, 'reject', notes);
-                      }}
-                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                    >
-                      Reject
-                    </button>
-                    <button className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                      Request More Info
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900 dark:text-white">
+                          {institution.type.charAt(0).toUpperCase() + institution.type.slice(1)}
+                        </div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                          {institution.location?.city}, {institution.location?.state}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900 dark:text-white">
+                          {institution.contact?.email}
+                        </div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                          {institution.contact?.phone}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(institution.status)}`}>
+                          {institution.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        <div>Total: {institution.stats?.totalUsers || 0}</div>
+                        <div>Admins: {institution.stats?.totalAdmins || 0}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        {new Date(institution.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button
+                          onClick={() => setSelectedInstitution(institution)}
+                          className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 mr-3"
+                        >
+                          View Details
+                        </button>
+                        {institution.status === 'pending' && (
+                          <>
+                            <button
+                              onClick={() => {
+                                const notes = prompt('Add verification notes (optional):');
+                                if (notes !== null) {
+                                  handleVerification(institution._id, 'approve', notes);
+                                }
+                              }}
+                              disabled={actionLoading}
+                              className="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300 mr-3 disabled:opacity-50"
+                            >
+                              Verify
+                            </button>
+                            <button
+                              onClick={() => {
+                                const notes = prompt('Reason for rejection:');
+                                if (notes && notes.trim()) {
+                                  handleVerification(institution._id, 'reject', notes);
+                                }
+                              }}
+                              disabled={actionLoading}
+                              className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 disabled:opacity-50"
+                            >
+                              Reject
+                            </button>
+                          </>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
-      )}
 
-      {activeTab === 'verified' && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-              Verified Universities ({verifiedUniversities.length})
-            </h3>
-          </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {verifiedUniversities.map((university) => (
-                <div key={university.id} className="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
-                  <div className="flex items-center space-x-3 mb-3">
-                    <span className="text-2xl">{getTypeIcon(university.type || 'public')}</span>
-                    <div>
-                      <h4 className="font-medium text-gray-900 dark:text-white text-sm">{university.label}</h4>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{university.location}, {university.state}</p>
-                    </div>
-                  </div>
-                  <div className="space-y-2 text-xs">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Users:</span>
-                      <span className="font-medium text-gray-900 dark:text-white">{university.userCount}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Admins:</span>
-                      <span className="font-medium text-gray-900 dark:text-white">{university.adminCount}/2</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Verification:</span>
-                      <span className={`px-2 py-1 rounded text-xs ${
-                        university.verificationLevel === 'enhanced' 
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                          : 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
-                      }`}>
-                        {university.verificationLevel}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
+        {/* Pagination */}
+        {pagination.totalPages > 1 && (
+          <div className="bg-white dark:bg-gray-800 px-4 py-3 flex items-center justify-between border-t border-gray-200 dark:border-gray-700 sm:px-6 mt-6 rounded-lg shadow">
+            <div className="flex-1 flex justify-between sm:hidden">
+              <button
+                onClick={() => setFilters(prev => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
+                disabled={!pagination.hasPrevPage}
+                className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => setFilters(prev => ({ ...prev, page: prev.page + 1 }))}
+                disabled={!pagination.hasNextPage}
+                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  Showing page <span className="font-medium">{pagination.currentPage}</span> of{' '}
+                  <span className="font-medium">{pagination.totalPages}</span> ({pagination.totalCount} total)
+                </p>
+              </div>
+              <div>
+                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                  <button
+                    onClick={() => setFilters(prev => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
+                    disabled={!pagination.hasPrevPage}
+                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    onClick={() => setFilters(prev => ({ ...prev, page: prev.page + 1 }))}
+                    disabled={!pagination.hasNextPage}
+                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
+                  >
+                    Next
+                  </button>
+                </nav>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* Institution Details Modal */}
+        {selectedInstitution && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white dark:bg-gray-800">
+              <div className="mt-3">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                    Institution Details
+                  </h3>
+                  <button
+                    onClick={() => setSelectedInstitution(null)}
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  >
+                    <span className="sr-only">Close</span>
+                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Basic Information */}
+                  <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                    <h4 className="font-medium text-gray-900 dark:text-white mb-2">Basic Information</h4>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">Name:</span>
+                        <span className="ml-2 text-gray-900 dark:text-white">{selectedInstitution.name}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">Code:</span>
+                        <span className="ml-2 text-gray-900 dark:text-white">{selectedInstitution.code}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">Type:</span>
+                        <span className="ml-2 text-gray-900 dark:text-white">
+                          {selectedInstitution.type.charAt(0).toUpperCase() + selectedInstitution.type.slice(1)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">Status:</span>
+                        <span className={`ml-2 px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(selectedInstitution.status)}`}>
+                          {selectedInstitution.status}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Location Information */}
+                  <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                    <h4 className="font-medium text-gray-900 dark:text-white mb-2">Location</h4>
+                    <div className="space-y-2 text-sm">
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">City:</span>
+                        <span className="ml-2 text-gray-900 dark:text-white">{selectedInstitution.location?.city}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">State:</span>
+                        <span className="ml-2 text-gray-900 dark:text-white">{selectedInstitution.location?.state}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">Country:</span>
+                        <span className="ml-2 text-gray-900 dark:text-white">{selectedInstitution.location?.country}</span>
+                      </div>
+                      {selectedInstitution.location?.address && (
+                        <div>
+                          <span className="text-gray-500 dark:text-gray-400">Address:</span>
+                          <span className="ml-2 text-gray-900 dark:text-white">{selectedInstitution.location.address}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Contact Information */}
+                  <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                    <h4 className="font-medium text-gray-900 dark:text-white mb-2">Contact Information</h4>
+                    <div className="space-y-2 text-sm">
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">Email:</span>
+                        <span className="ml-2 text-gray-900 dark:text-white">{selectedInstitution.contact?.email}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">Phone:</span>
+                        <span className="ml-2 text-gray-900 dark:text-white">{selectedInstitution.contact?.phone}</span>
+                      </div>
+                      {selectedInstitution.contact?.website && (
+                        <div>
+                          <span className="text-gray-500 dark:text-gray-400">Website:</span>
+                          <a
+                            href={selectedInstitution.contact.website}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="ml-2 text-blue-600 dark:text-blue-400 hover:underline"
+                          >
+                            {selectedInstitution.contact.website}
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Statistics */}
+                  <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                    <h4 className="font-medium text-gray-900 dark:text-white mb-2">Statistics</h4>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">Total Users:</span>
+                        <span className="ml-2 text-gray-900 dark:text-white">{selectedInstitution.stats?.totalUsers || 0}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">Admins:</span>
+                        <span className="ml-2 text-gray-900 dark:text-white">{selectedInstitution.stats?.totalAdmins || 0}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">Moderators:</span>
+                        <span className="ml-2 text-gray-900 dark:text-white">{selectedInstitution.stats?.totalModerators || 0}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">Students:</span>
+                        <span className="ml-2 text-gray-900 dark:text-white">{selectedInstitution.stats?.totalStudents || 0}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Settings */}
+                  <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                    <h4 className="font-medium text-gray-900 dark:text-white mb-2">Settings</h4>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">Max Admins:</span>
+                        <span className="ml-2 text-gray-900 dark:text-white">{selectedInstitution.settings?.maxAdmins || 2}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">Max Moderators:</span>
+                        <span className="ml-2 text-gray-900 dark:text-white">{selectedInstitution.settings?.maxModerators || 5}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">CBT Enabled:</span>
+                        <span className="ml-2 text-gray-900 dark:text-white">
+                          {selectedInstitution.settings?.enableCBT ? 'Yes' : 'No'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">Classroom Enabled:</span>
+                        <span className="ml-2 text-gray-900 dark:text-white">
+                          {selectedInstitution.settings?.enableClassroom ? 'Yes' : 'No'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Timestamps */}
+                  <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                    <h4 className="font-medium text-gray-900 dark:text-white mb-2">Timeline</h4>
+                    <div className="space-y-2 text-sm">
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">Created:</span>
+                        <span className="ml-2 text-gray-900 dark:text-white">
+                          {new Date(selectedInstitution.createdAt).toLocaleString()}
+                        </span>
+                      </div>
+                      {selectedInstitution.verifiedAt && (
+                        <div>
+                          <span className="text-gray-500 dark:text-gray-400">Verified:</span>
+                          <span className="ml-2 text-gray-900 dark:text-white">
+                            {new Date(selectedInstitution.verifiedAt).toLocaleString()}
+                          </span>
+                        </div>
+                      )}
+                      {selectedInstitution.adminNotes && (
+                        <div>
+                          <span className="text-gray-500 dark:text-gray-400">Admin Notes:</span>
+                          <p className="mt-1 text-gray-900 dark:text-white">{selectedInstitution.adminNotes}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  {selectedInstitution.status === 'pending' && (
+                    <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
+                      <button
+                        onClick={() => {
+                          const notes = prompt('Add verification notes (optional):');
+                          if (notes !== null) {
+                            handleVerification(selectedInstitution._id, 'approve', notes);
+                          }
+                        }}
+                        disabled={actionLoading}
+                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50"
+                      >
+                        {actionLoading ? 'Processing...' : 'Verify & Approve'}
+                      </button>
+                      <button
+                        onClick={() => {
+                          const notes = prompt('Reason for rejection:');
+                          if (notes && notes.trim()) {
+                            handleVerification(selectedInstitution._id, 'reject', notes);
+                          }
+                        }}
+                        disabled={actionLoading}
+                        className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50"
+                      >
+                        {actionLoading ? 'Processing...' : 'Reject'}
+                      </button>
+                      <button
+                        onClick={() => setSelectedInstitution(null)}
+                        className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700"
+                      >
+                        Close
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

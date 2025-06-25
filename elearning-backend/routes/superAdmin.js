@@ -419,6 +419,156 @@ router.post('/approve-admin/:approvalId', auth, requireSuperAdmin, async (req, r
   }
 });
 
+// Create test institutions (for development/testing only)
+router.post('/create-test-institutions', auth, requireSuperAdmin, async (req, res) => {
+  try {
+    if (!isMongoConnected()) {
+      return res.status(503).json({ message: 'Database not available' });
+    }
+
+    // Check if we're in development mode
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(403).json({ message: 'Test data creation not allowed in production' });
+    }
+
+    const testInstitutions = [
+      {
+        name: 'Federal University of Technology, Bauchi',
+        code: 'FUTBAUCHI',
+        type: 'university',
+        location: {
+          state: 'Bauchi',
+          city: 'Bauchi',
+          address: 'PMB 65, Bauchi',
+          country: 'Nigeria'
+        },
+        contact: {
+          email: 'info@futbauchi.edu.ng',
+          phone: '+234-803-123-4567',
+          website: 'https://futbauchi.edu.ng'
+        },
+        status: 'pending',
+        createdBy: req.user.userId,
+        settings: {
+          allowSelfRegistration: true,
+          requireApproval: true,
+          maxAdmins: 2,
+          maxModerators: 5,
+          enableCBT: true,
+          enableClassroom: false
+        },
+        stats: {
+          totalUsers: 150,
+          totalStudents: 120,
+          totalInstructors: 25,
+          totalAdmins: 1,
+          totalModerators: 3,
+          activeCourses: 15,
+          totalAssessments: 45
+        },
+        isActive: true
+      },
+      {
+        name: 'Kano State Polytechnic',
+        code: 'KANOPOLY',
+        type: 'polytechnic',
+        location: {
+          state: 'Kano',
+          city: 'Kano',
+          address: 'No. 3 Murtala Mohammed Way, Kano',
+          country: 'Nigeria'
+        },
+        contact: {
+          email: 'info@kanopoly.edu.ng',
+          phone: '+234-802-234-5678',
+          website: 'https://kanopoly.edu.ng'
+        },
+        status: 'pending',
+        createdBy: req.user.userId,
+        settings: {
+          allowSelfRegistration: true,
+          requireApproval: true,
+          maxAdmins: 2,
+          maxModerators: 5,
+          enableCBT: false,
+          enableClassroom: true
+        },
+        stats: {
+          totalUsers: 89,
+          totalStudents: 75,
+          totalInstructors: 10,
+          totalAdmins: 2,
+          totalModerators: 2,
+          activeCourses: 8,
+          totalAssessments: 20
+        },
+        isActive: true
+      },
+      {
+        name: 'University of Lagos',
+        code: 'UNILAG',
+        type: 'university',
+        location: {
+          state: 'Lagos',
+          city: 'Lagos',
+          address: 'Akoka, Yaba, Lagos',
+          country: 'Nigeria'
+        },
+        contact: {
+          email: 'info@unilag.edu.ng',
+          phone: '+234-801-345-6789',
+          website: 'https://unilag.edu.ng'
+        },
+        status: 'verified',
+        verifiedBy: req.user.userId,
+        verifiedAt: new Date(),
+        createdBy: req.user.userId,
+        settings: {
+          allowSelfRegistration: true,
+          requireApproval: true,
+          maxAdmins: 2,
+          maxModerators: 8,
+          enableCBT: true,
+          enableClassroom: true
+        },
+        stats: {
+          totalUsers: 2500,
+          totalStudents: 2200,
+          totalInstructors: 280,
+          totalAdmins: 2,
+          totalModerators: 8,
+          activeCourses: 150,
+          totalAssessments: 450
+        },
+        isActive: true
+      }
+    ];
+
+    // Check if institutions already exist
+    const existingInstitutions = await Institution.find({
+      code: { $in: testInstitutions.map(inst => inst.code) }
+    });
+
+    if (existingInstitutions.length > 0) {
+      return res.status(400).json({
+        message: 'Some test institutions already exist',
+        existing: existingInstitutions.map(inst => inst.code)
+      });
+    }
+
+    // Create institutions
+    const savedInstitutions = await Institution.insertMany(testInstitutions);
+
+    res.json({
+      message: `Created ${savedInstitutions.length} test institutions`,
+      institutions: savedInstitutions
+    });
+  } catch (error) {
+    console.error('Error creating test institutions:', error);
+    res.status(500).json({ message: 'Error creating test institutions' });
+  }
+});
+
 // Create test approval data (for development/testing only)
 router.post('/create-test-approvals', auth, requireSuperAdmin, async (req, res) => {
   try {
