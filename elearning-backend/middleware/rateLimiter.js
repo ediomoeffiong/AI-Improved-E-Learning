@@ -1,12 +1,5 @@
 const rateLimit = require('express-rate-limit');
 
-// Helper function to get client IP safely
-const getClientIP = (req) => {
-  // In production with trust proxy enabled, req.ip will be the real client IP
-  // In development, it will be the direct connection IP
-  return req.ip || req.connection.remoteAddress || 'unknown';
-};
-
 // Rate limiter for 2FA verification attempts
 const twoFactorRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -22,7 +15,7 @@ const twoFactorRateLimit = rateLimit({
   skipSuccessfulRequests: true,
   // Custom key generator to include user ID if available
   keyGenerator: (req) => {
-    return req.user?.userId || getClientIP(req);
+    return req.user?.userId || req.ip;
   }
 });
 
@@ -38,7 +31,7 @@ const twoFactorSetupRateLimit = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req) => {
-    return req.user?.userId || getClientIP(req);
+    return req.user?.userId || req.ip;
   }
 });
 
@@ -69,7 +62,7 @@ const backupCodeRateLimit = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req) => {
-    return req.user?.userId || getClientIP(req);
+    return req.user?.userId || req.ip;
   }
 });
 
