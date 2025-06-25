@@ -12,7 +12,7 @@ Set these in your Render dashboard:
 
 ```
 NODE_ENV=production
-MONGODB_URI=mongodb+srv://vercel-admin-user:LEKYyH3kagE0ohFk@appbackend.encifsv.mongodb.net/myFirstDatabase?retryWrites=true&w=majority&appName=AppBackend
+MONGODB_URI=mongodb+srv://covenanteffiong555:P%40ssw0rd@appbackend.encifsv.mongodb.net/elearning?retryWrites=true&w=majority&appName=AppBackend
 JWT_SECRET=your-production-jwt-secret-key-change-this
 CORS_ORIGIN=https://ai-improved-e-learning.vercel.app,https://ai-improved-e-learning.onrender.com
 PORT=10000
