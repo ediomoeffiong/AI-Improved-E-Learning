@@ -72,18 +72,6 @@ const connectDB = async () => {
     });
     console.log('✅ MongoDB connected successfully');
     console.log(`📊 Connected to database: ${mongoose.connection.name}`);
-
-    // Run deployment tasks in production after successful connection
-    if (process.env.NODE_ENV === 'production') {
-      console.log('🚀 Production environment detected - running deployment tasks...');
-      try {
-        const { runDeploymentTasksWithConnection } = require('./scripts/deploy');
-        await runDeploymentTasksWithConnection();
-      } catch (deployError) {
-        console.error('⚠️  Deployment tasks failed, but app will continue:', deployError.message);
-        console.log('💡 Institutions may need to be seeded manually if this is the first deployment');
-      }
-    }
   } catch (err) {
     console.error('❌ MongoDB connection failed:', err.message);
     console.log('\n🔧 Local MongoDB Setup Required:');

@@ -29,10 +29,9 @@ VITE_API_URL=https://ai-improved-e-learning.onrender.com/api
 
 #### Backend Changes
 - ✅ Institution seeding script already exists (`scripts/seedInstitutions.js`)
-- ✅ Deployment script runs automatically when app starts in production (`app.js`)
+- ✅ Deployment script automatically seeds institutions (`scripts/deploy.js`)
 - ✅ 110 Nigerian universities ready for seeding
 - ✅ Super Admin authentication working
-- ✅ Fixed MongoDB connection pool issues during deployment
 
 #### Frontend Changes
 - ✅ Fixed authentication error handling in `src/services/api.js`
@@ -96,11 +95,9 @@ git push origin main
 **Solution**: Check if institutions were seeded properly
 ```bash
 # Check Render logs for:
-🚀 Production environment detected - running deployment tasks...
 🏛️ Found 0 existing institutions - seeding Nigerian universities...
 ✅ Institution seeding completed successfully!
 📊 Total institutions inserted: 110
-🎉 Deployment tasks completed successfully!
 ```
 
 ### Issue: Authentication Errors
