@@ -98,6 +98,7 @@ import ModeratorVerificationSystem from './pages/admin/ModeratorVerificationSyst
 import SuperAdminUserManagement from './pages/admin/SuperAdminUserManagement';
 import SuperAdminInstitutionManagement from './pages/admin/SuperAdminInstitutionManagement';
 import SuperAdminInstitutionPage from './pages/admin/SuperAdminInstitutionPage';
+import SuperAdminUserApprovals from './pages/admin/SuperAdminUserApprovals';
 import InstitutionManagement from './components/admin/InstitutionManagement';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import InstitutionJoinRequest from './pages/user/InstitutionJoinRequest';
@@ -139,6 +140,7 @@ function App() {
 
               {/* Super Admin Protected Routes */}
               <Route path="/super-admin/users" element={<SuperAdminProtectedRoute><ErrorBoundary><SuperAdminUserManagement /></ErrorBoundary></SuperAdminProtectedRoute>} />
+              <Route path="/super-admin/user-approvals" element={<SuperAdminProtectedRoute><ErrorBoundary><SuperAdminUserApprovals /></ErrorBoundary></SuperAdminProtectedRoute>} />
               <Route path="/super-admin/institutions" element={<SuperAdminProtectedRoute><SuperAdminInstitutionPage /></SuperAdminProtectedRoute>} />
               <Route path="/super-admin/universities" element={<SuperAdminProtectedRoute><UniversityVerificationSystem /></SuperAdminProtectedRoute>} />
               <Route path="/super-admin/admins" element={<SuperAdminProtectedRoute><AdminVerificationSystem /></SuperAdminProtectedRoute>} />

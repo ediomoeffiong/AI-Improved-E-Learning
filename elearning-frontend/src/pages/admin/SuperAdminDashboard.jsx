@@ -347,11 +347,11 @@ const SuperAdminDashboard = () => {
                   />
                 )}
                 <QuickAction
-                  title="Approve Admins"
+                  title="User Approvals"
                   description={`${stats.pendingApprovals} pending approvals`}
                   icon="✅"
                   color="green"
-                  onClick={() => setActiveTab('approvals')}
+                  onClick={() => window.location.href = '/super-admin/user-approvals'}
                 />
                 <QuickAction
                   title="Manage Users"
@@ -482,7 +482,24 @@ const SuperAdminDashboard = () => {
                 ← Back to Dashboard
               </button>
             </div>
-            <p className="text-gray-600 dark:text-gray-400">Approval management interface coming soon...</p>
+            <div className="text-center py-8">
+              <div className="text-6xl mb-4">✅</div>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                User Approvals Management
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                Review and manage all pending user approval requests from a dedicated interface.
+              </p>
+              <Link
+                to="/super-admin/user-approvals"
+                className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+              >
+                Open User Approvals Page
+                <svg className="ml-2 -mr-1 w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </Link>
+            </div>
           </div>
         )}
 

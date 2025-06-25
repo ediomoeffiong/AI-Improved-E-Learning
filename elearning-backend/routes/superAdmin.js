@@ -177,7 +177,56 @@ router.post('/create-admin', auth, requireSuperAdminOnly, async (req, res) => {
   }
 });
 
-// Get pending institution admin approvals
+// Get all pending user approvals (all types)
+router.get('/pending-approvals', auth, requireSuperAdmin, async (req, res) => {
+  try {
+    if (!isMongoConnected()) {
+      return res.status(503).json({ message: 'Database not available' });
+    }
+
+    const { type, status = 'pending', page = 1, limit = 20 } = req.query;
+
+    // Build query
+    const query = { status };
+    if (type && type !== 'all') {
+      query.approvalType = type;
+    }
+
+    // Calculate pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const [approvals, totalCount] = await Promise.all([
+      UserApproval.find(query)
+        .populate('user', 'name email username phoneNumber role')
+        .populate('institution', 'name code')
+        .populate('reviewedBy', 'name email')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(parseInt(limit)),
+      UserApproval.countDocuments(query)
+    ]);
+
+    // Calculate pagination info
+    const totalPages = Math.ceil(totalCount / parseInt(limit));
+
+    res.json({
+      approvals,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages,
+        totalCount,
+        hasNextPage: parseInt(page) < totalPages,
+        hasPrevPage: parseInt(page) > 1,
+        limit: parseInt(limit)
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching pending approvals:', error);
+    res.status(500).json({ message: 'Error fetching pending approvals' });
+  }
+});
+
+// Get pending institution admin approvals (legacy endpoint)
 router.get('/pending-admins', auth, requireSuperAdmin, async (req, res) => {
   try {
     if (!isMongoConnected()) {
@@ -199,7 +248,111 @@ router.get('/pending-admins', auth, requireSuperAdmin, async (req, res) => {
   }
 });
 
-// Approve or reject institution admin
+// General approval endpoint for all types of user approvals
+router.post('/approve-user/:approvalId', auth, requireSuperAdmin, async (req, res) => {
+  try {
+    const { approvalId } = req.params;
+    const { action, notes, adminType, moderatorType } = req.body; // action: 'approve' or 'reject'
+
+    if (!['approve', 'reject'].includes(action)) {
+      return res.status(400).json({ message: 'Invalid action. Must be approve or reject.' });
+    }
+
+    if (!isMongoConnected()) {
+      return res.status(503).json({ message: 'Database not available' });
+    }
+
+    const approval = await UserApproval.findById(approvalId).populate('user institution');
+
+    if (!approval) {
+      return res.status(404).json({ message: 'Approval request not found' });
+    }
+
+    if (approval.status !== 'pending') {
+      return res.status(400).json({ message: 'This approval request has already been processed' });
+    }
+
+    if (action === 'approve') {
+      let updateData = {
+        isVerified: true,
+        verificationStatus: 'approved',
+        verifiedBy: req.user.userId,
+        verifiedAt: new Date()
+      };
+
+      // Handle different approval types
+      switch (approval.approvalType) {
+        case 'admin_verification':
+          updateData.role = 'Admin';
+          updateData.adminType = adminType || 'primary';
+          if (approval.institution) {
+            updateData.institution = approval.institution._id;
+            updateData.institutionName = approval.institution.name;
+          }
+          break;
+
+        case 'moderator_verification':
+          updateData.role = 'Moderator';
+          if (approval.institution) {
+            updateData.institution = approval.institution._id;
+            updateData.institutionName = approval.institution.name;
+          }
+          break;
+
+        case 'institution_join':
+          updateData.role = approval.requestedRole;
+          if (approval.institution) {
+            updateData.institution = approval.institution._id;
+            updateData.institutionName = approval.institution.name;
+            updateData.institutionApprovalStatus = 'approved';
+            updateData.institutionApprovedBy = req.user.userId;
+          }
+          break;
+
+        case 'role_upgrade':
+          updateData.role = approval.requestedRole;
+          break;
+
+        default:
+          updateData.role = approval.requestedRole;
+      }
+
+      // Update user
+      await User.findByIdAndUpdate(approval.user._id, updateData);
+
+      // Update approval status
+      approval.status = 'approved';
+      approval.reviewedBy = req.user.userId;
+      approval.reviewedAt = new Date();
+      approval.approvalNotes = notes;
+      approval.workflowStage = 'completed';
+      await approval.save();
+
+      res.json({
+        message: `${approval.approvalType.replace('_', ' ')} approved successfully`,
+        approval: approval
+      });
+    } else {
+      // Reject the approval
+      approval.status = 'rejected';
+      approval.reviewedBy = req.user.userId;
+      approval.reviewedAt = new Date();
+      approval.reviewNotes = notes;
+      approval.workflowStage = 'rejected';
+      await approval.save();
+
+      res.json({
+        message: `${approval.approvalType.replace('_', ' ')} request rejected`,
+        approval: approval
+      });
+    }
+  } catch (error) {
+    console.error('Error processing user approval:', error);
+    res.status(500).json({ message: 'Error processing approval' });
+  }
+});
+
+// Approve or reject institution admin (legacy endpoint)
 router.post('/approve-admin/:approvalId', auth, requireSuperAdmin, async (req, res) => {
   try {
     const { approvalId } = req.params;
@@ -214,7 +367,7 @@ router.post('/approve-admin/:approvalId', auth, requireSuperAdmin, async (req, r
     }
 
     const approval = await UserApproval.findById(approvalId).populate('user institution');
-    
+
     if (!approval) {
       return res.status(404).json({ message: 'Approval request not found' });
     }
@@ -243,7 +396,7 @@ router.post('/approve-admin/:approvalId', auth, requireSuperAdmin, async (req, r
       approval.approvalNotes = notes;
       await approval.save();
 
-      res.json({ 
+      res.json({
         message: 'Institution Admin approved successfully',
         approval: approval
       });
@@ -255,7 +408,7 @@ router.post('/approve-admin/:approvalId', auth, requireSuperAdmin, async (req, r
       approval.reviewNotes = notes;
       await approval.save();
 
-      res.json({ 
+      res.json({
         message: 'Institution Admin request rejected',
         approval: approval
       });
@@ -263,6 +416,105 @@ router.post('/approve-admin/:approvalId', auth, requireSuperAdmin, async (req, r
   } catch (error) {
     console.error('Error processing admin approval:', error);
     res.status(500).json({ message: 'Error processing approval' });
+  }
+});
+
+// Create test approval data (for development/testing only)
+router.post('/create-test-approvals', auth, requireSuperAdmin, async (req, res) => {
+  try {
+    if (!isMongoConnected()) {
+      return res.status(503).json({ message: 'Database not available' });
+    }
+
+    // Check if we're in development mode
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(403).json({ message: 'Test data creation not allowed in production' });
+    }
+
+    // Find some existing users and institutions for test data
+    const [users, institutions] = await Promise.all([
+      User.find({ role: { $in: ['Student', 'User'] } }).limit(3),
+      Institution.find().limit(2)
+    ]);
+
+    if (users.length === 0 || institutions.length === 0) {
+      return res.status(400).json({ message: 'Need existing users and institutions to create test approvals' });
+    }
+
+    const testApprovals = [];
+
+    // Create admin verification request
+    if (users[0] && institutions[0]) {
+      testApprovals.push(new UserApproval({
+        user: users[0]._id,
+        approvalType: 'admin_verification',
+        currentRole: users[0].role,
+        requestedRole: 'Admin',
+        requestedAdminType: 'primary',
+        institution: institutions[0]._id,
+        institutionName: institutions[0].name,
+        reason: 'I am the IT director at this institution and would like to become an admin',
+        additionalInfo: 'I have 5 years of experience managing educational platforms',
+        userDetails: {
+          name: users[0].name,
+          email: users[0].email,
+          phoneNumber: users[0].phoneNumber
+        },
+        priority: 'normal'
+      }));
+    }
+
+    // Create moderator verification request
+    if (users[1] && institutions[1]) {
+      testApprovals.push(new UserApproval({
+        user: users[1]._id,
+        approvalType: 'moderator_verification',
+        currentRole: users[1].role,
+        requestedRole: 'Moderator',
+        institution: institutions[1]._id,
+        institutionName: institutions[1].name,
+        reason: 'I am a senior student and would like to help moderate the platform',
+        additionalInfo: 'I have been using the platform for 2 years and understand the community guidelines',
+        userDetails: {
+          name: users[1].name,
+          email: users[1].email,
+          phoneNumber: users[1].phoneNumber
+        },
+        priority: 'normal'
+      }));
+    }
+
+    // Create institution join request
+    if (users[2] && institutions[0]) {
+      testApprovals.push(new UserApproval({
+        user: users[2]._id,
+        approvalType: 'institution_join',
+        currentRole: users[2].role,
+        requestedRole: 'Student',
+        institution: institutions[0]._id,
+        institutionName: institutions[0].name,
+        reason: 'I am a new student at this institution',
+        additionalInfo: 'I have just enrolled and need access to institutional features',
+        userDetails: {
+          name: users[2].name,
+          email: users[2].email,
+          phoneNumber: users[2].phoneNumber,
+          studentId: 'STU2024001'
+        },
+        priority: 'high'
+      }));
+    }
+
+    // Save all test approvals
+    const savedApprovals = await Promise.all(testApprovals.map(approval => approval.save()));
+
+    res.json({
+      message: `Created ${savedApprovals.length} test approval requests`,
+      approvals: savedApprovals
+    });
+  } catch (error) {
+    console.error('Error creating test approvals:', error);
+    res.status(500).json({ message: 'Error creating test approvals' });
   }
 });
 
