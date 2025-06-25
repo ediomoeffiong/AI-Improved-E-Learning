@@ -4,16 +4,29 @@ import { useAuth } from '../../contexts/AuthContext';
 import { USER_ROLES, ROLE_ICONS } from '../../constants/roles';
 
 const RoleBasedHeader = () => {
-  const { user, logout, currentUser, isSuperAdmin } = useAuth();
+  const { user, logout, getUserName } = useAuth();
   const navigate = useNavigate();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-  const [isInstitutionsDropdownOpen, setIsInstitutionsDropdownOpen] = useState(false);
   const userMenuRef = useRef(null);
   const notificationRef = useRef(null);
-  const institutionsDropdownRef = useRef(null);
 
+  // Check if user is super admin
+  const superAdminToken = localStorage.getItem('appAdminToken');
+  const superAdminUser = localStorage.getItem('appAdminUser');
 
+  let isSuperAdmin = null;
+  if (superAdminToken && superAdminUser) {
+    try {
+      isSuperAdmin = JSON.parse(superAdminUser);
+    } catch (error) {
+      console.error('Error parsing super admin user:', error);
+      localStorage.removeItem('appAdminToken');
+      localStorage.removeItem('appAdminUser');
+    }
+  }
+
+  const currentUser = isSuperAdmin || user;
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -22,9 +35,6 @@ const RoleBasedHeader = () => {
       }
       if (notificationRef.current && !notificationRef.current.contains(event.target)) {
         setIsNotificationOpen(false);
-      }
-      if (institutionsDropdownRef.current && !institutionsDropdownRef.current.contains(event.target)) {
-        setIsInstitutionsDropdownOpen(false);
       }
     };
 
@@ -43,26 +53,13 @@ const RoleBasedHeader = () => {
     }
   };
 
-  const getDisplayName = () => {
-    return currentUser?.username || currentUser?.name;
-  };
-
   const getNavigationItems = () => {
     if (isSuperAdmin) {
       if (isSuperAdmin.role === USER_ROLES.SUPER_ADMIN) {
         return [
           { name: 'Dashboard', href: '/dashboard', icon: '📊' },
           { name: 'User Management', href: '/super-admin/users', icon: '👥' },
-          {
-            name: 'Institutions',
-            icon: '🏫',
-            isDropdown: true,
-            dropdownItems: [
-              { name: 'Institution Management', href: '/super-admin/institutions', icon: '🏫', description: 'Manage all institutions' },
-              { name: 'University Verification', href: '/super-admin/universities', icon: '🎓', description: 'Review and approve new universities' },
-              { name: 'Admin Verification', href: '/super-admin/admins', icon: '👑', description: 'Verify institution admin requests' }
-            ]
-          },
+          { name: 'Institutions', href: '/super-admin/institutions', icon: '🏫' },
           { name: 'System Health', href: '/super-admin/system', icon: '⚙️' },
           { name: 'Reports', href: '/super-admin/reports', icon: '📋' }
         ];
@@ -179,7 +176,7 @@ const RoleBasedHeader = () => {
                 <h1 className="text-xl font-bold text-white">{getHeaderTitle()}</h1>
                 {currentUser && (
                   <p className="text-sm text-white text-opacity-80">
-                    Welcome, {getDisplayName() || currentUser.name}
+                    Welcome, {getUserName() || currentUser.name}
                   </p>
                 )}
               </div>
@@ -189,56 +186,14 @@ const RoleBasedHeader = () => {
           {/* Navigation */}
           <nav className="hidden md:flex space-x-6">
             {navigationItems.map((item) => (
-              item.isDropdown ? (
-                <div key={item.name} className="relative" ref={item.name === 'Institutions' ? institutionsDropdownRef : null}>
-                  <button
-                    onClick={() => {
-                      if (item.name === 'Institutions') {
-                        setIsInstitutionsDropdownOpen(!isInstitutionsDropdownOpen);
-                      }
-                    }}
-                    className="flex items-center space-x-2 text-white text-opacity-90 hover:text-opacity-100 px-3 py-2 rounded-lg hover:bg-white hover:bg-opacity-10 transition-all duration-200"
-                  >
-                    <span>{item.icon}</span>
-                    <span className="font-medium">{item.name}</span>
-                    <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
-
-                  {item.name === 'Institutions' && isInstitutionsDropdownOpen && (
-                    <div className="absolute left-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
-                      <div className="p-2">
-                        {item.dropdownItems.map((dropdownItem) => (
-                          <Link
-                            key={dropdownItem.name}
-                            to={dropdownItem.href}
-                            onClick={() => setIsInstitutionsDropdownOpen(false)}
-                            className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                          >
-                            <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                              <span className="text-lg">{dropdownItem.icon}</span>
-                            </div>
-                            <div>
-                              <h3 className="font-medium text-gray-900 dark:text-white">{dropdownItem.name}</h3>
-                              <p className="text-sm text-gray-500 dark:text-gray-400">{dropdownItem.description}</p>
-                            </div>
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className="flex items-center space-x-2 text-white text-opacity-90 hover:text-opacity-100 px-3 py-2 rounded-lg hover:bg-white hover:bg-opacity-10 transition-all duration-200"
-                >
-                  <span>{item.icon}</span>
-                  <span className="font-medium">{item.name}</span>
-                </Link>
-              )
+              <Link
+                key={item.name}
+                to={item.href}
+                className="flex items-center space-x-2 text-white text-opacity-90 hover:text-opacity-100 px-3 py-2 rounded-lg hover:bg-white hover:bg-opacity-10 transition-all duration-200"
+              >
+                <span>{item.icon}</span>
+                <span className="font-medium">{item.name}</span>
+              </Link>
             ))}
           </nav>
 
@@ -298,11 +253,11 @@ const RoleBasedHeader = () => {
               >
                 <div className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
                   <span className="text-sm font-bold">
-                    {(getDisplayName() || currentUser?.name || 'U').charAt(0).toUpperCase()}
+                    {(getUserName() || currentUser?.name || 'U').charAt(0).toUpperCase()}
                   </span>
                 </div>
                 <div className="hidden md:block text-left">
-                  <p className="text-sm font-medium">{getDisplayName() || currentUser?.name}</p>
+                  <p className="text-sm font-medium">{getUserName() || currentUser?.name}</p>
                   <p className="text-xs text-opacity-75">
                     {ROLE_ICONS[currentUser?.role]} {currentUser?.role?.replace('_', ' ')}
                   </p>
@@ -316,7 +271,7 @@ const RoleBasedHeader = () => {
                 <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
                   <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                     <p className="text-sm font-medium text-gray-900 dark:text-white">
-                      {getDisplayName() || currentUser?.name}
+                      {getUserName() || currentUser?.name}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
                       {currentUser?.email}

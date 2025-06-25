@@ -1885,7 +1885,6 @@ export const superAdminAPI = {
   getInstitutions: async (filters = {}) => {
     try {
       const superAdminToken = localStorage.getItem('appAdminToken');
-
       if (!superAdminToken) {
         throw new Error('Super Admin authentication required');
       }
@@ -1898,7 +1897,6 @@ export const superAdminAPI = {
       });
 
       const endpoint = `/super-admin/institutions${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'GET',
         headers: {
@@ -1914,41 +1912,12 @@ export const superAdminAPI = {
 
       return await response.json();
     } catch (error) {
-      // Handle authentication errors
-      if (error.message.includes('Super Admin authentication required') ||
-          error.message.includes('No token, authorization denied') ||
-          error.message.includes('Token is not valid') ||
-          error.message.includes('Access denied: Super Admin privileges required')) {
-        console.log('🚨 Authentication error detected');
-
-        // In development mode, show mock data instead of redirecting
-        if (import.meta.env.DEV) {
-          console.log('🚨 Development mode - using mock data for institutions');
-          localStorage.removeItem('appAdminToken');
-          localStorage.removeItem('appAdminUser');
-          // Fall through to mock data below
-        } else {
-          // In production, clear tokens and redirect
-          console.log('🚨 Production mode - clearing tokens and redirecting');
-          localStorage.removeItem('appAdminToken');
-          localStorage.removeItem('appAdminUser');
-          if (typeof window !== 'undefined') {
-            window.location.href = '/super-admin-login';
-          }
-          throw error;
-        }
-      }
-
       if (error.message.includes('Backend service is not available') ||
           error.message.includes('Demo mode is enabled') ||
           error.message.includes('fetch') ||
           error.message.includes('NetworkError') ||
-          error.message.includes('Failed to fetch') ||
-          error.message.includes('Super Admin authentication required') ||
-          error.message.includes('No token, authorization denied') ||
-          error.message.includes('Token is not valid') ||
-          error.message.includes('Access denied: Super Admin privileges required')) {
-        console.log('🚨 USING MOCK DATA FOR INSTITUTIONS - Backend/Auth not available');
+          error.message.includes('Failed to fetch')) {
+        console.log('🚨 USING MOCK DATA FOR INSTITUTIONS - Backend not available');
         return {
           institutions: [
             {
@@ -2058,12 +2027,8 @@ export const superAdminAPI = {
           error.message.includes('Demo mode is enabled') ||
           error.message.includes('fetch') ||
           error.message.includes('NetworkError') ||
-          error.message.includes('Failed to fetch') ||
-          error.message.includes('Super Admin authentication required') ||
-          error.message.includes('No token, authorization denied') ||
-          error.message.includes('Token is not valid') ||
-          error.message.includes('Access denied: Super Admin privileges required')) {
-        console.log('🚨 USING MOCK DATA FOR INSTITUTION STATS - Backend/Auth not available');
+          error.message.includes('Failed to fetch')) {
+        console.log('🚨 USING MOCK DATA FOR INSTITUTION STATS - Backend not available');
         return {
           stats: {
             totalInstitutions: 123,
