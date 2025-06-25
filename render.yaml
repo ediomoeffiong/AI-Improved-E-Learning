@@ -4,9 +4,9 @@ services:
     env: node
     plan: free
     rootDir: elearning-backend
-    buildCommand: npm ci --only=production
+    buildCommand: npm install
     startCommand: npm start
-    # Removed postDeployCommand since deployment tasks now run on app start
+    postDeployCommand: npm run deploy
     envVars:
       - key: NODE_ENV
         value: production

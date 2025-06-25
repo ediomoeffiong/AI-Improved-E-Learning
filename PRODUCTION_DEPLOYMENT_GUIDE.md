@@ -189,7 +189,6 @@ Ensure this is set in Vercel dashboard:
 ### 4. Monitor Deployment
 - Watch Render logs for successful deployment and institution seeding
 - Watch Vercel logs for successful frontend build
-- Verify no package manager warnings in Render logs
 
 ### 5. Test Production
 1. Visit: https://ai-improved-e-learning.vercel.app/super-admin-login
