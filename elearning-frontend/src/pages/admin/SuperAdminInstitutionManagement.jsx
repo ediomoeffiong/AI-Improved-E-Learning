@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { USER_ROLES, ROLE_ICONS } from '../../constants/roles';
-import { dashboardAPI } from '../../services/api';
+import { superAdminAPI } from '../../services/api';
 
 const SuperAdminInstitutionManagement = () => {
   const [activeTab, setActiveTab] = useState('all-institutions');
@@ -32,126 +32,57 @@ const SuperAdminInstitutionManagement = () => {
   const fetchInstitutions = async () => {
     try {
       setLoading(true);
-      // For now, use mock data - replace with real API call
-      const mockInstitutions = [
-        {
-          id: 1,
-          name: 'University of Lagos',
-          shortName: 'UNILAG',
-          type: 'Federal University',
-          location: 'Lagos, Nigeria',
-          status: 'verified',
-          establishedYear: 1962,
-          website: 'https://unilag.edu.ng',
-          totalUsers: 2456,
-          totalAdmins: 3,
-          totalModerators: 8,
-          totalStudents: 2234,
-          totalInstructors: 211,
-          totalCourses: 145,
-          verifiedAt: new Date('2024-01-10'),
-          lastActivity: new Date('2024-01-21')
-        },
-        {
-          id: 2,
-          name: 'Ahmadu Bello University',
-          shortName: 'ABU',
-          type: 'Federal University',
-          location: 'Zaria, Kaduna State',
-          status: 'verified',
-          establishedYear: 1962,
-          website: 'https://abu.edu.ng',
-          totalUsers: 1876,
-          totalAdmins: 2,
-          totalModerators: 6,
-          totalStudents: 1698,
-          totalInstructors: 170,
-          totalCourses: 98,
-          verifiedAt: new Date('2024-01-08'),
-          lastActivity: new Date('2024-01-20')
-        },
-        {
-          id: 3,
-          name: 'University of Ibadan',
-          shortName: 'UI',
-          type: 'Federal University',
-          location: 'Ibadan, Oyo State',
-          status: 'verified',
-          establishedYear: 1948,
-          website: 'https://ui.edu.ng',
-          totalUsers: 1654,
-          totalAdmins: 2,
-          totalModerators: 5,
-          totalStudents: 1456,
-          totalInstructors: 191,
-          totalCourses: 112,
-          verifiedAt: new Date('2024-01-05'),
-          lastActivity: new Date('2024-01-19')
-        },
-        {
-          id: 4,
-          name: 'Federal University of Technology, Akure',
-          shortName: 'FUTA',
-          type: 'Federal University of Technology',
-          location: 'Akure, Ondo State',
-          status: 'pending',
-          establishedYear: 1981,
-          website: 'https://futa.edu.ng',
-          totalUsers: 0,
-          totalAdmins: 0,
-          totalModerators: 0,
-          totalStudents: 0,
-          totalInstructors: 0,
-          totalCourses: 0,
-          verifiedAt: null,
-          lastActivity: null,
-          applicationDate: new Date('2024-01-18')
-        },
-        {
-          id: 5,
-          name: 'University of Benin',
-          shortName: 'UNIBEN',
-          type: 'Federal University',
-          location: 'Benin City, Edo State',
-          status: 'suspended',
-          establishedYear: 1970,
-          website: 'https://uniben.edu',
-          totalUsers: 987,
-          totalAdmins: 1,
-          totalModerators: 3,
-          totalStudents: 876,
-          totalInstructors: 107,
-          totalCourses: 67,
-          verifiedAt: new Date('2024-01-12'),
-          lastActivity: new Date('2024-01-16'),
-          suspendedAt: new Date('2024-01-17'),
-          suspensionReason: 'Policy violation - unauthorized course content'
-        },
-        {
-          id: 6,
-          name: 'Lagos State University',
-          shortName: 'LASU',
-          type: 'State University',
-          location: 'Lagos, Nigeria',
-          status: 'verified',
-          establishedYear: 1983,
-          website: 'https://lasu.edu.ng',
-          totalUsers: 1234,
-          totalAdmins: 2,
-          totalModerators: 4,
-          totalStudents: 1098,
-          totalInstructors: 130,
-          totalCourses: 89,
-          verifiedAt: new Date('2024-01-14'),
-          lastActivity: new Date('2024-01-21')
-        }
-      ];
-      
-      setInstitutions(mockInstitutions);
+      console.log('Fetching institutions data from Super Admin API...');
+
+      // Use the real Super Admin API endpoint for institutions
+      const data = await superAdminAPI.getInstitutions();
+
+      // Transform the data to match the expected format
+      const transformedInstitutions = (data.institutions || []).map(institution => ({
+        id: institution._id || institution.id,
+        name: institution.name,
+        shortName: institution.code || institution.shortName,
+        type: institution.type,
+        location: institution.location ?
+          `${institution.location.city || ''}, ${institution.location.state || ''}, ${institution.location.country || ''}`.replace(/^,\s*|,\s*$/g, '') :
+          'Location not specified',
+        status: institution.status,
+        establishedYear: institution.establishedYear || 'Unknown',
+        website: institution.contact?.website || institution.website,
+        totalUsers: institution.stats?.totalUsers || 0,
+        totalAdmins: institution.stats?.totalAdmins || 0,
+        totalModerators: institution.stats?.totalModerators || 0,
+        totalStudents: institution.stats?.totalStudents || 0,
+        totalInstructors: institution.stats?.totalInstructors || 0,
+        totalCourses: institution.stats?.activeCourses || institution.stats?.totalCourses || 0,
+        verifiedAt: institution.verifiedAt ? new Date(institution.verifiedAt) : null,
+        lastActivity: institution.updatedAt ? new Date(institution.updatedAt) : null,
+        applicationDate: institution.createdAt ? new Date(institution.createdAt) : null,
+        suspendedAt: institution.suspendedAt ? new Date(institution.suspendedAt) : null,
+        suspensionReason: institution.adminNotes || institution.suspensionReason
+      }));
+
+      setInstitutions(transformedInstitutions);
       setError(null);
     } catch (err) {
       console.error('Error fetching institutions:', err);
-      setError('Unable to load institutions. Please try again.');
+
+      let errorMessage = 'Unable to load institutions. Please try again.';
+
+      if (err.message.includes('Failed to fetch') ||
+          err.message.includes('NetworkError') ||
+          err.message.includes('ERR_NETWORK')) {
+        errorMessage = 'Backend service is temporarily unavailable. Please check your connection.';
+      } else if (err.message.includes('Super Admin authentication required') ||
+                 err.message.includes('401') ||
+                 err.message.includes('Unauthorized')) {
+        errorMessage = 'Authentication expired. Please log in again.';
+      } else if (err.message.includes('403') ||
+                 err.message.includes('Forbidden')) {
+        errorMessage = 'Access denied. Super Admin privileges required.';
+      }
+
+      setError(errorMessage);
       setInstitutions([]);
     } finally {
       setLoading(false);
@@ -188,21 +119,55 @@ const SuperAdminInstitutionManagement = () => {
     try {
       setActionLoading(true);
       console.log(`Performing ${action} on institution ${institutionId}`);
-      
-      // Mock API call - replace with real implementation
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
+      // Use real API call to update institution status
+      let newStatus;
+      let notes = '';
+
+      switch (action) {
+        case 'verify':
+          newStatus = 'verified';
+          notes = 'Institution verified by Super Admin';
+          break;
+        case 'suspend':
+          newStatus = 'suspended';
+          notes = prompt('Reason for suspension:') || 'Suspended by Super Admin';
+          break;
+        case 'activate':
+          newStatus = 'verified';
+          notes = 'Institution reactivated by Super Admin';
+          break;
+        default:
+          throw new Error('Invalid action');
+      }
+
+      // Call the backend API to update institution status
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://ai-improved-e-learning.onrender.com'}/api/super-admin/institutions/${institutionId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('appAdminToken')}`,
+        },
+        body: JSON.stringify({ status: newStatus, notes }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+
       // Update institution status locally
       setInstitutions(prevInstitutions =>
         prevInstitutions.map(institution =>
           institution.id === institutionId
             ? {
                 ...institution,
-                status: action === 'verify' ? 'verified' : 
-                       action === 'suspend' ? 'suspended' : 
-                       action === 'activate' ? 'verified' : institution.status,
-                verifiedAt: action === 'verify' ? new Date() : institution.verifiedAt,
-                suspendedAt: action === 'suspend' ? new Date() : institution.suspendedAt
+                status: newStatus,
+                verifiedAt: newStatus === 'verified' ? new Date() : institution.verifiedAt,
+                suspendedAt: newStatus === 'suspended' ? new Date() : institution.suspendedAt,
+                suspensionReason: newStatus === 'suspended' ? notes : institution.suspensionReason
               }
             : institution
         )
@@ -210,9 +175,23 @@ const SuperAdminInstitutionManagement = () => {
 
       setShowInstitutionModal(false);
       setSelectedInstitution(null);
+
+      // Show success message
+      console.log(`Institution ${action} completed successfully:`, result.message);
     } catch (err) {
       console.error(`Error performing ${action}:`, err);
-      setError(`Failed to ${action} institution. Please try again.`);
+
+      let errorMessage = `Failed to ${action} institution. Please try again.`;
+      if (err.message.includes('authentication') || err.message.includes('401')) {
+        errorMessage = 'Authentication expired. Please log in again.';
+      } else if (err.message.includes('403')) {
+        errorMessage = 'Access denied. Insufficient privileges.';
+      } else if (err.message.includes('404')) {
+        errorMessage = 'Institution not found.';
+      }
+
+      setError(errorMessage);
+      setTimeout(() => setError(null), 5000); // Clear error after 5 seconds
     } finally {
       setActionLoading(false);
     }

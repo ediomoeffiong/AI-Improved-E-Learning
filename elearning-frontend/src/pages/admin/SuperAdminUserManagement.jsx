@@ -38,29 +38,58 @@ const SuperAdminUserManagement = () => {
       setLoading(true);
       console.log('Fetching super admin users data...');
 
-      // Use the real API endpoint that returns actual data
-      const data = await dashboardAPI.getSuperAdminUsers();
+      // Use the correct Super Admin API endpoint for users
+      const data = await superAdminAPI.getUsers();
 
       // Process users to add hierarchical structure for moderators
       const processedUsers = processUsersHierarchy(data.users || []);
 
       setAllUsers(processedUsers);
-      setSummary(data.summary || {});
-      setInstitutions(data.institutions || []);
+
+      // Calculate summary from the actual data
+      const summary = {
+        totalUsers: data.users?.length || 0,
+        pendingApprovals: data.users?.filter(u => u.approvalStatus === 'pending' || u.verificationStatus === 'pending').length || 0,
+        suspendedUsers: data.users?.filter(u => u.status === 'suspended').length || 0,
+        activeUsers: data.users?.filter(u => u.isActive && u.status === 'active').length || 0,
+        adminsAndModerators: data.users?.filter(u => ['Admin', 'Moderator'].includes(u.role)).length || 0
+      };
+      setSummary(summary);
+
+      // Extract unique institutions from users
+      const uniqueInstitutions = [...new Set(data.users?.map(u => u.institutionName || u.institution).filter(Boolean) || [])];
+      setInstitutions(uniqueInstitutions);
+
       setError(null);
     } catch (err) {
       console.error('Error fetching users:', err);
 
-      // Only show error for connectivity issues
-      if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError') ||
-          err.message.includes('ERR_NETWORK') || err.message.includes('ERR_INTERNET_DISCONNECTED')) {
-        setError('Backend service is temporarily unavailable. Please try again.');
-      } else {
-        setError(null); // Don't show error for other cases
+      // Provide specific error messages based on error type
+      let errorMessage = 'Failed to fetch users. Please try again.';
+
+      if (err.message.includes('Failed to fetch') ||
+          err.message.includes('NetworkError') ||
+          err.message.includes('ERR_NETWORK') ||
+          err.message.includes('ERR_INTERNET_DISCONNECTED')) {
+        errorMessage = 'Backend service is temporarily unavailable. Please check your connection.';
+      } else if (err.message.includes('Super Admin authentication required') ||
+                 err.message.includes('401') ||
+                 err.message.includes('Unauthorized')) {
+        errorMessage = 'Authentication expired. Please log in again.';
+      } else if (err.message.includes('403') ||
+                 err.message.includes('Forbidden')) {
+        errorMessage = 'Access denied. Super Admin privileges required.';
       }
 
+      setError(errorMessage);
       setAllUsers([]);
-      setSummary({});
+      setSummary({
+        totalUsers: 0,
+        pendingApprovals: 0,
+        suspendedUsers: 0,
+        activeUsers: 0,
+        adminsAndModerators: 0
+      });
       setInstitutions([]);
     } finally {
       setLoading(false);
@@ -145,55 +174,85 @@ const SuperAdminUserManagement = () => {
       setActionLoading(true);
       console.log(`Performing ${action} on user ${userId}`);
 
-      // Use superAdminAPI for user management actions
-      const response = await superAdminAPI.manageUser(userId, action, notes);
+      // Use the correct Super Admin API endpoint for user management
+      let response;
 
-      // Update user status locally
+      // Map frontend actions to backend API calls
+      if (['approve', 'disapprove', 'pause', 'disable', 'enable'].includes(action)) {
+        // Use the manage-user endpoint for admin/moderator actions
+        response = await fetch(`${process.env.REACT_APP_API_URL || 'https://ai-improved-e-learning.onrender.com'}/api/super-admin/manage-user/${userId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('appAdminToken')}`,
+          },
+          body: JSON.stringify({ action, notes }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        }
+
+        response = await response.json();
+      } else {
+        // For other actions, use the existing manageUser function
+        response = await superAdminAPI.manageUser(userId, action, notes);
+      }
+
+      // Update user status locally using the correct ID field
       setAllUsers(prevUsers =>
         prevUsers.map(user =>
-          user.id === userId
+          (user.id === userId || user._id === userId)
             ? {
                 ...user,
-                approvalStatus: response.user.approvalStatus,
-                status: response.user.status,
-                isActive: response.user.isActive
+                approvalStatus: response.user?.approvalStatus || user.approvalStatus,
+                status: response.user?.status || user.status,
+                isActive: response.user?.isActive !== undefined ? response.user.isActive : user.isActive
               }
             : user
         )
       );
 
-      // Update summary counts
+      // Update summary counts based on the updated users
       setSummary(prevSummary => {
-        const newSummary = { ...prevSummary };
-
-        // Recalculate counts based on updated users
         const updatedUsers = allUsers.map(user =>
-          user.id === userId
+          (user.id === userId || user._id === userId)
             ? {
                 ...user,
-                approvalStatus: response.user.approvalStatus,
-                status: response.user.status,
-                isActive: response.user.isActive
+                approvalStatus: response.user?.approvalStatus || user.approvalStatus,
+                status: response.user?.status || user.status,
+                isActive: response.user?.isActive !== undefined ? response.user.isActive : user.isActive
               }
             : user
         );
 
-        newSummary.pendingApprovals = updatedUsers.filter(u => u.approvalStatus === 'pending').length;
-        newSummary.suspendedUsers = updatedUsers.filter(u => u.status === 'suspended').length;
-        newSummary.activeUsers = updatedUsers.filter(u => u.status === 'active' && u.isActive).length;
-
-        return newSummary;
+        return {
+          ...prevSummary,
+          pendingApprovals: updatedUsers.filter(u => u.approvalStatus === 'pending' || u.verificationStatus === 'pending').length,
+          suspendedUsers: updatedUsers.filter(u => u.status === 'suspended').length,
+          activeUsers: updatedUsers.filter(u => u.status === 'active' && u.isActive).length
+        };
       });
 
       setShowUserModal(false);
       setSelectedUser(null);
 
       // Show success message
-      setSuccessMessage(response.message);
+      setSuccessMessage(response.message || `User ${action} completed successfully`);
       setTimeout(() => setSuccessMessage(null), 5000); // Clear after 5 seconds
     } catch (err) {
       console.error(`Error performing ${action}:`, err);
-      setError(`Failed to ${action} user. Please try again.`);
+
+      let errorMessage = `Failed to ${action} user. Please try again.`;
+      if (err.message.includes('authentication') || err.message.includes('401')) {
+        errorMessage = 'Authentication expired. Please log in again.';
+      } else if (err.message.includes('403')) {
+        errorMessage = 'Access denied. Insufficient privileges.';
+      }
+
+      setError(errorMessage);
+      setTimeout(() => setError(null), 5000); // Clear error after 5 seconds
     } finally {
       setActionLoading(false);
     }
