@@ -150,7 +150,7 @@ const DashboardTabs = ({ activeTab, onTabChange, dashboardData }) => {
       <div className="relative">
         {/* Enhanced Tab Navigation Container */}
         <nav 
-          className="relative bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-3xl p-1.5 border border-white/30 dark:border-gray-700/50 shadow-2xl overflow-hidden tab-navigation"
+          className="relative bg-white dark:bg-gray-800 backdrop-blur-xl rounded-3xl p-1.5 border border-gray-300 dark:border-gray-600 shadow-2xl overflow-hidden tab-navigation"
           role="tablist"
           aria-label="Dashboard navigation"
         >
@@ -173,7 +173,7 @@ const DashboardTabs = ({ activeTab, onTabChange, dashboardData }) => {
                 onFocus={() => handleTabFocus(tab.id)}
                 onBlur={handleTabBlur}
                 className={`relative flex-1 flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-2 px-2 sm:px-4 py-3 sm:py-4 rounded-2xl font-semibold text-xs sm:text-sm transition-all duration-300 group tab-button ${
-                  activeTab === tab.id ? 'active text-white z-10' : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                  activeTab === tab.id ? 'active text-white z-10' : 'text-black dark:text-white hover:text-black dark:hover:text-gray-100'
                 } ${focusedTab === tab.id ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-transparent' : ''}`}
                 role="tab"
                 aria-selected={activeTab === tab.id}
@@ -196,10 +196,24 @@ const DashboardTabs = ({ activeTab, onTabChange, dashboardData }) => {
                 </div>
                 
                 {/* Label */}
-                <span className="hidden sm:inline font-medium">
+                <span
+                  className={`hidden sm:inline font-bold ${activeTab === tab.id ? 'text-white' : 'text-black dark:text-white'}`}
+                  style={activeTab !== tab.id ? {
+                    color: document.documentElement.classList.contains('dark') ? 'rgb(255, 255, 255)' : 'rgb(0, 0, 0)',
+                    fontWeight: '700',
+                    textShadow: '0 1px 2px rgba(0, 0, 0, 0.1)'
+                  } : {}}
+                >
                   {tab.label}
                 </span>
-                <span className="sm:hidden text-xs font-medium">
+                <span
+                  className={`sm:hidden text-xs font-bold ${activeTab === tab.id ? 'text-white' : 'text-black dark:text-white'}`}
+                  style={activeTab !== tab.id ? {
+                    color: document.documentElement.classList.contains('dark') ? 'rgb(255, 255, 255)' : 'rgb(0, 0, 0)',
+                    fontWeight: '700',
+                    textShadow: '0 1px 2px rgba(0, 0, 0, 0.1)'
+                  } : {}}
+                >
                   {tab.shortLabel}
                 </span>
                 
@@ -260,7 +274,7 @@ const DashboardTabs = ({ activeTab, onTabChange, dashboardData }) => {
               <button
                 key={index}
                 onClick={action.onClick}
-                className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 rounded-lg hover:bg-white dark:hover:bg-gray-800 hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-200"
+                className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-800 dark:text-gray-100 bg-white/80 dark:bg-gray-700/80 backdrop-blur-sm border border-gray-300/60 dark:border-gray-600/60 rounded-lg hover:bg-white dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 shadow-sm hover:shadow-md"
                 title={action.description}
               >
                 <span className="mr-1">{action.icon}</span>
