@@ -317,7 +317,157 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// App Admin Login (Super Admin/Super Moderator)
+// Super Admin Login (Super Admin/Super Moderator) - New unified endpoint
+router.post('/super-admin-login', loginRateLimit, async (req, res) => {
+  try {
+    const { email, password, role } = req.body;
+
+    // Validation
+    if (!email || !password || !role) {
+      return res.status(400).json({ message: 'Email/username, password, and role are required' });
+    }
+
+    // Validate role is a super admin role
+    if (!['Super Admin', 'Super Moderator'].includes(role)) {
+      return res.status(400).json({ message: 'Invalid admin role specified' });
+    }
+
+    let user;
+
+    if (isMongoConnected()) {
+      // Use MongoDB - search by email or username for super admin roles only
+      user = await User.findOne({
+        $and: [
+          {
+            $or: [
+              { email: email.toLowerCase() },
+              { username: email.toLowerCase() }
+            ]
+          },
+          { role: { $in: ['Super Admin', 'Super Moderator'] } }
+        ]
+      });
+    } else {
+      // Use fallback data for super admin accounts
+      const fallbackSuperAdmins = [
+        {
+          _id: 'super-admin-1',
+          name: 'Super Administrator',
+          username: 'superadmin',
+          email: 'superadmin@app.com',
+          password: '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/RK.s5uDxy', // secret123
+          role: 'Super Admin',
+          permissions: ['manage_users', 'manage_institutions', 'manage_platform', 'view_analytics', 'approve_admins', 'approve_moderators', 'create_secondary_admins'],
+          isActive: true,
+          createdAt: new Date('2024-01-01'),
+          twoFactorAuth: {
+            enabled: false,
+            secret: null,
+            backupCodes: []
+          }
+        },
+        {
+          _id: 'super-mod-1',
+          name: 'Super Moderator',
+          username: 'supermod',
+          email: 'supermod@app.com',
+          password: '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/RK.s5uDxy', // secret123
+          role: 'Super Moderator',
+          permissions: ['manage_institutions', 'view_analytics', 'approve_admins', 'approve_moderators'],
+          isActive: true,
+          createdAt: new Date('2024-01-01'),
+          twoFactorAuth: {
+            enabled: false,
+            secret: null,
+            backupCodes: []
+          }
+        }
+      ];
+
+      user = fallbackSuperAdmins.find(admin =>
+        (admin.email === email.toLowerCase() || admin.username === email.toLowerCase()) &&
+        ['Super Admin', 'Super Moderator'].includes(admin.role)
+      );
+    }
+
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid credentials or insufficient privileges' });
+    }
+
+    // Check if user is active
+    if (!user.isActive) {
+      return res.status(401).json({ message: 'Account is deactivated' });
+    }
+
+    // Verify password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    // Check if 2FA is enabled
+    if (user.twoFactorAuth && user.twoFactorAuth.enabled) {
+      // Generate temporary token for 2FA verification
+      const tempToken = jwt.sign(
+        {
+          userId: user._id,
+          email: user.email,
+          role: user.role,
+          step: 'password_verified',
+          requires2FA: true
+        },
+        process.env.JWT_SECRET || 'fallback-secret',
+        { expiresIn: '10m' }
+      );
+
+      return res.status(200).json({
+        message: '2FA verification required',
+        requires2FA: true,
+        tempToken,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role
+        }
+      });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      {
+        userId: user._id,
+        email: user.email,
+        role: user.role,
+        permissions: user.permissions || []
+      },
+      process.env.JWT_SECRET || 'fallback-secret',
+      { expiresIn: '24h' }
+    );
+
+    // Return success response
+    res.status(200).json({
+      message: 'Login successful',
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        permissions: user.permissions || [],
+        isActive: user.isActive,
+        twoFactorEnabled: user.twoFactorAuth?.enabled || false
+      }
+    });
+
+  } catch (error) {
+    console.error('Super admin login error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// App Admin Login (Super Admin/Super Moderator) - Legacy endpoint for backward compatibility
 router.post('/app-admin-login', loginRateLimit, async (req, res) => {
   try {
     const { email, password, role } = req.body;

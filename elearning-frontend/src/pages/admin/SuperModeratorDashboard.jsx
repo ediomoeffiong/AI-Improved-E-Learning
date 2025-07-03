@@ -11,7 +11,7 @@ const SuperModeratorDashboard = () => {
   const [lastUpdated, setLastUpdated] = useState(null);
 
   // Get current super moderator user
-  const currentUser = JSON.parse(localStorage.getItem('appAdminUser') || '{}');
+  const currentUser = JSON.parse(localStorage.getItem('superAdminUser') || '{}');
 
   useEffect(() => {
     fetchDashboardData();

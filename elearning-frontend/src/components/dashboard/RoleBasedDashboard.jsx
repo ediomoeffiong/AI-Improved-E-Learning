@@ -3,7 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { USER_ROLES } from '../../constants/roles';
 
 // Import all dashboard components
-import AppAdminDashboard from '../../pages/admin/AppAdminDashboard';
+import ModernSuperAdminDashboard from '../../pages/admin/ModernSuperAdminDashboard';
 import SuperModeratorDashboard from '../../pages/admin/SuperModeratorDashboard';
 import InstitutionAdminDashboard from '../../pages/admin/InstitutionAdminDashboard';
 import InstitutionModeratorDashboard from '../../pages/admin/InstitutionModeratorDashboard';
@@ -15,8 +15,8 @@ const RoleBasedDashboard = () => {
   const { user } = useAuth();
 
   // Check if user is super admin (stored separately)
-  const superAdminToken = localStorage.getItem('appAdminToken');
-  const superAdminUser = localStorage.getItem('appAdminUser');
+  const superAdminToken = localStorage.getItem('superAdminToken');
+  const superAdminUser = localStorage.getItem('superAdminUser');
 
   let isSuperAdmin = null;
   if (superAdminToken && superAdminUser) {
@@ -24,15 +24,15 @@ const RoleBasedDashboard = () => {
       isSuperAdmin = JSON.parse(superAdminUser);
     } catch (error) {
       console.error('Error parsing super admin user:', error);
-      localStorage.removeItem('appAdminToken');
-      localStorage.removeItem('appAdminUser');
+      localStorage.removeItem('superAdminToken');
+      localStorage.removeItem('superAdminUser');
     }
   }
 
   // If super admin/moderator is logged in, show appropriate dashboard
   if (isSuperAdmin && (isSuperAdmin.role === USER_ROLES.SUPER_ADMIN || isSuperAdmin.role === USER_ROLES.SUPER_MODERATOR)) {
     if (isSuperAdmin.role === USER_ROLES.SUPER_ADMIN) {
-      return <AppAdminDashboard />;
+      return <ModernSuperAdminDashboard />;
     } else if (isSuperAdmin.role === USER_ROLES.SUPER_MODERATOR) {
       return <SuperModeratorDashboard />;
     }
@@ -71,7 +71,7 @@ const RoleBasedDashboard = () => {
   // If super admin/moderator is logged in but user is null, that's fine - continue with appropriate flow
   if (isSuperAdmin && !user) {
     if (isSuperAdmin.role === USER_ROLES.SUPER_ADMIN) {
-      return <AppAdminDashboard />;
+      return <ModernSuperAdminDashboard />;
     } else if (isSuperAdmin.role === USER_ROLES.SUPER_MODERATOR) {
       return <SuperModeratorDashboard />;
     }

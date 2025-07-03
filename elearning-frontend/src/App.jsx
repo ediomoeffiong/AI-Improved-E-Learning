@@ -3,8 +3,8 @@ import './App.css';
 import './styles/global.css';
 
 // Layout components
-import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
+import SmartHeader from './components/layout/SmartHeader';
 import Chatbot from './components/chatbot/Chatbot';
 import ScrollToTop from './components/common/ScrollToTop';
 
@@ -73,6 +73,19 @@ import Settings from './pages/user/Settings';
 import SuperAdminProfile from './pages/admin/SuperAdminProfile';
 import SuperAdminSettings from './pages/admin/SuperAdminSettings';
 
+// Super Admin Management pages
+import AllCourses from './pages/admin/super-admin/AllCourses';
+import CreateCourse from './pages/admin/super-admin/CreateCourse';
+import Categories from './pages/admin/super-admin/Categories';
+import CourseAnalytics from './pages/admin/super-admin/CourseAnalytics';
+import AllQuizzes from './pages/admin/super-admin/AllQuizzes';
+import CreateQuiz from './pages/admin/super-admin/CreateQuiz';
+import SuperAdminQuizResults from './pages/admin/super-admin/QuizResults';
+import ProgressOverview from './pages/admin/super-admin/ProgressOverview';
+import CourseCompletions from './pages/admin/super-admin/CourseCompletions';
+import LearningPaths from './pages/admin/super-admin/LearningPaths';
+import InterventionTools from './pages/admin/super-admin/InterventionTools';
+
 // Support pages
 import Support from './pages/support/Support';
 
@@ -81,11 +94,10 @@ import TermsOfService from './pages/legal/TermsOfService';
 import PrivacyPolicy from './pages/legal/PrivacyPolicy';
 
 // Super Admin pages
-import SuperAdminLogin from './pages/auth/AppAdminLogin';
+import SuperAdminLogin from './pages/auth/SuperAdminLogin';
 
 // Role-based components
 import RoleBasedDashboard from './components/dashboard/RoleBasedDashboard';
-import RoleBasedHeader from './components/layout/RoleBasedHeader';
 
 // Protected route components
 import SuperAdminProtectedRoute from './components/auth/SuperAdminProtectedRoute';
@@ -112,7 +124,7 @@ function App() {
         <ScrollToTop />
         <PWAPrompt />
         <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
-        <Header />
+        <SmartHeader />
         <main className="flex-grow pt-16 px-4 sm:px-6 lg:px-8">
           <div className="container mx-auto py-6">
             <Routes>
@@ -147,6 +159,23 @@ function App() {
               <Route path="/super-admin/universities" element={<SuperAdminProtectedRoute><UniversityVerificationSystem /></SuperAdminProtectedRoute>} />
               <Route path="/super-admin/admins" element={<SuperAdminProtectedRoute><AdminVerificationSystem /></SuperAdminProtectedRoute>} />
 
+              {/* Super Admin Course Management Routes */}
+              <Route path="/super-admin/courses" element={<SuperAdminProtectedRoute><AllCourses /></SuperAdminProtectedRoute>} />
+              <Route path="/super-admin/courses/create" element={<SuperAdminProtectedRoute><CreateCourse /></SuperAdminProtectedRoute>} />
+              <Route path="/super-admin/categories" element={<SuperAdminProtectedRoute><Categories /></SuperAdminProtectedRoute>} />
+              <Route path="/super-admin/course-analytics" element={<SuperAdminProtectedRoute><CourseAnalytics /></SuperAdminProtectedRoute>} />
+
+              {/* Super Admin Quiz Management Routes */}
+              <Route path="/super-admin/quizzes" element={<SuperAdminProtectedRoute><AllQuizzes /></SuperAdminProtectedRoute>} />
+              <Route path="/super-admin/quizzes/create" element={<SuperAdminProtectedRoute><CreateQuiz /></SuperAdminProtectedRoute>} />
+              <Route path="/super-admin/quiz-results" element={<SuperAdminProtectedRoute><SuperAdminQuizResults /></SuperAdminProtectedRoute>} />
+
+              {/* Super Admin Progress Routes */}
+              <Route path="/super-admin/progress-overview" element={<SuperAdminProtectedRoute><ProgressOverview /></SuperAdminProtectedRoute>} />
+              <Route path="/super-admin/course-completions" element={<SuperAdminProtectedRoute><CourseCompletions /></SuperAdminProtectedRoute>} />
+              <Route path="/super-admin/learning-paths" element={<SuperAdminProtectedRoute><LearningPaths /></SuperAdminProtectedRoute>} />
+              <Route path="/super-admin/intervention-tools" element={<SuperAdminProtectedRoute><InterventionTools /></SuperAdminProtectedRoute>} />
+
               {/* User Institution Routes */}
               <Route path="/join-institution" element={<ProtectedRoute><InstitutionJoinRequest /></ProtectedRoute>} />
 
@@ -162,6 +191,7 @@ function App() {
               <Route path="/courses/:id" element={<ProtectedRoute><CourseDetails /></ProtectedRoute>} />
               
               {/* Protected Quiz Routes */}
+              <Route path="/quiz" element={<ProtectedRoute><QuizDashboard /></ProtectedRoute>} />
               <Route path="/quiz/dashboard" element={<ProtectedRoute><QuizDashboard /></ProtectedRoute>} />
               <Route path="/quiz/:id" element={<ProtectedRoute><TakeQuiz /></ProtectedRoute>} />
               <Route path="/quiz/:id/results/:attemptId" element={<ProtectedRoute><QuizResults /></ProtectedRoute>} />

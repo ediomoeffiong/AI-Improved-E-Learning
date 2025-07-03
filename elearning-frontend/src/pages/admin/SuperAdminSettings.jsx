@@ -12,25 +12,25 @@ function SuperAdminSettings() {
     sessionTimeout: '60',
     requirePasswordChange: false,
     loginNotifications: true,
-    
+
     // Platform Settings
     maintenanceMode: false,
     debugMode: false,
     systemAlerts: true,
     emailReports: true,
-    
+
     // Notification Settings
     userRegistrationAlerts: true,
     institutionRequestAlerts: true,
     systemErrorAlerts: true,
     dailyReports: true,
     weeklyReports: true,
-    
+
     // Privacy Settings
     auditLogging: true,
     dataRetention: '365',
     anonymizeData: false,
-    
+
     // Advanced Settings
     apiRateLimit: '1000',
     maxFileSize: '50',
@@ -45,7 +45,7 @@ function SuperAdminSettings() {
   });
 
   const [activeTab, setActiveTab] = useState('security');
-  
+
   // Message modal states
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [showErrorMessage, setShowErrorMessage] = useState(false);
@@ -56,7 +56,7 @@ function SuperAdminSettings() {
   // Get current super admin user
   const getCurrentUser = () => {
     try {
-      const userData = localStorage.getItem('appAdminUser');
+      const userData = localStorage.getItem('superAdminUser');
       return userData ? JSON.parse(userData) : null;
     } catch (error) {
       console.error('Error parsing user data:', error);

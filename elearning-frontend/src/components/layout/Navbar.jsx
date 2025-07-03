@@ -788,7 +788,7 @@ const Navbar = ({ isScrolled = false }) => {
                       </Link>
 
                       <Link
-                        to="/profile"
+                        to={isSuperAdminLoggedIn ? "/super-admin/profile" : "/profile"}
                         onClick={handleLinkClick}
                         className="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150 group"
                       >
@@ -808,7 +808,7 @@ const Navbar = ({ isScrolled = false }) => {
                         </div>
                       ) : (
                         <Link
-                          to="/settings"
+                          to={isSuperAdminLoggedIn ? "/super-admin/settings" : "/settings"}
                           onClick={handleLinkClick}
                           className="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150 group"
                         >
@@ -1043,7 +1043,7 @@ const Navbar = ({ isScrolled = false }) => {
                 onClick={handleLinkClick}
                 className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md transition-colors duration-150"
               >
-                🏠 Home
+                Home
               </Link>
             )}
 
@@ -1054,7 +1054,7 @@ const Navbar = ({ isScrolled = false }) => {
                 onClick={handleLinkClick}
                 className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md transition-colors duration-150"
               >
-                📊 Dashboard
+                Dashboard
               </Link>
             )}
             
@@ -1078,7 +1078,7 @@ const Navbar = ({ isScrolled = false }) => {
                       onClick={handleLinkClick}
                       className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md transition-colors duration-150"
                     >
-                      📊 Dashboard
+                      Dashboard
                     </Link>
                   </>
                 ) : null}
@@ -1089,7 +1089,7 @@ const Navbar = ({ isScrolled = false }) => {
                   onClick={handleLinkClick}
                   className="flex items-center justify-between px-3 py-2 text-white hover:bg-blue-700 rounded-md transition-colors duration-150"
                 >
-                  <span>📚 Browse Courses</span>
+                  <span>Browse Courses</span>
                   <span className="text-xs bg-green-500 px-2 py-0.5 rounded-full">New</span>
                 </Link>
 
@@ -1101,7 +1101,7 @@ const Navbar = ({ isScrolled = false }) => {
                       onClick={handleLinkClick}
                       className="flex items-center justify-between px-3 py-2 text-white hover:bg-blue-700 rounded-md transition-colors duration-150"
                     >
-                      <span>✅ My Courses</span>
+                      <span>My Courses</span>
                       <span className="text-xs bg-purple-500 px-2 py-0.5 rounded-full">New</span>
                     </Link>
                     <Link
@@ -1109,20 +1109,20 @@ const Navbar = ({ isScrolled = false }) => {
                       onClick={handleLinkClick}
                       className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md transition-colors duration-150"
                     >
-                      📄 Course Materials
+                      Course Materials
                     </Link>
                     <Link
                       to="/courses/discussion"
                       onClick={handleLinkClick}
                       className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md transition-colors duration-150"
                     >
-                      💬 Discussions
+                      Discussions
                     </Link>
                   </>
                 ) : (
                   <div className="px-3 py-2 text-blue-200 text-sm">
                     <Link to="/login" className="text-white hover:text-blue-100 font-medium">
-                      🔐 Sign in
+                      Sign in
                     </Link> to access your courses
                   </div>
                 )}
@@ -1136,7 +1136,7 @@ const Navbar = ({ isScrolled = false }) => {
                 onClick={handleLinkClick}
                 className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md transition-colors duration-150"
               >
-                📝 Quiz
+                Quiz
               </Link>
             ) : (
               <Link
@@ -1144,7 +1144,7 @@ const Navbar = ({ isScrolled = false }) => {
                 onClick={handleLinkClick}
                 className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md transition-colors duration-150"
               >
-                📝 Quiz
+                Quiz
               </Link>
             )}
 
@@ -1162,12 +1162,12 @@ const Navbar = ({ isScrolled = false }) => {
             )}
             {(isAuthenticated() || isSuperAdminLoggedIn) && hasInstitutionFunctions() && openDropdown === 'mobile-classroom' && (
               <div className="pl-4 space-y-1 bg-blue-700/30 rounded-md mx-2 py-2">
-                <Link to="/classroom/dashboard" onClick={handleLinkClick} className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">🏫 Dashboard</Link>
+                <Link to="/classroom/dashboard" onClick={handleLinkClick} className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Dashboard</Link>
                 <div className="px-3 py-1 text-xs text-blue-200 font-semibold uppercase tracking-wide">CBT System</div>
-                <Link to="/cbt/dashboard" onClick={handleLinkClick} className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">📊 Dashboard</Link>
-                <Link to="/cbt/practice" onClick={handleLinkClick} className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">📚 Practice</Link>
-                <Link to="/cbt/take-assessment" onClick={handleLinkClick} className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">✅ Take Assessment</Link>
-                <Link to="/cbt/view-results" onClick={handleLinkClick} className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">📈 View Results</Link>
+                <Link to="/cbt/dashboard" onClick={handleLinkClick} className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Dashboard</Link>
+                <Link to="/cbt/practice" onClick={handleLinkClick} className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Practice</Link>
+                <Link to="/cbt/take-assessment" onClick={handleLinkClick} className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">Take Assessment</Link>
+                <Link to="/cbt/view-results" onClick={handleLinkClick} className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md">View Results</Link>
               </div>
             )}
 
@@ -1203,7 +1203,7 @@ const Navbar = ({ isScrolled = false }) => {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
                   </svg>
-                  <span>🔐 Sign In</span>
+                  <span>Sign In</span>
                 </Link>
               )}
             </div>

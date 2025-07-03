@@ -687,6 +687,17 @@ router.get('/stats', auth, requireSuperAdmin, async (req, res) => {
       return res.status(503).json({ message: 'Database not available' });
     }
 
+    // Ensure Institution model is properly loaded
+    if (!Institution) {
+      throw new Error('Institution model not loaded');
+    }
+
+    // Calculate date ranges for trend analysis
+    const now = new Date();
+    const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const twoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+
     const [
       totalUsers,
       totalInstitutions,
@@ -698,20 +709,35 @@ router.get('/stats', auth, requireSuperAdmin, async (req, res) => {
       superAdmins,
       institutionAdmins,
       newUsersThisMonth,
+      newUsersLastMonth,
+      newInstitutionsThisMonth,
+      newInstitutionsLastMonth,
+      newCoursesThisMonth,
+      newCoursesLastMonth,
+      pendingApprovalsLastMonth,
       recentUsers,
       recentActivities,
       institutionStats
     ] = await Promise.all([
       User.countDocuments(),
       Institution.countDocuments(),
-      Course.countDocuments(),
-      Enrollment.countDocuments(),
-      Quiz.countDocuments(),
-      QuizAttempt.countDocuments(),
+      Course?.countDocuments() || Promise.resolve(0),
+      Enrollment?.countDocuments() || Promise.resolve(0),
+      Quiz?.countDocuments() || Promise.resolve(0),
+      QuizAttempt?.countDocuments() || Promise.resolve(0),
       UserApproval.countDocuments({ status: 'pending' }),
       User.countDocuments({ role: { $in: ['Super Admin', 'Super Moderator'] } }),
       User.countDocuments({ role: 'Admin' }),
-      User.countDocuments({ createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }),
+      User.countDocuments({ createdAt: { $gte: thisMonth } }),
+      User.countDocuments({ createdAt: { $gte: lastMonth, $lt: thisMonth } }),
+      Institution.countDocuments({ createdAt: { $gte: thisMonth } }),
+      Institution.countDocuments({ createdAt: { $gte: lastMonth, $lt: thisMonth } }),
+      Course?.countDocuments({ createdAt: { $gte: thisMonth } }) || Promise.resolve(0),
+      Course?.countDocuments({ createdAt: { $gte: lastMonth, $lt: thisMonth } }) || Promise.resolve(0),
+      UserApproval.countDocuments({
+        status: 'pending',
+        createdAt: { $gte: lastMonth, $lt: thisMonth }
+      }),
       User.find().sort({ createdAt: -1 }).limit(5).select('name email role createdAt'),
       // Generate real-time activities based on actual data
       Promise.resolve().then(async () => {
@@ -830,6 +856,19 @@ router.get('/stats', auth, requireSuperAdmin, async (req, res) => {
     // Calculate revenue (mock data - would come from actual payment records)
     const revenueThisMonth = Math.floor(Math.random() * 50000) + 10000;
 
+    // Calculate growth trends (percentage change from last month)
+    const calculateGrowth = (current, previous) => {
+      if (previous === 0) return current > 0 ? 100 : 0;
+      return Math.round(((current - previous) / previous) * 100);
+    };
+
+    const trends = {
+      usersGrowth: calculateGrowth(newUsersThisMonth, newUsersLastMonth),
+      institutionsGrowth: calculateGrowth(newInstitutionsThisMonth, newInstitutionsLastMonth),
+      coursesGrowth: calculateGrowth(newCoursesThisMonth, newCoursesLastMonth),
+      approvalsChange: calculateGrowth(pendingApprovals, pendingApprovalsLastMonth)
+    };
+
     // System health metrics
     const systemHealth = {
       database: 'connected',
@@ -841,10 +880,22 @@ router.get('/stats', auth, requireSuperAdmin, async (req, res) => {
       errorRate: '0.02%'
     };
 
+    // If totalInstitutions is 0 but we know institutions exist, try a direct count
+    let finalInstitutionCount = totalInstitutions;
+    if (totalInstitutions === 0) {
+      try {
+        finalInstitutionCount = await Institution.countDocuments();
+        console.log('🔧 Fallback institution count:', finalInstitutionCount);
+      } catch (err) {
+        console.error('❌ Fallback institution count failed:', err);
+        finalInstitutionCount = 0;
+      }
+    }
+
     res.json({
       stats: {
         totalUsers,
-        totalInstitutions,
+        totalInstitutions: finalInstitutionCount,
         totalCourses,
         totalEnrollments,
         totalQuizzes,
@@ -855,6 +906,7 @@ router.get('/stats', auth, requireSuperAdmin, async (req, res) => {
         newUsersThisMonth,
         revenueThisMonth
       },
+      trends,
       recentUsers,
       recentActivities,
       institutionStats,

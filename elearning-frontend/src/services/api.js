@@ -86,7 +86,7 @@ const getAuthToken = () => {
 
 // Helper function to get Super Admin auth token
 const getSuperAdminAuthToken = () => {
-  return localStorage.getItem('appAdminToken');
+  return localStorage.getItem('superAdminToken');
 };
 
 // Helper function to make API requests with offline support
@@ -732,23 +732,38 @@ export const authAPI = {
     }
   },
 
-  // App Admin Login
-  appAdminLogin: async (credentials) => {
+  // Super Admin Login (unified endpoint)
+  superAdminLogin: async (credentials) => {
     try {
-      return await apiRequest('/auth/app-admin-login', {
+      return await apiRequest('/auth/super-admin-login', {
         method: 'POST',
         body: JSON.stringify(credentials),
       });
     } catch (error) {
-      // Handle 404 (endpoint not implemented) or other backend issues
-      if (error.message.includes('404') ||
-          error.message.includes('Backend service is not available') ||
-          error.message.includes('Demo mode is enabled')) {
-        console.log('App admin endpoint not available, using mock data');
-        return await mockAPI.appAdminLogin(credentials);
+      // Fallback to legacy endpoint if new one fails
+      try {
+        console.log('Falling back to legacy app-admin-login endpoint');
+        return await apiRequest('/auth/app-admin-login', {
+          method: 'POST',
+          body: JSON.stringify(credentials),
+        });
+      } catch (fallbackError) {
+        // Handle 404 (endpoint not implemented) or other backend issues
+        if (error.message.includes('404') ||
+            error.message.includes('Backend service is not available') ||
+            error.message.includes('Demo mode is enabled')) {
+          console.log('Super admin endpoint not available, using mock data');
+          return await mockAPI.appAdminLogin(credentials);
+        }
+        throw error;
       }
-      throw error;
     }
+  },
+
+  // App Admin Login (legacy - for backward compatibility)
+  appAdminLogin: async (credentials) => {
+    // Redirect to new unified endpoint
+    return await api.superAdminLogin(credentials);
   },
 
   // Register
@@ -1694,11 +1709,17 @@ export const superAdminAPI = {
   // Get platform statistics and recent users
   getStats: async () => {
     try {
+      console.log('🔍 SuperAdminAPI.getStats called');
+
       // Use Super Admin token for authentication
       const superAdminToken = localStorage.getItem('appAdminToken');
+      console.log('🔑 Super Admin Token found:', !!superAdminToken);
+
       if (!superAdminToken) {
         throw new Error('Super Admin authentication required');
       }
+
+      console.log('🌐 Making API call to:', `${API_BASE_URL}/super-admin/stats`);
 
       const response = await fetch(`${API_BASE_URL}/super-admin/stats`, {
         method: 'GET',
@@ -1708,26 +1729,45 @@ export const superAdminAPI = {
         },
       });
 
+      console.log('📡 API Response status:', response.status);
+      console.log('📡 API Response ok:', response.ok);
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        console.log('❌ API Error data:', errorData);
         throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
       }
 
-      return await response.json();
+      const data = await response.json();
+      console.log('✅ API Success - Raw data:', data);
+      console.log('📊 Institutions count from API:', data.stats?.totalInstitutions);
+
+      return data;
     } catch (error) {
+      console.error('❌ SuperAdminAPI.getStats error:', error);
+      console.error('❌ Error message:', error.message);
+
       if (error.message.includes('Backend service is not available') ||
           error.message.includes('Demo mode is enabled') ||
           error.message.includes('fetch') ||
           error.message.includes('NetworkError') ||
           error.message.includes('Failed to fetch')) {
-        console.log('Using mock data for Super Admin stats');
-        return {
+        console.log('🔄 Using mock data for Super Admin stats due to network error');
+        const mockData = {
           stats: {
             totalUsers: 15847,
             totalInstitutions: 234,
             pendingApprovals: 23,
             superAdmins: 3,
-            institutionAdmins: 156
+            institutionAdmins: 156,
+            totalCourses: 1247,
+            totalEnrollments: 8934
+          },
+          trends: {
+            usersGrowth: 12,
+            institutionsGrowth: 8,
+            approvalsChange: -5,
+            coursesGrowth: 15
           },
           recentUsers: [
             {
@@ -1767,7 +1807,11 @@ export const superAdminAPI = {
             }
           ]
         };
+        console.log('📦 Returning mock data:', mockData);
+        console.log('🏛️ Mock institutions count:', mockData.stats.totalInstitutions);
+        return mockData;
       }
+      console.error('❌ Throwing error (not network related):', error.message);
       throw error;
     }
   },

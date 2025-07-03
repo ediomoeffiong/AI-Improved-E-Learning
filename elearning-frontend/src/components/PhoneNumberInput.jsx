@@ -152,17 +152,17 @@ const PhoneNumberInput = ({
           {label} {required && <span className="text-red-500">*</span>}
         </label>
       )}
-      
+
       <div className="flex space-x-2">
         {/* Country Code Selector */}
         <div className="relative min-w-[140px]" ref={dropdownRef}>
           <button
             type="button"
             onClick={() => setShowCountryDropdown(!showCountryDropdown)}
-            className={`w-full bg-white dark:bg-gray-700 border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white flex items-center justify-between ${
-              error 
-                ? 'border-red-300 dark:border-red-600' 
-                : 'border-gray-300 dark:border-gray-600'
+            className={`w-full bg-white dark:bg-gray-700 border rounded-xl px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white flex items-center justify-between transition-all duration-200 ${
+              error
+                ? 'border-red-300 dark:border-red-600 focus:ring-red-500'
+                : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'
             }`}
             disabled={disabled}
           >
@@ -211,10 +211,10 @@ const PhoneNumberInput = ({
             handlePhoneNumberChange(formatted);
           }}
           placeholder={placeholder}
-          className={`flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm font-mono ${
-            error 
-              ? 'border-red-300 dark:border-red-600' 
-              : 'border-gray-300 dark:border-gray-600'
+          className={`flex-1 px-3 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:bg-gray-700 dark:text-white text-sm font-mono transition-all duration-200 ${
+            error
+              ? 'border-red-300 dark:border-red-600 focus:ring-red-500 bg-red-50 dark:bg-red-900/20'
+              : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 bg-white dark:bg-gray-700'
           }`}
           disabled={disabled}
           required={required}

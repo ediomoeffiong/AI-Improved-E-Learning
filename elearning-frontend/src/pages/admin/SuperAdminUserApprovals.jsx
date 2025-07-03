@@ -6,7 +6,7 @@ const SuperAdminUserApprovals = () => {
   // Get Super Admin user from localStorage (separate from regular auth)
   const getSuperAdminUser = () => {
     try {
-      const superAdminUser = localStorage.getItem('appAdminUser');
+      const superAdminUser = localStorage.getItem('superAdminUser');
       return superAdminUser ? JSON.parse(superAdminUser) : null;
     } catch (error) {
       console.error('Error parsing super admin user:', error);
@@ -145,7 +145,7 @@ const SuperAdminUserApprovals = () => {
     try {
       setActionLoading(true);
       
-      const token = localStorage.getItem('appAdminToken');
+      const token = localStorage.getItem('superAdminToken');
       if (!token) {
         throw new Error('No authentication token found');
       }

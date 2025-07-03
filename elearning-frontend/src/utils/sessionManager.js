@@ -17,8 +17,8 @@ export const STORAGE_KEYS = {
     USER: 'user'
   },
   SUPER_ADMIN: {
-    TOKEN: 'appAdminToken',
-    USER: 'appAdminUser'
+    TOKEN: 'superAdminToken',
+    USER: 'superAdminUser'
   }
 };
 
