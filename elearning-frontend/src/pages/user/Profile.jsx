@@ -1,11 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import PhoneNumberInput from '../../components/PhoneNumberInput';
 import { formatPhoneNumber } from '../../constants/countryCodes';
+import { enrollmentAPI, userAPI } from '../../services/api';
 
 function Profile() {
   const { user, getUserName, getUserEmail, getUserRole } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [stats, setStats] = useState({
+    totalCourses: 0,
+    completedCourses: 0,
+    totalTimeSpent: 0
+  });
   const [formData, setFormData] = useState({
     name: getUserName() || '',
     email: getUserEmail() || '',
@@ -14,6 +22,40 @@ function Profile() {
     location: '',
     website: ''
   });
+
+  // Fetch user statistics on component mount
+  useEffect(() => {
+    const fetchUserStats = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Fetch enrollment statistics
+        const enrollmentStats = await enrollmentAPI.getEnrollmentStats();
+
+        if (enrollmentStats) {
+          setStats({
+            totalCourses: enrollmentStats.totalCourses || 0,
+            completedCourses: enrollmentStats.completedCourses || 0,
+            totalTimeSpent: enrollmentStats.totalTimeSpent || 0
+          });
+        }
+      } catch (err) {
+        console.error('Error fetching user statistics:', err);
+        setError('Unable to load statistics. Showing default values.');
+        // Keep default values in case of error
+        setStats({
+          totalCourses: 0,
+          completedCourses: 0,
+          totalTimeSpent: 0
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserStats();
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -39,6 +81,16 @@ function Profile() {
       website: ''
     });
     setIsEditing(false);
+  };
+
+  // Helper function to format time spent in hours
+  const formatTimeSpent = (minutes) => {
+    if (minutes < 60) {
+      return `${minutes}m`;
+    }
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
   };
 
   return (
@@ -225,7 +277,11 @@ function Profile() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Courses Enrolled</p>
-              <p className="text-2xl font-semibold text-gray-900 dark:text-white">12</p>
+              {loading ? (
+                <div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-8 w-12 rounded"></div>
+              ) : (
+                <p className="text-2xl font-semibold text-gray-900 dark:text-white">{stats.totalCourses}</p>
+              )}
             </div>
           </div>
         </div>
@@ -239,7 +295,11 @@ function Profile() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Courses Completed</p>
-              <p className="text-2xl font-semibold text-gray-900 dark:text-white">8</p>
+              {loading ? (
+                <div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-8 w-12 rounded"></div>
+              ) : (
+                <p className="text-2xl font-semibold text-gray-900 dark:text-white">{stats.completedCourses}</p>
+              )}
             </div>
           </div>
         </div>
@@ -253,11 +313,33 @@ function Profile() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Learning Hours</p>
-              <p className="text-2xl font-semibold text-gray-900 dark:text-white">156</p>
+              {loading ? (
+                <div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-8 w-16 rounded"></div>
+              ) : (
+                <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+                  {stats.totalTimeSpent > 0 ? formatTimeSpent(stats.totalTimeSpent) : '0h'}
+                </p>
+              )}
             </div>
           </div>
         </div>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-yellow-800 dark:text-yellow-200">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

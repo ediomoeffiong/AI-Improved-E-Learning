@@ -398,7 +398,23 @@ export const enrollmentAPI = {
 
   // Get enrollment statistics
   getEnrollmentStats: async () => {
-    return apiRequest('/enrollments/stats');
+    try {
+      return await apiRequest('/enrollments/stats');
+    } catch (error) {
+      if (error.message.includes('Backend service is not available')) {
+        console.log('Using mock data for enrollment stats');
+        // Return mock stats for demo mode
+        return {
+          totalCourses: 0,
+          completedCourses: 0,
+          inProgressCourses: 0,
+          certificates: 0,
+          totalTimeSpent: 0,
+          averageProgress: 0
+        };
+      }
+      throw error;
+    }
   },
 
   // Get specific enrollment
