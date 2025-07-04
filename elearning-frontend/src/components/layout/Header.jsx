@@ -118,7 +118,7 @@ function Header() {
         }}
       >
         {/* Enhanced Navbar with scroll effects */}
-        <div className={`transition-all duration-300 ${isScrolled ? 'py-2' : 'py-0'}`}>
+        <div className={`transition-all duration-300 ${isScrolled ? 'py-1' : 'py-0'}`}>
           <Navbar isScrolled={isScrolled} />
         </div>
       </header>
@@ -127,7 +127,7 @@ function Header() {
       <div
         className="transition-all duration-300"
         style={{
-          height: `${(showAnnouncement && !isScrolled ? announcementHeight : 0) + (isScrolled ? 60 : 64)}px`
+          height: `${(showAnnouncement && !isScrolled ? announcementHeight : 0) + (isScrolled ? 40 : 48)}px`
         }}
       />
     </>

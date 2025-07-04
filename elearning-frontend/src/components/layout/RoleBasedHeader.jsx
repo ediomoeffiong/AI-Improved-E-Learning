@@ -233,35 +233,159 @@ const RoleBasedHeader = () => {
             name: 'Courses',
             type: 'dropdown',
             items: [
-              { name: 'Course Dashboard', href: '/courses/dashboard', description: 'View your course progress and overview', icon: '📊' },
-              { name: 'All Courses', href: '/courses', description: 'Browse all available courses', icon: '📚' },
-              { name: 'My Courses', href: '/courses/my-courses', description: 'View your enrolled courses', icon: '🎓' },
-              { name: 'Course Categories', href: '/courses/categories', description: 'Browse courses by category', icon: '📂' },
-              { name: 'Course Search', href: '/courses/search', description: 'Search for specific courses', icon: '🔍' }
+              {
+                name: 'Dashboard',
+                href: '/courses/dashboard',
+                description: 'Course overview',
+                icon: (
+                  <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+                  </svg>
+                )
+              },
+              {
+                name: 'Browse Courses',
+                href: '/courses',
+                description: 'Explore catalog',
+                badge: 'New',
+                icon: (
+                  <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+                  </svg>
+                )
+              },
+              {
+                name: 'My Courses',
+                href: '/courses/my-courses',
+                description: 'Enrolled courses',
+                badge: 'New',
+                icon: (
+                  <svg className="w-5 h-5 text-purple-500" fill="currentColor" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none"/>
+                    <circle cx="12" cy="12" r="6" fill="currentColor"/>
+                  </svg>
+                )
+              },
+              {
+                name: 'Course Materials',
+                href: '/courses/materials',
+                description: 'Resources & files',
+                icon: (
+                  <svg className="w-5 h-5 text-orange-500" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                  </svg>
+                )
+              },
+              {
+                name: 'Discussions',
+                href: '/courses/discussion',
+                description: 'Community forum',
+                icon: (
+                  <svg className="w-5 h-5 text-purple-500" fill="currentColor" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none"/>
+                    <circle cx="9" cy="9" r="1.5" fill="currentColor"/>
+                    <circle cx="15" cy="9" r="1.5" fill="currentColor"/>
+                    <path d="M8 14s1.5 2 4 2 4-2 4-2" stroke="currentColor" strokeWidth="2" fill="none"/>
+                  </svg>
+                )
+              }
             ]
           },
           {
             name: 'Quizzes',
             type: 'dropdown',
             items: [
-              { name: 'Quiz Dashboard', href: '/quiz/dashboard', description: 'View your quiz performance overview', icon: '📊' },
-              { name: 'Available Quizzes', href: '/quizzes', description: 'Browse all available quizzes', icon: '📝' },
-              { name: 'My Quiz Results', href: '/quizzes/results', description: 'View your quiz scores and history', icon: '📈' },
-              { name: 'Practice Tests', href: '/quizzes/practice', description: 'Take practice quizzes', icon: '🎯' },
-              { name: 'Quiz Categories', href: '/quizzes/categories', description: 'Browse quizzes by subject', icon: '📂' }
+              {
+                name: 'Quiz Dashboard',
+                href: '/quiz/dashboard',
+                description: 'Performance overview',
+                icon: (
+                  <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+                  </svg>
+                )
+              },
+              {
+                name: 'Available Quizzes',
+                href: '/quizzes',
+                description: 'Browse all quizzes',
+                icon: (
+                  <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+                  </svg>
+                )
+              },
+              {
+                name: 'My Quiz Results',
+                href: '/quizzes/results',
+                description: 'View scores & history',
+                icon: (
+                  <svg className="w-5 h-5 text-orange-500" fill="currentColor" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none"/>
+                    <path d="m9 12 2 2 4-4" stroke="currentColor" strokeWidth="2" fill="none"/>
+                  </svg>
+                )
+              },
+              {
+                name: 'Practice Tests',
+                href: '/quizzes/practice',
+                description: 'Take practice quizzes',
+                icon: (
+                  <svg className="w-5 h-5 text-purple-500" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                  </svg>
+                )
+              }
             ]
           },
           {
             name: 'Progress',
             type: 'dropdown',
             items: [
-              { name: 'Progress Dashboard', href: '/progress/dashboard', description: 'View your overall learning progress', icon: '📊' },
-              { name: 'Performance Reports', href: '/progress/reports', description: 'Detailed performance analytics', icon: '📋' },
-              { name: 'Activity Logs', href: '/progress/activity', description: 'View your learning activity history', icon: '📝' },
-              { name: 'Achievements', href: '/progress/achievements', description: 'View your earned badges and achievements', icon: '🏆' },
-              { name: 'Personalized Recommendations', href: '/progress/recommendations', description: 'Get AI-powered learning suggestions', icon: '💡' }
+              {
+                name: 'Dashboard',
+                href: '/progress/dashboard',
+                description: 'Progress overview',
+                icon: (
+                  <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+                  </svg>
+                )
+              },
+              {
+                name: 'Performance Reports',
+                href: '/progress/reports',
+                description: 'Detailed analytics',
+                icon: (
+                  <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+                  </svg>
+                )
+              },
+              {
+                name: 'Activity Logs',
+                href: '/progress/activity',
+                description: 'Learning history',
+                icon: (
+                  <svg className="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none"/>
+                    <polyline points="12,6 12,12 16,14" stroke="currentColor" strokeWidth="2" fill="none"/>
+                  </svg>
+                )
+              },
+              {
+                name: 'AI Recommendations',
+                href: '/progress/recommendations',
+                description: 'Personalized tips',
+                icon: (
+                  <svg className="w-5 h-5 text-purple-500" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                  </svg>
+                )
+              }
             ]
-          }
+          },
+
         ];
     }
   };
@@ -310,12 +434,12 @@ const RoleBasedHeader = () => {
           {/* Logo */}
           <div className="flex items-center">
             <Link to={currentUser ? "/dashboard" : "/"} className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <div className="w-8 h-8 bg-white rounded flex items-center justify-center">
+                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                 </svg>
               </div>
-              <span className="text-lg font-semibold text-white hidden sm:inline">AI E-Learning</span>
+              <span className="text-base font-medium text-white">AI E-Learning</span>
             </Link>
           </div>
 
@@ -326,36 +450,41 @@ const RoleBasedHeader = () => {
                 <div key={item.name} className="relative dropdown-container">
                   <button
                     onClick={() => toggleDropdown(item.name)}
-                    className="flex items-center space-x-2 text-white text-opacity-90 hover:text-white px-3 py-2 rounded-lg hover:bg-black hover:bg-opacity-20 hover:shadow-lg transition-all duration-200"
+                    className="flex items-center space-x-1 text-white hover:text-white/80 px-3 py-2 transition-all duration-200"
                   >
-                    <span className="font-medium">{item.name}</span>
+                    <span className="text-base font-medium">{item.name}</span>
                     <svg
-                      className={`w-4 h-4 ml-1 transition-transform duration-200 ${
+                      className={`w-4 h-4 transition-transform duration-200 ${
                         openDropdown === item.name ? 'rotate-180' : ''
                       }`}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
+                      strokeWidth={2}
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                     </svg>
                   </button>
                   {openDropdown === item.name && (
-                    <div className="absolute z-50 mt-2 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-2 animate-in slide-in-from-top-2 duration-200">
+                    <div className="absolute z-50 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-100 py-2 animate-in slide-in-from-top-2 duration-200">
                       {item.items.map((subItem, index) => (
                         <Link
                           key={subItem.name}
                           to={subItem.href}
                           onClick={() => setOpenDropdown(null)}
-                          className="flex items-center px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 group"
+                          className="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 group transition-all duration-200"
                         >
-                          <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center mr-3">
-                            <span className="text-blue-600 dark:text-blue-400">
-                              {subItem.icon || '📚'}
-                            </span>
+                          <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center mr-3 group-hover:bg-blue-50 transition-colors duration-200">
+                            <div className={typeof subItem.icon === 'string' ? "text-gray-600 group-hover:text-blue-600 transition-colors duration-200" : ""}>
+                              {typeof subItem.icon === 'string' ? (
+                                <span>{subItem.icon}</span>
+                              ) : (
+                                subItem.icon || <span>📚</span>
+                              )}
+                            </div>
                           </div>
                           <div className="flex-1">
-                            <div className="font-medium flex items-center">
+                            <div className="font-medium flex items-center text-gray-900 group-hover:text-blue-600 transition-colors duration-200">
                               {subItem.name}
                               {subItem.badge && (
                                 <span className="ml-2 px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
@@ -363,22 +492,22 @@ const RoleBasedHeader = () => {
                                 </span>
                               )}
                             </div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">{subItem.description}</div>
+                            <div className="text-xs text-gray-500">{subItem.description}</div>
                           </div>
                         </Link>
                       ))}
                       {/* Special message for non-authenticated users on Courses dropdown */}
                       {!currentUser && item.name === 'Courses' && (
-                        <div className="border-t border-gray-200 dark:border-gray-700 mt-2 pt-2">
+                        <div className="border-t border-gray-200 mt-2 pt-2">
                           <div className="px-4 py-3 text-center">
                             <Link
                               to="/login"
-                              className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium"
+                              className="text-blue-600 hover:text-blue-800 font-medium"
                               onClick={() => setOpenDropdown(null)}
                             >
                               Sign in
                             </Link>
-                            <span className="text-gray-600 dark:text-gray-400"> to access your courses and dashboard</span>
+                            <span className="text-gray-600"> to access your courses and dashboard</span>
                           </div>
                         </div>
                       )}
@@ -389,27 +518,27 @@ const RoleBasedHeader = () => {
                 <Link
                   key={item.name}
                   to={item.href}
-                  className="flex items-center space-x-2 text-white text-opacity-90 hover:text-white px-3 py-2 rounded-lg hover:bg-black hover:bg-opacity-20 hover:shadow-lg transition-all duration-200"
+                  className="text-white hover:text-white/80 px-3 py-2 transition-all duration-200"
                 >
-                  <span className="font-medium">{item.name}</span>
+                  <span className="text-base font-medium">{item.name}</span>
                 </Link>
               )
             ))}
           </nav>
 
           {/* Right side - Notifications and User Menu */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
             {/* Notifications - Only show for authenticated users */}
             {currentUser && (
               <div className="relative" ref={notificationRef}>
                 <button
                   onClick={() => setIsNotificationOpen(!isNotificationOpen)}
-                  className="p-2 text-white text-opacity-90 hover:text-opacity-100 hover:bg-white hover:bg-opacity-10 rounded-lg transition-all duration-200"
+                  className="relative p-2 text-white hover:text-white/80 transition-all duration-200"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                   </svg>
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
                     3
                   </span>
                 </button>
@@ -464,45 +593,34 @@ const RoleBasedHeader = () => {
               <div className="relative" ref={userMenuRef}>
                 <button
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="group flex items-center space-x-3 text-white/90 hover:text-white hover:bg-white/10 px-4 py-2.5 rounded-xl transition-all duration-300 ease-out hover:shadow-lg hover:shadow-black/10"
+                  className="flex items-center space-x-3 text-white hover:bg-white/10 px-3 py-2 rounded transition-all duration-200"
                 >
-                  {/* Enhanced Avatar */}
-                  <div className="relative">
-                    <div className="w-10 h-10 bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-sm rounded-xl flex items-center justify-center ring-2 ring-white/20 group-hover:ring-white/30 transition-all duration-300">
-                      <span className="text-sm font-bold tracking-wide">
-                        {(getUserName() || currentUser?.name || 'U').charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                    {/* Online indicator */}
-                    <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full ring-2 ring-white/20"></div>
+                  {/* White Circular Avatar with Refined User Icon */}
+                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
+                    <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
                   </div>
 
-                  {/* User Info */}
-                  <div className="hidden md:block text-left">
-                    <p className="text-sm font-semibold leading-tight">{getUserName() || currentUser?.name}</p>
-                    <div className="flex items-center space-x-1.5 mt-0.5">
-                      <span className="text-xs opacity-90">{ROLE_ICONS[currentUser?.role]}</span>
-                      <p className="text-xs font-medium opacity-75 capitalize">
-                        {currentUser?.role?.replace('_', ' ')}
-                      </p>
-                    </div>
-                  </div>
+                  {/* Welcome Text */}
+                  <span className="text-base font-medium text-white">Welcome, {getUserName() || currentUser?.name || 'User'}</span>
 
                   {/* Dropdown Arrow */}
                   <svg
-                    className={`w-4 h-4 transition-transform duration-300 ${isUserMenuOpen ? 'rotate-180' : ''}`}
+                    className={`w-4 h-4 text-white transition-transform duration-200 ${isUserMenuOpen ? 'rotate-180' : ''}`}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
+                    strokeWidth={2}
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
 
               {isUserMenuOpen && (
-                <div className="absolute right-0 mt-3 w-64 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 z-50 overflow-hidden">
+                <div className="absolute right-0 mt-3 w-64 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden">
                   {/* User Info Header */}
-                  <div className="p-5 bg-gradient-to-br from-blue-50/50 to-purple-50/50 dark:from-gray-700/50 dark:to-gray-600/50 border-b border-gray-200/50 dark:border-gray-700/50">
+                  <div className="p-5 bg-gradient-to-br from-blue-50 to-purple-50 border-b border-gray-100">
                     <div className="flex items-center space-x-3">
                       <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
                         <span className="text-white font-bold text-lg">
@@ -510,15 +628,15 @@ const RoleBasedHeader = () => {
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                        <p className="text-sm font-semibold text-gray-900 truncate">
                           {getUserName() || currentUser?.name}
                         </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        <p className="text-xs text-gray-500 truncate">
                           {currentUser?.email}
                         </p>
                         <div className="flex items-center space-x-1.5 mt-1">
                           <span className="text-sm">{ROLE_ICONS[currentUser?.role]}</span>
-                          <span className="text-xs font-medium text-blue-600 dark:text-blue-400 capitalize">
+                          <span className="text-xs font-medium text-blue-600 capitalize">
                             {currentUser?.role?.replace('_', ' ')}
                           </span>
                         </div>
@@ -531,7 +649,7 @@ const RoleBasedHeader = () => {
                       <>
                         <Link
                           to="/super-admin/profile"
-                          className="group flex items-center px-5 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-700/50 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200"
+                          className="group flex items-center px-5 py-3 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200"
                         >
                           <span className="mr-3 text-base">👤</span>
                           <span>My Profile</span>
@@ -541,7 +659,7 @@ const RoleBasedHeader = () => {
                         </Link>
                         <Link
                           to="/super-admin/settings"
-                          className="group flex items-center px-5 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-700/50 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200"
+                          className="group flex items-center px-5 py-3 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200"
                         >
                           <span className="mr-3 text-base">⚙️</span>
                           <span>Settings</span>
@@ -551,7 +669,7 @@ const RoleBasedHeader = () => {
                         </Link>
                         <Link
                           to="/super-admin/system"
-                          className="group flex items-center px-5 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-700/50 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200"
+                          className="group flex items-center px-5 py-3 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200"
                         >
                           <span className="mr-3 text-base">🔧</span>
                           <span>System Settings</span>
@@ -564,7 +682,7 @@ const RoleBasedHeader = () => {
                       <>
                         <Link
                           to="/profile"
-                          className="group flex items-center px-5 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-700/50 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200"
+                          className="group flex items-center px-5 py-3 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200"
                         >
                           <span className="mr-3 text-base">👤</span>
                           <span>Profile</span>
@@ -574,7 +692,7 @@ const RoleBasedHeader = () => {
                         </Link>
                         <Link
                           to="/settings"
-                          className="group flex items-center px-5 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-700/50 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200"
+                          className="group flex items-center px-5 py-3 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200"
                         >
                           <span className="mr-3 text-base">⚙️</span>
                           <span>Settings</span>
@@ -586,10 +704,10 @@ const RoleBasedHeader = () => {
                     )}
                   </div>
                   {/* Logout Section */}
-                  <div className="border-t border-gray-200/50 dark:border-gray-700/50 py-2">
+                  <div className="border-t border-gray-100 py-2">
                     <button
                       onClick={handleLogout}
-                      className="group flex items-center w-full px-5 py-3 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-700 dark:hover:text-red-300 transition-all duration-200"
+                      className="group flex items-center w-full px-5 py-3 text-sm font-medium text-red-600 hover:bg-red-50 hover:text-red-700 transition-all duration-200"
                     >
                       <span className="mr-3 text-base">🚪</span>
                       <span>Sign Out</span>
@@ -631,7 +749,7 @@ const RoleBasedHeader = () => {
                 <div key={item.name}>
                   <button
                     onClick={() => toggleDropdown(`mobile-${item.name}`)}
-                    className="w-full text-left px-3 py-2 text-white hover:bg-blue-700 rounded-md flex justify-between items-center"
+                    className="w-full text-left px-3 py-2 text-white hover:bg-gradient-to-r hover:from-blue-500/30 hover:to-purple-500/30 rounded-md flex justify-between items-center transition-all duration-200"
                   >
                     <span>{item.name}</span>
                     <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 transform ${openDropdown === `mobile-${item.name}` ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -658,7 +776,7 @@ const RoleBasedHeader = () => {
                   key={item.name}
                   to={item.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md"
+                  className="block px-3 py-2 text-white hover:bg-gradient-to-r hover:from-blue-500/30 hover:to-purple-500/30 rounded-md transition-all duration-200"
                 >
                   {item.name}
                 </Link>
@@ -671,14 +789,14 @@ const RoleBasedHeader = () => {
                 <Link
                   to="/login"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="block px-3 py-2 text-white hover:bg-blue-700 rounded-md text-center border border-white border-opacity-30"
+                  className="block px-3 py-2 text-white hover:bg-gradient-to-r hover:from-blue-500/30 hover:to-purple-500/30 rounded-md text-center border border-white border-opacity-30 transition-all duration-200"
                 >
                   Sign In
                 </Link>
                 <Link
                   to="/register"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="block px-3 py-2 bg-white text-blue-600 hover:bg-blue-50 rounded-md text-center font-medium"
+                  className="block px-3 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:from-blue-600 hover:to-purple-600 rounded-md text-center font-medium transition-all duration-200"
                 >
                   Get Started
                 </Link>

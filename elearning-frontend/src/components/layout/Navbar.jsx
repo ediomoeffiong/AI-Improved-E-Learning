@@ -312,7 +312,7 @@ const Navbar = ({ isScrolled = false }) => {
     }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className={`flex justify-between items-center transition-all duration-300 ${
-          isScrolled ? 'h-14' : 'h-16'
+          isScrolled ? 'h-10' : 'h-12'
         }`}>
           <Link
             to="/"
