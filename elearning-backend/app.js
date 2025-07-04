@@ -15,7 +15,7 @@ const app = express();
 // CORS configuration
 const corsOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
-  : ['http://localhost:5173', 'http://localhost:3000'];
+  : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3000'];
 
 // Add debug logging for CORS
 console.log('🔧 CORS Configuration:');
@@ -60,6 +60,7 @@ app.use('/api/super-admin', require('./routes/superAdmin'));
 app.use('/api/institution-admin', require('./routes/institutionAdmin'));
 app.use('/api/institution-membership', require('./routes/institutionMembership'));
 app.use('/api/2fa', require('./routes/twoFactorAuth'));
+app.use('/api/notifications', require('./routes/notifications'));
 
 // Connect to MongoDB with enhanced error handling and fallback
 const connectDB = async () => {
