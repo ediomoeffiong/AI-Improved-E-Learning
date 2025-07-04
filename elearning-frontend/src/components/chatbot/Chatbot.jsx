@@ -1,6 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
+import { USER_ROLES } from '../../constants/roles';
 
 function Chatbot() {
+  const { getUserRole } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     { 
@@ -58,10 +61,10 @@ function Chatbot() {
     };
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
-    
+
     // Simulate bot typing
     setIsTyping(true);
-    
+
     // Simulate response delay
     setTimeout(() => {
       const botResponse = {
@@ -74,12 +77,34 @@ function Chatbot() {
     }, 1000);
   };
 
+  // Fallback check for Super Admin role directly from localStorage
+  const isSuperAdminFromStorage = () => {
+    try {
+      const superAdminUser = localStorage.getItem('superAdminUser');
+      if (superAdminUser) {
+        const userData = JSON.parse(superAdminUser);
+        return userData.role === USER_ROLES.SUPER_ADMIN || userData.role === USER_ROLES.SUPER_MODERATOR;
+      }
+    } catch (error) {
+      console.error('Error checking super admin from storage:', error);
+    }
+    return false;
+  };
+
+  // Get appropriate gradient based on user role
+  const getButtonGradient = () => {
+    if (getUserRole() === USER_ROLES.SUPER_ADMIN || getUserRole() === USER_ROLES.SUPER_MODERATOR || isSuperAdminFromStorage()) {
+      return 'bg-gradient-to-r from-blue-600 via-blue-700 to-red-500 hover:from-blue-700 hover:via-blue-800 hover:to-red-600';
+    }
+    return 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700';
+  };
+
   return (
     <div className="fixed bottom-24 right-8 z-50">
       {/* Chat button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110"
+        className={`${getButtonGradient()} text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110`}
         aria-label="Open chat assistant"
       >
         {isOpen ? (
@@ -97,7 +122,7 @@ function Chatbot() {
       {isOpen && (
         <div className="absolute bottom-16 right-0 w-80 sm:w-96 bg-white dark:bg-gray-800 rounded-lg shadow-xl overflow-hidden flex flex-col transition-all duration-300 border border-gray-200 dark:border-gray-700">
           {/* Chat header */}
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-3 flex justify-between items-center">
+          <div className={`${getButtonGradient()} text-white px-4 py-3 flex justify-between items-center`}>
             <div className="flex items-center">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -122,10 +147,10 @@ function Chatbot() {
                 key={message.id} 
                 className={`mb-3 flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                <div 
+                <div
                   className={`px-4 py-2 rounded-lg max-w-[80%] ${
                     message.sender === 'user'
-                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
+                      ? `${getButtonGradient()} text-white`
                       : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
                   }`}
                 >
@@ -158,7 +183,7 @@ function Chatbot() {
             />
             <button
               type="submit"
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4 py-2 rounded-r-lg transition-all duration-200"
+              className={`${getButtonGradient()} text-white px-4 py-2 rounded-r-lg transition-all duration-200`}
               disabled={inputValue.trim() === ''}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

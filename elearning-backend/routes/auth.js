@@ -267,6 +267,13 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
+    // Prevent Super Admin and Super Moderator from using normal login
+    if (user.role === 'Super Admin' || user.role === 'Super Moderator') {
+      return res.status(403).json({
+        message: 'Super Admin and Super Moderator accounts must use the dedicated admin login portal.'
+      });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid credentials' });

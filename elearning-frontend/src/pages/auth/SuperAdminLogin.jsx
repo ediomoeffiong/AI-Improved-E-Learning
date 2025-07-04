@@ -150,7 +150,9 @@ function SuperAdminLogin() {
 
         // Create mock super admin data
         const mockData = {
-          token: 'mock-super-admin-token-' + Date.now(),
+          token: formData.role === 'Super Admin'
+            ? 'mock-super-admin-token-' + Date.now()
+            : 'mock-super-moderator-token-' + Date.now(),
           user: {
             id: 'super-admin-demo',
             name: `Demo ${formData.role}`,
@@ -253,7 +255,8 @@ function SuperAdminLogin() {
           <SessionConflictWarning
             conflictType={sessionConflict.conflictType}
             conflictUser={sessionConflict.conflictUser}
-            onResolved={handleSessionConflictResolved}
+            targetSessionType={SESSION_TYPES.SUPER_ADMIN}
+            onLogoutComplete={handleSessionConflictResolved}
           />
         )}
 

@@ -1882,8 +1882,8 @@ export const superAdminAPI = {
     try {
       console.log('🔍 SuperAdminAPI.getStats called');
 
-      // Use Super Admin token for authentication
-      const superAdminToken = localStorage.getItem('appAdminToken');
+      // Use Super Admin token for authentication (fixed token key)
+      const superAdminToken = localStorage.getItem('superAdminToken');
       console.log('🔑 Super Admin Token found:', !!superAdminToken);
 
       if (!superAdminToken) {
@@ -1990,7 +1990,7 @@ export const superAdminAPI = {
   // Get all users with filtering and pagination
   getUsers: async (filters = {}) => {
     try {
-      const superAdminToken = localStorage.getItem('appAdminToken');
+      const superAdminToken = localStorage.getItem('superAdminToken');
       if (!superAdminToken) {
         throw new Error('Super Admin authentication required');
       }
@@ -2046,7 +2046,7 @@ export const superAdminAPI = {
   // Create new Super Admin or Super Moderator
   createAdmin: async (adminData) => {
     try {
-      const superAdminToken = localStorage.getItem('appAdminToken');
+      const superAdminToken = localStorage.getItem('superAdminToken');
       if (!superAdminToken) {
         throw new Error('Super Admin authentication required');
       }
@@ -2099,7 +2099,7 @@ export const superAdminAPI = {
   // Get all institutions with filtering and pagination
   getInstitutions: async (filters = {}) => {
     try {
-      const superAdminToken = localStorage.getItem('appAdminToken');
+      const superAdminToken = localStorage.getItem('superAdminToken');
       if (!superAdminToken) {
         throw new Error('Super Admin authentication required');
       }
@@ -2218,7 +2218,7 @@ export const superAdminAPI = {
   // Get institution statistics
   getInstitutionStats: async () => {
     try {
-      const superAdminToken = localStorage.getItem('appAdminToken');
+      const superAdminToken = localStorage.getItem('superAdminToken');
       if (!superAdminToken) {
         throw new Error('Super Admin authentication required');
       }
@@ -2272,7 +2272,7 @@ export const superAdminAPI = {
   // Update institution status
   updateInstitutionStatus: async (institutionId, statusData) => {
     try {
-      const superAdminToken = localStorage.getItem('appAdminToken');
+      const superAdminToken = localStorage.getItem('superAdminToken');
       if (!superAdminToken) {
         throw new Error('Super Admin authentication required');
       }
@@ -2311,7 +2311,7 @@ export const superAdminAPI = {
   // Bulk institution actions
   bulkInstitutionAction: async (actionData) => {
     try {
-      const superAdminToken = localStorage.getItem('appAdminToken');
+      const superAdminToken = localStorage.getItem('superAdminToken');
       if (!superAdminToken) {
         throw new Error('Super Admin authentication required');
       }
@@ -2350,7 +2350,7 @@ export const superAdminAPI = {
   // Manage user actions (approve, disapprove, pause, disable)
   manageUser: async (userId, action, notes = '') => {
     try {
-      const superAdminToken = localStorage.getItem('appAdminToken');
+      const superAdminToken = localStorage.getItem('superAdminToken');
       if (!superAdminToken) {
         throw new Error('Super Admin authentication required');
       }

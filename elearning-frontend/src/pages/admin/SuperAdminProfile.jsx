@@ -123,7 +123,7 @@ function SuperAdminProfile() {
 
       <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden">
         {/* Profile Header */}
-        <div className="bg-gradient-to-r from-red-600 to-purple-600 px-6 py-8">
+        <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-red-500 px-6 py-8">
           <div className="flex items-center space-x-6">
             {/* Avatar */}
             <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center">

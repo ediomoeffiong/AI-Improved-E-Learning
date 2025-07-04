@@ -93,7 +93,7 @@ export const getCurrentSessionUser = () => {
       return null;
     }
   }
-  
+
   if (hasNormalUserSession()) {
     try {
       return JSON.parse(localStorage.getItem(STORAGE_KEYS.NORMAL_USER.USER));
@@ -101,7 +101,23 @@ export const getCurrentSessionUser = () => {
       return null;
     }
   }
-  
+
+  return null;
+};
+
+/**
+ * Get current super admin user data specifically
+ * @returns {object|null}
+ */
+export const getCurrentSuperAdminUser = () => {
+  if (hasSuperAdminSession()) {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEYS.SUPER_ADMIN.USER));
+    } catch (error) {
+      return null;
+    }
+  }
+
   return null;
 };
 
@@ -151,16 +167,30 @@ export const checkNormalUserLoginConflict = () => {
  * @returns {object} { hasConflict: boolean, conflictType: string|null, conflictUser: object|null }
  */
 export const checkSuperAdminLoginConflict = () => {
+  // Check if a Super Admin/Moderator is already logged in
+  if (hasSuperAdminSession()) {
+    const user = getCurrentSuperAdminUser();
+    const sessionType = user?.role === 'Super Admin' ? SESSION_TYPES.SUPER_ADMIN : SESSION_TYPES.SUPER_MODERATOR;
+    return {
+      hasConflict: true,
+      conflictType: sessionType,
+      conflictUser: user,
+      isAlreadyLoggedIn: true
+    };
+  }
+
+  // Check if a normal user is logged in
   if (hasNormalUserSession()) {
     const user = getCurrentSessionUser();
     return {
       hasConflict: true,
       conflictType: SESSION_TYPES.NORMAL_USER,
-      conflictUser: user
+      conflictUser: user,
+      isAlreadyLoggedIn: false
     };
   }
-  
-  return { hasConflict: false, conflictType: null, conflictUser: null };
+
+  return { hasConflict: false, conflictType: null, conflictUser: null, isAlreadyLoggedIn: false };
 };
 
 /**

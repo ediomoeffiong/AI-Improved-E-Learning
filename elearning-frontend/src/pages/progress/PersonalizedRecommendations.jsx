@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useGamification } from '../../contexts/GamificationContext';
+import { USER_ROLES } from '../../constants/roles';
 
 // Enhanced mock data for recommendations
 const recommendedCourses = [
@@ -169,11 +170,33 @@ const skillGaps = [
 ];
 
 function PersonalizedRecommendations() {
-  const { isAuthenticated, getUserName } = useAuth();
+  const { isAuthenticated, getUserName, getUserRole } = useAuth();
   const { userStats, addPoints } = useGamification();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [showAIInsights, setShowAIInsights] = useState(true);
+
+  // Fallback check for Super Admin role directly from localStorage
+  const isSuperAdminFromStorage = () => {
+    try {
+      const superAdminUser = localStorage.getItem('superAdminUser');
+      if (superAdminUser) {
+        const userData = JSON.parse(superAdminUser);
+        return userData.role === USER_ROLES.SUPER_ADMIN || userData.role === USER_ROLES.SUPER_MODERATOR;
+      }
+    } catch (error) {
+      console.error('Error checking super admin from storage:', error);
+    }
+    return false;
+  };
+
+  // Get appropriate gradient based on user role
+  const getButtonGradient = () => {
+    if (getUserRole() === USER_ROLES.SUPER_ADMIN || getUserRole() === USER_ROLES.SUPER_MODERATOR || isSuperAdminFromStorage()) {
+      return 'bg-gradient-to-r from-blue-600 via-blue-700 to-red-500 hover:from-blue-700 hover:via-blue-800 hover:to-red-600';
+    }
+    return 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700';
+  };
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -223,7 +246,7 @@ function PersonalizedRecommendations() {
           <div className="flex items-center space-x-3 mt-4 lg:mt-0">
             <button
               onClick={() => setShowAIInsights(!showAIInsights)}
-              className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white text-sm font-medium rounded-lg transition-all duration-200"
+              className={`inline-flex items-center px-4 py-2 ${getButtonGradient()} text-white text-sm font-medium rounded-lg transition-all duration-200`}
             >
               <span className="mr-2">🧠</span>
               {showAIInsights ? 'Hide' : 'Show'} AI Insights
@@ -245,7 +268,7 @@ function PersonalizedRecommendations() {
         {showAIInsights && isAuthenticated() && (
           <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 rounded-xl p-6 mb-6 border border-indigo-200 dark:border-gray-600">
             <div className="flex items-start space-x-4">
-              <div className="w-12 h-12 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl flex items-center justify-center">
+              <div className={`w-12 h-12 ${getButtonGradient()} rounded-xl flex items-center justify-center`}>
                 <span className="text-2xl">🤖</span>
               </div>
               <div className="flex-1">
@@ -551,7 +574,7 @@ function PersonalizedRecommendations() {
         <div className="fixed bottom-56 right-8 z-50">
           <button
             onClick={() => setShowAIInsights(!showAIInsights)}
-            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110"
+            className={`${getButtonGradient()} text-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110`}
             title="Toggle AI Insights"
           >
             <span className="text-xl">🧠</span>

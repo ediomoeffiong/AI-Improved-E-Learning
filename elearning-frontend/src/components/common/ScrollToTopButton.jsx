@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useScrollToTop } from '../../hooks/useScrollToTop';
+import { useAuth } from '../../contexts/AuthContext';
+import { USER_ROLES } from '../../constants/roles';
 
 const ScrollToTopButton = () => {
+  const { getUserRole } = useAuth();
   const [isVisible, setIsVisible] = useState(false);
   const { scrollToTop } = useScrollToTop();
 
@@ -28,6 +31,28 @@ const ScrollToTopButton = () => {
     });
   };
 
+  // Fallback check for Super Admin role directly from localStorage
+  const isSuperAdminFromStorage = () => {
+    try {
+      const superAdminUser = localStorage.getItem('superAdminUser');
+      if (superAdminUser) {
+        const userData = JSON.parse(superAdminUser);
+        return userData.role === USER_ROLES.SUPER_ADMIN || userData.role === USER_ROLES.SUPER_MODERATOR;
+      }
+    } catch (error) {
+      console.error('Error checking super admin from storage:', error);
+    }
+    return false;
+  };
+
+  // Get appropriate gradient based on user role
+  const getButtonGradient = () => {
+    if (getUserRole() === USER_ROLES.SUPER_ADMIN || getUserRole() === USER_ROLES.SUPER_MODERATOR || isSuperAdminFromStorage()) {
+      return 'from-blue-600 via-blue-700 to-red-500 hover:from-blue-700 hover:via-blue-800 hover:to-red-600';
+    }
+    return 'from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700';
+  };
+
   if (!isVisible) {
     return null;
   }
@@ -37,8 +62,7 @@ const ScrollToTopButton = () => {
       onClick={handleScrollToTop}
       className={`
         fixed bottom-24 right-4 sm:right-8 z-50
-        bg-gradient-to-r from-blue-600 to-purple-600
-        hover:from-blue-700 hover:to-purple-700
+        bg-gradient-to-r ${getButtonGradient()}
         text-white p-3 rounded-full shadow-lg
         transition-all duration-300 ease-in-out
         hover:scale-110 hover:shadow-xl

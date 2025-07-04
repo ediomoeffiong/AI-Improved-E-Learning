@@ -60,7 +60,7 @@ const QuickActionCard = ({ title, description, icon, color, onClick, badge }) =>
               {title}
             </h3>
             {badge && (
-              <span className="px-2 py-1 bg-red-500 text-white text-xs rounded-full animate-pulse">
+              <span className="px-2 py-1 bg-green-500 text-white text-xs rounded-full animate-pulse">
                 {badge}
               </span>
             )}
@@ -200,14 +200,28 @@ const SuperAdminDashboard = () => {
       // Check if we have a valid token
       const token = localStorage.getItem('superAdminToken');
       console.log('🔑 Super Admin Token exists:', !!token);
+      console.log('🔑 Token preview:', token ? token.substring(0, 20) + '...' : 'null');
+
+      // Check demo mode status
+      const demoModeEnabled = localStorage.getItem('demoModeEnabled') === 'true';
+      console.log('🎭 Demo mode enabled:', demoModeEnabled);
 
       // Fetch real data from Super Admin API using the correct endpoint
       let response;
       try {
+        console.log('🚀 Attempting superAdminAPI.getStats()...');
         response = await superAdminAPI.getStats();
+        console.log('✅ superAdminAPI.getStats() successful:', response);
       } catch (error) {
+        console.log('❌ superAdminAPI.getStats() failed:', error.message);
         console.log('🔄 Falling back to dashboardAPI.getSuperAdminDashboardData()');
-        response = await dashboardAPI.getSuperAdminDashboardData();
+        try {
+          response = await dashboardAPI.getSuperAdminDashboardData();
+          console.log('✅ dashboardAPI.getSuperAdminDashboardData() successful:', response);
+        } catch (fallbackError) {
+          console.log('❌ dashboardAPI.getSuperAdminDashboardData() also failed:', fallbackError.message);
+          throw fallbackError;
+        }
       }
 
       console.log('📊 API Response received:', response);
@@ -239,7 +253,15 @@ const SuperAdminDashboard = () => {
         totalQuizAttempts: response.stats.totalQuizAttempts || 0,
         newUsersThisMonth: response.stats.newUsersThisMonth || 0,
         revenueThisMonth: response.stats.revenueThisMonth || 0,
-        institutionStats: response.institutionStats || []
+        institutionStats: response.institutionStats || [],
+        // New analytics from backend
+        growthRate: response.analytics?.growthRate || 0,
+        satisfactionRating: response.analytics?.satisfactionRating || 0,
+        courseCompletionRate: response.analytics?.courseCompletionRate || 0,
+        activeUsersThisWeek: response.analytics?.activeUsersThisWeek || 0,
+        averageQuizScore: response.analytics?.averageQuizScore || 0,
+        totalTimeSpentHours: response.analytics?.totalTimeSpentHours || 0,
+        platformUtilization: response.analytics?.platformUtilization || 0
       });
 
       setLastUpdated(new Date());
@@ -404,10 +426,10 @@ const SuperAdminDashboard = () => {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-slate-900 dark:to-indigo-950 flex items-center justify-center">
         <div className="text-center">
           <div className="relative">
-            <div className="w-16 h-16 bg-gradient-to-r from-red-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-2xl mx-auto mb-4 animate-pulse">
+            <div className="w-16 h-16 bg-gradient-to-r from-blue-600 via-blue-700 to-red-500 rounded-2xl flex items-center justify-center shadow-2xl mx-auto mb-4 animate-pulse">
               <span className="text-white font-bold text-2xl">⚡</span>
             </div>
-            <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-purple-600 rounded-2xl blur-xl opacity-30 animate-pulse"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-blue-700 to-red-500 rounded-2xl blur-xl opacity-30 animate-pulse"></div>
           </div>
           <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-2">
             Super Admin Command Center
@@ -438,7 +460,7 @@ const SuperAdminDashboard = () => {
               {/* Left Section - Title & Search */}
               <div className="flex items-center space-x-6">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <div className="w-10 h-10 bg-gradient-to-r from-blue-600 via-blue-700 to-red-500 rounded-xl flex items-center justify-center shadow-lg">
                     <span className="text-white font-bold text-lg">⚡</span>
                   </div>
                   <div>
@@ -499,7 +521,7 @@ const SuperAdminDashboard = () => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5zM11 19H6.5A2.5 2.5 0 014 16.5v-9A2.5 2.5 0 016.5 5h11A2.5 2.5 0 0120 7.5v3.5" />
                     </svg>
                     {notifications.length > 0 && (
-                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center animate-pulse">
+                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 text-white text-xs rounded-full flex items-center justify-center animate-pulse">
                         {notifications.length}
                       </span>
                     )}
@@ -563,7 +585,7 @@ const SuperAdminDashboard = () => {
                 </button>
 
                 {/* User Badge */}
-                <div className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-red-500/10 to-purple-600/10 border border-red-200/50 dark:border-purple-500/50 rounded-lg backdrop-blur-sm">
+                <div className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-blue-600/10 via-blue-700/10 to-red-500/10 border border-blue-200/50 dark:border-red-500/50 rounded-lg backdrop-blur-sm">
                   <span className="text-lg">{ROLE_ICONS[currentUser?.role] || '👤'}</span>
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{currentUser?.role}</span>
                 </div>
@@ -701,8 +723,8 @@ const SuperAdminDashboard = () => {
               icon="🏛️"
               gradient="from-green-500 to-emerald-500"
               description="Verified institutions"
-              trend="+8%"
-              trendUp={true}
+              trend={null}
+              trendUp={null}
             />
             <ModernStatCard
               title="Pending Approvals"
@@ -710,14 +732,14 @@ const SuperAdminDashboard = () => {
               icon="⏳"
               gradient="from-yellow-500 to-orange-500"
               description="Awaiting review"
-              trend="-5%"
-              trendUp={false}
+              trend="+0%"
+              trendUp={null}
             />
             <ModernStatCard
               title="Super Admins"
               value={stats.superAdmins}
               icon="⚡"
-              gradient="from-red-500 to-pink-500"
+              gradient="from-blue-600 via-blue-700 to-red-500"
               description="Platform administrators"
               trend="0%"
               trendUp={null}
@@ -782,7 +804,7 @@ const SuperAdminDashboard = () => {
                         title="Create Super Admin"
                         description="Add new Super Admin or Super Moderator"
                         icon="⚡"
-                        color="from-red-500 to-pink-600"
+                        color="from-blue-600 via-blue-700 to-red-500"
                         onClick={() => setActiveTab('create-admin')}
                       />
                     )}
@@ -826,7 +848,7 @@ const SuperAdminDashboard = () => {
                       title="2FA Settings"
                       description="Manage two-factor authentication"
                       icon="🔐"
-                      color="from-green-500 to-teal-600"
+                      color="from-blue-600 via-blue-700 to-red-500"
                       onClick={() => setActiveTab('2fa-settings')}
                     />
                   </div>
@@ -1149,7 +1171,7 @@ const SuperAdminDashboard = () => {
                     <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">Active</p>
                     <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">Hit Rate: 87%</p>
                   </div>
-                  <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center">
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-600 via-blue-700 to-red-500 rounded-full flex items-center justify-center">
                     <span className="text-white text-xl">⚡</span>
                   </div>
                 </div>
@@ -2142,7 +2164,7 @@ const SuperAdminDashboard = () => {
           <div className="bg-white/30 dark:bg-gray-900/30 backdrop-blur-sm rounded-2xl p-6 border border-white/20 dark:border-gray-700/50">
             <div className="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
               <div className="flex items-center space-x-4">
-                <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                <div className="w-10 h-10 bg-gradient-to-r from-blue-600 via-blue-700 to-red-500 rounded-xl flex items-center justify-center shadow-lg">
                   <span className="text-white font-bold text-lg">⚡</span>
                 </div>
                 <div>

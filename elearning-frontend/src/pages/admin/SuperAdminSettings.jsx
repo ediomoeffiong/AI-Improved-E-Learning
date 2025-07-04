@@ -348,7 +348,7 @@ function SuperAdminSettings() {
                   <div className="md:col-span-3">
                     <button
                       type="submit"
-                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md font-medium transition-colors duration-200"
+                      className="bg-gradient-to-r from-blue-600 via-blue-700 to-red-500 hover:from-blue-700 hover:via-blue-800 hover:to-red-600 text-white px-4 py-2 rounded-md font-medium transition-all duration-200"
                     >
                       Update Password
                     </button>
@@ -688,7 +688,7 @@ function SuperAdminSettings() {
           <div className="flex justify-end">
             <button
               onClick={handleSaveSettings}
-              className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-md font-medium transition-colors duration-200 flex items-center space-x-2"
+              className="bg-gradient-to-r from-blue-600 via-blue-700 to-red-500 hover:from-blue-700 hover:via-blue-800 hover:to-red-600 text-white px-6 py-2 rounded-md font-medium transition-all duration-200 flex items-center space-x-2"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />

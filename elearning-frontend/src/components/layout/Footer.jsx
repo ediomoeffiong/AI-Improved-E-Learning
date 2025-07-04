@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { USER_ROLES } from '../../constants/roles';
 
 function Footer() {
   const currentYear = new Date().getFullYear();
@@ -8,7 +9,21 @@ function Footer() {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user, getUserRole } = useAuth();
+
+  // Fallback check for Super Admin role directly from localStorage
+  const isSuperAdminFromStorage = () => {
+    try {
+      const superAdminUser = localStorage.getItem('superAdminUser');
+      if (superAdminUser) {
+        const userData = JSON.parse(superAdminUser);
+        return userData.role === USER_ROLES.SUPER_ADMIN || userData.role === USER_ROLES.SUPER_MODERATOR;
+      }
+    } catch (error) {
+      console.error('Error checking super admin from storage:', error);
+    }
+    return false;
+  };
 
   // Handle scroll to show/hide back to top button
   useEffect(() => {
@@ -25,6 +40,14 @@ function Footer() {
       top: 0,
       behavior: 'smooth'
     });
+  };
+
+  // Get appropriate gradient based on user role
+  const getButtonGradient = () => {
+    if (getUserRole() === USER_ROLES.SUPER_ADMIN || getUserRole() === USER_ROLES.SUPER_MODERATOR || isSuperAdminFromStorage()) {
+      return 'bg-gradient-to-r from-blue-600 via-blue-700 to-red-500 hover:from-blue-700 hover:via-blue-800 hover:to-red-600';
+    }
+    return 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700';
   };
 
   const handleNewsletterSubmit = async (e) => {
@@ -60,116 +83,180 @@ function Footer() {
       </div>
 
       <div className="relative z-10">
-        {/* Newsletter Section */}
-        <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 py-16 relative overflow-hidden">
-          {/* Animated Background Elements */}
-          <div className="absolute inset-0 opacity-20">
-            <div className="absolute top-10 left-10 w-20 h-20 bg-white rounded-full animate-pulse"></div>
-            <div className="absolute top-32 right-20 w-16 h-16 bg-white rounded-full animate-pulse delay-1000"></div>
-            <div className="absolute bottom-20 left-1/4 w-12 h-12 bg-white rounded-full animate-pulse delay-2000"></div>
-            <div className="absolute bottom-32 right-1/3 w-8 h-8 bg-white rounded-full animate-pulse delay-3000"></div>
-          </div>
+        {/* Newsletter/Admin Section */}
+        {(getUserRole() === USER_ROLES.SUPER_ADMIN || getUserRole() === USER_ROLES.SUPER_MODERATOR || isSuperAdminFromStorage()) ? (
+          // Admin-specific section
+          <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-red-500 py-16 relative overflow-hidden">
+            {/* Animated Background Elements */}
+            <div className="absolute inset-0 opacity-20">
+              <div className="absolute top-10 left-10 w-20 h-20 bg-white rounded-full animate-pulse"></div>
+              <div className="absolute top-32 right-20 w-16 h-16 bg-white rounded-full animate-pulse delay-1000"></div>
+              <div className="absolute bottom-20 left-1/4 w-12 h-12 bg-white rounded-full animate-pulse delay-2000"></div>
+              <div className="absolute bottom-32 right-1/3 w-8 h-8 bg-white rounded-full animate-pulse delay-3000"></div>
+            </div>
 
-          <div className="container mx-auto px-4 max-w-7xl relative z-10">
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-full mb-6 backdrop-blur-sm">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-              </div>
+            <div className="container mx-auto px-4 max-w-7xl relative z-10">
+              <div className="text-center">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-full mb-6 backdrop-blur-sm">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                </div>
 
-              <h2 className="text-4xl font-bold mb-4 text-white">
-                🚀 Stay Ahead of the Curve
-              </h2>
-              <p className="text-blue-100 mb-8 max-w-3xl mx-auto text-lg leading-relaxed">
-                Join <span className="font-bold text-white">25,000+</span> learners who receive exclusive updates about new AI-powered courses,
-                cutting-edge learning techniques, and career advancement opportunities delivered straight to their inbox.
-              </p>
+                <h2 className="text-4xl font-bold mb-4 text-white">
+                  🛡️ {(getUserRole() === USER_ROLES.SUPER_ADMIN || (isSuperAdminFromStorage() && JSON.parse(localStorage.getItem('superAdminUser') || '{}').role === USER_ROLES.SUPER_ADMIN)) ? 'Super Admin' : 'Super Moderator'} Control Center
+                </h2>
+                <p className="text-blue-100 mb-8 max-w-3xl mx-auto text-lg leading-relaxed">
+                  You have <span className="font-bold text-white">full administrative access</span> to manage the platform,
+                  monitor system health, oversee user activities, and ensure optimal performance across all learning environments.
+                </p>
 
-              {!isSubscribed ? (
-                <form onSubmit={handleNewsletterSubmit} className="max-w-lg mx-auto">
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <div className="flex-1 relative">
-                      <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="Enter your email address"
-                        className="w-full px-6 py-4 rounded-xl text-gray-900 bg-white/95 backdrop-blur-sm focus:outline-none focus:ring-4 focus:ring-white/50 focus:bg-white transition-all duration-200 placeholder-gray-500"
-                        required
-                        disabled={isLoading}
-                      />
-                      <div className="absolute inset-y-0 right-0 flex items-center pr-4">
-                        <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
-                        </svg>
-                      </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+                  <div className="bg-white/20 backdrop-blur-sm rounded-xl p-6 border border-white/30 text-center">
+                    <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
                     </div>
-                    <button
-                      type="submit"
-                      disabled={isLoading}
-                      className="bg-white text-blue-600 px-8 py-4 rounded-xl font-bold hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-white/50 transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[140px]"
-                    >
-                      {isLoading ? (
-                        <div className="flex items-center">
-                          <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          Subscribing...
-                        </div>
-                      ) : (
-                        <div className="flex items-center">
-                          <span>Subscribe Now</span>
-                          <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                          </svg>
-                        </div>
-                      )}
-                    </button>
+                    <h3 className="text-lg font-bold text-white mb-2">System Health</h3>
+                    <p className="text-blue-100 text-sm">Monitor platform performance and uptime</p>
                   </div>
 
-                  <div className="mt-4 flex items-center justify-center space-x-6 text-sm text-blue-100">
-                    <div className="flex items-center">
-                      <svg className="w-4 h-4 mr-2 text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  <div className="bg-white/20 backdrop-blur-sm rounded-xl p-6 border border-white/30 text-center">
+                    <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
                       </svg>
-                      No spam, ever
                     </div>
-                    <div className="flex items-center">
-                      <svg className="w-4 h-4 mr-2 text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      Unsubscribe anytime
-                    </div>
-                    <div className="flex items-center">
-                      <svg className="w-4 h-4 mr-2 text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      Weekly updates
-                    </div>
+                    <h3 className="text-lg font-bold text-white mb-2">User Management</h3>
+                    <p className="text-blue-100 text-sm">Oversee all platform users and permissions</p>
                   </div>
-                </form>
-              ) : (
-                <div className="max-w-lg mx-auto">
-                  <div className="bg-white/20 backdrop-blur-sm rounded-xl p-6 border border-white/30">
-                    <div className="flex items-center justify-center mb-4">
-                      <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center">
-                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
+
+                  <div className="bg-white/20 backdrop-blur-sm rounded-xl p-6 border border-white/30 text-center">
+                    <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
                     </div>
-                    <h3 className="text-2xl font-bold text-white mb-2">🎉 Welcome to the Community!</h3>
-                    <p className="text-blue-100">
-                      Thank you for subscribing! Check your inbox for a welcome email with exclusive learning resources.
-                    </p>
+                    <h3 className="text-lg font-bold text-white mb-2">Analytics</h3>
+                    <p className="text-blue-100 text-sm">View detailed platform usage statistics</p>
                   </div>
                 </div>
-              )}
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          // Regular newsletter section for non-admin users
+          <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 py-16 relative overflow-hidden">
+            {/* Animated Background Elements */}
+            <div className="absolute inset-0 opacity-20">
+              <div className="absolute top-10 left-10 w-20 h-20 bg-white rounded-full animate-pulse"></div>
+              <div className="absolute top-32 right-20 w-16 h-16 bg-white rounded-full animate-pulse delay-1000"></div>
+              <div className="absolute bottom-20 left-1/4 w-12 h-12 bg-white rounded-full animate-pulse delay-2000"></div>
+              <div className="absolute bottom-32 right-1/3 w-8 h-8 bg-white rounded-full animate-pulse delay-3000"></div>
+            </div>
+
+            <div className="container mx-auto px-4 max-w-7xl relative z-10">
+              <div className="text-center">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-full mb-6 backdrop-blur-sm">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </div>
+
+                <h2 className="text-4xl font-bold mb-4 text-white">
+                  🚀 Stay Ahead of the Curve
+                </h2>
+                <p className="text-blue-100 mb-8 max-w-3xl mx-auto text-lg leading-relaxed">
+                  Join <span className="font-bold text-white">25,000+</span> learners who receive exclusive updates about new AI-powered courses,
+                  cutting-edge learning techniques, and career advancement opportunities delivered straight to their inbox.
+                </p>
+
+                {!isSubscribed ? (
+                  <form onSubmit={handleNewsletterSubmit} className="max-w-lg mx-auto">
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <div className="flex-1 relative">
+                        <input
+                          type="email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="Enter your email address"
+                          className="w-full px-6 py-4 rounded-xl text-gray-900 bg-white/95 backdrop-blur-sm focus:outline-none focus:ring-4 focus:ring-white/50 focus:bg-white transition-all duration-200 placeholder-gray-500"
+                          required
+                          disabled={isLoading}
+                        />
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-4">
+                          <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                          </svg>
+                        </div>
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={isLoading}
+                        className="bg-white text-blue-600 px-8 py-4 rounded-xl font-bold hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-white/50 transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[140px]"
+                      >
+                        {isLoading ? (
+                          <div className="flex items-center">
+                            <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Subscribing...
+                          </div>
+                        ) : (
+                          <div className="flex items-center">
+                            <span>Subscribe Now</span>
+                            <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                            </svg>
+                          </div>
+                        )}
+                      </button>
+                    </div>
+
+                    <div className="mt-4 flex items-center justify-center space-x-6 text-sm text-blue-100">
+                      <div className="flex items-center">
+                        <svg className="w-4 h-4 mr-2 text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        No spam, ever
+                      </div>
+                      <div className="flex items-center">
+                        <svg className="w-4 h-4 mr-2 text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Unsubscribe anytime
+                      </div>
+                      <div className="flex items-center">
+                        <svg className="w-4 h-4 mr-2 text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Weekly updates
+                      </div>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="max-w-lg mx-auto">
+                    <div className="bg-white/20 backdrop-blur-sm rounded-xl p-6 border border-white/30">
+                      <div className="flex items-center justify-center mb-4">
+                        <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center">
+                          <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                      </div>
+                      <h3 className="text-2xl font-bold text-white mb-2">🎉 Welcome to the Community!</h3>
+                      <p className="text-blue-100">
+                        Thank you for subscribing! Check your inbox for a welcome email with exclusive learning resources.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Main Footer Content */}
         <div className="container mx-auto px-4 py-16 max-w-7xl">
@@ -510,7 +597,7 @@ function Footer() {
       {showBackToTop && (
         <button
           onClick={scrollToTop}
-          className="fixed bottom-8 right-8 z-50 bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4 rounded-full shadow-2xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-110 active:scale-95 group"
+          className={`fixed bottom-8 right-8 z-50 ${getButtonGradient()} text-white p-4 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-110 active:scale-95 group`}
           aria-label="Back to top"
         >
           <svg className="w-6 h-6 transform group-hover:-translate-y-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">

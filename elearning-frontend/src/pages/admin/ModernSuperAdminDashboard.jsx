@@ -9,6 +9,13 @@ const ModernSuperAdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
+
+  // Helper function to format trend percentages (prevent negative values)
+  const formatTrend = (value) => {
+    if (!value || value === 0) return null;
+    if (value < 0) return '+0%'; // Show +0% instead of negative values
+    return `+${value}%`;
+  };
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalInstitutions: 0,
@@ -24,6 +31,16 @@ const ModernSuperAdminDashboard = () => {
       approvalsChange: 0,
       coursesGrowth: 0
     }
+  });
+  const [analytics, setAnalytics] = useState({
+    growthRate: 0,
+    revenueThisMonth: 0,
+    satisfactionRating: 0,
+    courseCompletionRate: 0,
+    activeUsersThisWeek: 0,
+    averageQuizScore: 0,
+    totalTimeSpentHours: 0,
+    platformUtilization: 0
   });
   const [recentUsers, setRecentUsers] = useState([]);
   const [recentActivities, setRecentActivities] = useState([]);
@@ -58,6 +75,18 @@ const ModernSuperAdminDashboard = () => {
           approvalsChange: response.trends?.approvalsChange || 0,
           coursesGrowth: response.trends?.coursesGrowth || 0
         }
+      });
+
+      // Set analytics data from real backend response
+      setAnalytics({
+        growthRate: response.analytics?.growthRate || 0,
+        revenueThisMonth: response.analytics?.revenueThisMonth || 0,
+        satisfactionRating: response.analytics?.satisfactionRating || 0,
+        courseCompletionRate: response.analytics?.courseCompletionRate || 0,
+        activeUsersThisWeek: response.analytics?.activeUsersThisWeek || 0,
+        averageQuizScore: response.analytics?.averageQuizScore || 0,
+        totalTimeSpentHours: response.analytics?.totalTimeSpentHours || 0,
+        platformUtilization: response.analytics?.platformUtilization || 0
       });
 
       setRecentUsers(response.recentUsers || []);
@@ -98,11 +127,11 @@ const ModernSuperAdminDashboard = () => {
             
             {/* Header Left - Title and Status */}
             <div className="flex items-center space-x-4 lg:space-x-6">
-              <div className="w-16 h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-red-500 via-purple-600 to-blue-600 rounded-2xl lg:rounded-3xl flex items-center justify-center shadow-2xl">
+              <div className="w-16 h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-blue-600 via-blue-700 to-red-500 rounded-2xl lg:rounded-3xl flex items-center justify-center shadow-2xl">
                 <span className="text-white font-bold text-2xl lg:text-3xl">⚡</span>
               </div>
               <div>
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold bg-gradient-to-r from-red-600 via-purple-600 to-blue-600 bg-clip-text text-transparent">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold bg-gradient-to-r from-blue-600 via-blue-700 to-red-500 bg-clip-text text-transparent">
                   Super Admin
                 </h1>
                 <p className="text-base sm:text-lg lg:text-xl text-gray-600 dark:text-gray-300 font-medium mt-1 lg:mt-2">
@@ -145,7 +174,7 @@ const ModernSuperAdminDashboard = () => {
                 </button>
                 <Link
                   to="/super-admin/settings"
-                  className="group relative flex items-center justify-center w-12 h-12 bg-gradient-to-r from-red-600 to-purple-600 hover:from-red-700 hover:to-purple-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 active:scale-95"
+                  className="group relative flex items-center justify-center w-12 h-12 bg-gradient-to-r from-blue-600 via-blue-700 to-red-500 hover:from-blue-700 hover:via-blue-800 hover:to-red-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 active:scale-95"
                   title="Super Admin Settings"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -168,7 +197,7 @@ const ModernSuperAdminDashboard = () => {
                 </button>
                 <Link
                   to="/super-admin/settings"
-                  className="group relative inline-flex items-center px-4 md:px-6 py-3 bg-gradient-to-r from-red-600 to-purple-600 hover:from-red-700 hover:to-purple-700 text-white rounded-xl shadow-lg hover:shadow-xl text-sm font-semibold transition-all duration-300 hover:scale-105"
+                  className="group relative inline-flex items-center px-4 md:px-6 py-3 bg-gradient-to-r from-blue-600 via-blue-700 to-red-500 hover:from-blue-700 hover:via-blue-800 hover:to-red-600 text-white rounded-xl shadow-lg hover:shadow-xl text-sm font-semibold transition-all duration-300 hover:scale-105"
                 >
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -274,7 +303,7 @@ const ModernSuperAdminDashboard = () => {
                   onClick={() => setActiveTab(tab.id)}
                   className={`group relative flex items-center space-x-2 lg:space-x-3 px-3 sm:px-4 lg:px-6 py-3 lg:py-4 rounded-xl lg:rounded-2xl font-semibold text-xs sm:text-sm transition-all duration-300 whitespace-nowrap flex-shrink-0 ${
                     activeTab === tab.id
-                      ? 'bg-gradient-to-r from-red-500 to-purple-600 text-white shadow-lg scale-105'
+                      ? 'bg-gradient-to-r from-blue-600 via-blue-700 to-red-500 text-white shadow-lg scale-105'
                       : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-white/50 dark:hover:bg-gray-700/50'
                   }`}
                   title={tab.description}
@@ -283,7 +312,7 @@ const ModernSuperAdminDashboard = () => {
                   <span className="hidden sm:inline">{tab.label}</span>
                   <span className="sm:hidden">{tab.shortLabel}</span>
                   {tab.badge && tab.badge > 0 && (
-                    <span className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold animate-pulse">
+                    <span className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 text-white text-xs rounded-full flex items-center justify-center font-bold animate-pulse">
                       {tab.badge > 9 ? '9+' : tab.badge}
                     </span>
                   )}
@@ -311,7 +340,7 @@ const ModernSuperAdminDashboard = () => {
                 icon="👥"
                 gradient="from-blue-500 to-cyan-500"
                 description="Platform users"
-                trend={stats.trends?.usersGrowth ? `${stats.trends.usersGrowth > 0 ? '+' : ''}${stats.trends.usersGrowth}%` : null}
+                trend={formatTrend(stats.trends?.usersGrowth)}
               />
               <StatCard
                 title="Institutions"
@@ -319,7 +348,7 @@ const ModernSuperAdminDashboard = () => {
                 icon="🏛️"
                 gradient="from-green-500 to-emerald-500"
                 description="Verified institutions"
-                trend={stats.trends?.institutionsGrowth ? `${stats.trends.institutionsGrowth > 0 ? '+' : ''}${stats.trends.institutionsGrowth}%` : null}
+                trend={null}
               />
               <StatCard
                 title="Pending Approvals"
@@ -327,7 +356,7 @@ const ModernSuperAdminDashboard = () => {
                 icon="⏳"
                 gradient="from-yellow-500 to-orange-500"
                 description="Awaiting review"
-                trend={stats.trends?.approvalsChange ? `${stats.trends.approvalsChange > 0 ? '+' : ''}${stats.trends.approvalsChange}%` : null}
+                trend={formatTrend(stats.trends?.approvalsChange)}
               />
               <StatCard
                 title="Total Courses"
@@ -335,7 +364,7 @@ const ModernSuperAdminDashboard = () => {
                 icon="📚"
                 gradient="from-purple-500 to-indigo-500"
                 description="Available courses"
-                trend={stats.trends?.coursesGrowth ? `${stats.trends.coursesGrowth > 0 ? '+' : ''}${stats.trends.coursesGrowth}%` : null}
+                trend={formatTrend(stats.trends?.coursesGrowth)}
               />
             </div>
 
@@ -367,7 +396,7 @@ const ModernSuperAdminDashboard = () => {
                 title="System Health"
                 description="Monitor platform performance and status"
                 icon="⚙️"
-                gradient="from-red-500 to-pink-500"
+                gradient="from-blue-600 via-blue-700 to-red-500"
                 onClick={() => setActiveTab('system')}
               />
               <QuickActionCard
@@ -446,7 +475,7 @@ const ModernSuperAdminDashboard = () => {
 
                 <div className="bg-purple-50 dark:bg-purple-900/20 rounded-2xl p-6">
                   <div className="flex items-center justify-between mb-4">
-                    <div className="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center">
+                    <div className="w-12 h-12 bg-gradient-to-r from-blue-600 via-blue-700 to-red-500 rounded-xl flex items-center justify-center">
                       <span className="text-white text-lg">⚡</span>
                     </div>
                     <span className="text-2xl font-bold text-purple-600 dark:text-purple-400">{stats.superAdmins}</span>
@@ -578,7 +607,9 @@ const ModernSuperAdminDashboard = () => {
                     <span className="text-white text-lg">📈</span>
                   </div>
                   <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">Growth Rate</h3>
-                  <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">+24%</p>
+                  <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                    {analytics.growthRate > 0 ? '+' : ''}{analytics.growthRate}%
+                  </p>
                   <p className="text-sm text-blue-600 dark:text-blue-400">This month</p>
                 </div>
 
@@ -587,7 +618,9 @@ const ModernSuperAdminDashboard = () => {
                     <span className="text-white text-lg">💰</span>
                   </div>
                   <h3 className="font-semibold text-green-900 dark:text-green-100 mb-2">Revenue</h3>
-                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">$45.2K</p>
+                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    ${(analytics.revenueThisMonth / 1000).toFixed(1)}K
+                  </p>
                   <p className="text-sm text-green-600 dark:text-green-400">This month</p>
                 </div>
 
@@ -596,7 +629,9 @@ const ModernSuperAdminDashboard = () => {
                     <span className="text-white text-lg">⭐</span>
                   </div>
                   <h3 className="font-semibold text-purple-900 dark:text-purple-100 mb-2">Satisfaction</h3>
-                  <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">4.8/5</p>
+                  <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                    {analytics.satisfactionRating.toFixed(1)}/5
+                  </p>
                   <p className="text-sm text-purple-600 dark:text-purple-400">Average rating</p>
                 </div>
 
@@ -605,8 +640,57 @@ const ModernSuperAdminDashboard = () => {
                     <span className="text-white text-lg">🎯</span>
                   </div>
                   <h3 className="font-semibold text-orange-900 dark:text-orange-100 mb-2">Completion</h3>
-                  <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">87%</p>
+                  <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                    {analytics.courseCompletionRate}%
+                  </p>
                   <p className="text-sm text-orange-600 dark:text-orange-400">Course completion</p>
+                </div>
+              </div>
+
+              {/* Additional Analytics Metrics */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl p-6">
+                  <div className="w-12 h-12 bg-indigo-500 rounded-xl flex items-center justify-center mb-4">
+                    <span className="text-white text-lg">👥</span>
+                  </div>
+                  <h3 className="font-semibold text-indigo-900 dark:text-indigo-100 mb-2">Active Users</h3>
+                  <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                    {analytics.activeUsersThisWeek.toLocaleString()}
+                  </p>
+                  <p className="text-sm text-indigo-600 dark:text-indigo-400">This week</p>
+                </div>
+
+                <div className="bg-cyan-50 dark:bg-cyan-900/20 rounded-2xl p-6">
+                  <div className="w-12 h-12 bg-cyan-500 rounded-xl flex items-center justify-center mb-4">
+                    <span className="text-white text-lg">🧠</span>
+                  </div>
+                  <h3 className="font-semibold text-cyan-900 dark:text-cyan-100 mb-2">Quiz Performance</h3>
+                  <p className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">
+                    {analytics.averageQuizScore}%
+                  </p>
+                  <p className="text-sm text-cyan-600 dark:text-cyan-400">Average score</p>
+                </div>
+
+                <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl p-6">
+                  <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center mb-4">
+                    <span className="text-white text-lg">⏱️</span>
+                  </div>
+                  <h3 className="font-semibold text-emerald-900 dark:text-emerald-100 mb-2">Study Time</h3>
+                  <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                    {analytics.totalTimeSpentHours.toLocaleString()}h
+                  </p>
+                  <p className="text-sm text-emerald-600 dark:text-emerald-400">Total hours</p>
+                </div>
+
+                <div className="bg-rose-50 dark:bg-rose-900/20 rounded-2xl p-6">
+                  <div className="w-12 h-12 bg-rose-500 rounded-xl flex items-center justify-center mb-4">
+                    <span className="text-white text-lg">📊</span>
+                  </div>
+                  <h3 className="font-semibold text-rose-900 dark:text-rose-100 mb-2">Utilization</h3>
+                  <p className="text-2xl font-bold text-rose-600 dark:text-rose-400">
+                    {analytics.platformUtilization}%
+                  </p>
+                  <p className="text-sm text-rose-600 dark:text-rose-400">Platform usage</p>
                 </div>
               </div>
 
@@ -635,7 +719,7 @@ const ModernSuperAdminDashboard = () => {
           <div className="space-y-12">
             <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-white/20 dark:border-gray-700/50 rounded-3xl p-10 shadow-lg">
               <div className="flex items-center space-x-6 mb-8">
-                <div className="w-20 h-20 bg-gradient-to-br from-red-500 to-pink-500 rounded-3xl flex items-center justify-center shadow-xl">
+                <div className="w-20 h-20 bg-gradient-to-br from-blue-600 via-blue-700 to-red-500 rounded-3xl flex items-center justify-center shadow-xl">
                   <span className="text-white text-3xl">⚙️</span>
                 </div>
                 <div>
@@ -711,7 +795,7 @@ const ModernSuperAdminDashboard = () => {
               <div className="flex flex-wrap gap-4">
                 <Link
                   to="/super-admin/system-monitor"
-                  className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white rounded-2xl shadow-lg hover:shadow-xl font-semibold transition-all duration-300 hover:scale-105"
+                  className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 via-blue-700 to-red-500 hover:from-blue-700 hover:via-blue-800 hover:to-red-600 text-white rounded-2xl shadow-lg hover:shadow-xl font-semibold transition-all duration-300 hover:scale-105"
                 >
                   <span className="mr-3">📊</span>
                   System Monitor
@@ -778,7 +862,7 @@ const QuickActionCard = ({ title, description, icon, gradient, onClick, badge })
           <span className="text-white text-xl">{icon}</span>
         </div>
         {badge && badge > 0 && (
-          <span className="px-3 py-1 bg-red-500 text-white text-xs rounded-full font-bold">
+          <span className="px-3 py-1 bg-green-500 text-white text-xs rounded-full font-bold">
             {badge > 9 ? '9+' : badge}
           </span>
         )}

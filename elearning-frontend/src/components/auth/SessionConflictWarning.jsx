@@ -76,14 +76,26 @@ const SessionConflictWarning = ({
 
   const getWarningMessage = () => {
     const conflictTypeName = getSessionTypeName(conflictType);
-    const targetTypeName = targetSessionType === SESSION_TYPES.NORMAL_USER 
-      ? 'Normal User' 
+    const targetTypeName = targetSessionType === SESSION_TYPES.NORMAL_USER
+      ? 'Normal User'
       : 'Super Admin/Moderator';
+
+    // Special case: Super Admin/Moderator already logged in and trying to access Super Admin login
+    if ((conflictType === SESSION_TYPES.SUPER_ADMIN || conflictType === SESSION_TYPES.SUPER_MODERATOR) &&
+        (targetSessionType === SESSION_TYPES.SUPER_ADMIN || targetSessionType === SESSION_TYPES.SUPER_MODERATOR)) {
+      return {
+        title: `Already Logged In`,
+        message: `You are already logged in as a ${conflictTypeName} (${conflictUser?.name || conflictUser?.email}). You can continue to your dashboard or logout if you want to login with a different account.`,
+        action: `Logout ${conflictTypeName}`,
+        isAlreadyLoggedIn: true
+      };
+    }
 
     return {
       title: `${conflictTypeName} Session Active`,
       message: `You are currently logged in as a ${conflictTypeName} (${conflictUser?.name || conflictUser?.email}). To access the ${targetTypeName} login, you must first log out of your current session.`,
-      action: `Logout ${conflictTypeName}`
+      action: `Logout ${conflictTypeName}`,
+      isAlreadyLoggedIn: false
     };
   };
 
@@ -132,6 +144,24 @@ const SessionConflictWarning = ({
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-3">
+              {/* Show "Go to Dashboard" button if already logged in as Super Admin/Moderator */}
+              {warningInfo.isAlreadyLoggedIn && (conflictType === SESSION_TYPES.SUPER_ADMIN || conflictType === SESSION_TYPES.SUPER_MODERATOR) && (
+                <button
+                  onClick={() => {
+                    const dashboardPath = conflictType === SESSION_TYPES.SUPER_ADMIN
+                      ? '/super-admin-dashboard'
+                      : '/super-moderator-dashboard';
+                    navigate(dashboardPath);
+                  }}
+                  className="flex items-center justify-center space-x-2 bg-gradient-to-r from-blue-600 via-blue-700 to-red-500 text-white px-4 py-2 rounded-lg font-medium hover:from-blue-700 hover:via-blue-800 hover:to-red-600 transition-all duration-200 shadow-md hover:shadow-lg"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  <span>Go to Dashboard</span>
+                </button>
+              )}
+
               <button
                 onClick={handleLogoutClick}
                 disabled={isLoggingOut}
@@ -143,15 +173,17 @@ const SessionConflictWarning = ({
                 <span>{isLoggingOut ? 'Logging out...' : warningInfo.action}</span>
               </button>
 
-              <button
-                onClick={() => navigate('/')}
-                className="flex items-center justify-center space-x-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-200 transition-all duration-200 shadow-md hover:shadow-lg"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                </svg>
-                <span>Go to Home</span>
-              </button>
+              {!warningInfo.isAlreadyLoggedIn && (
+                <button
+                  onClick={() => navigate('/')}
+                  className="flex items-center justify-center space-x-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-200 transition-all duration-200 shadow-md hover:shadow-lg"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                  </svg>
+                  <span>Go to Home</span>
+                </button>
+              )}
             </div>
           </div>
         </div>

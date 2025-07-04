@@ -853,6 +853,27 @@ router.get('/stats', auth, requireSuperAdmin, async (req, res) => {
       ])
     ]);
 
+    // Calculate additional analytics metrics
+    const [
+      completedEnrollments,
+      averageQuizScore,
+      totalQuizScores,
+      activeUsersThisWeek,
+      totalTimeSpent
+    ] = await Promise.all([
+      Enrollment?.countDocuments({ status: 'completed' }) || Promise.resolve(0),
+      QuizAttempt?.aggregate([
+        { $group: { _id: null, avgScore: { $avg: '$percentage' } } }
+      ]).then(result => result[0]?.avgScore || 0) || Promise.resolve(0),
+      QuizAttempt?.countDocuments() || Promise.resolve(0),
+      User.countDocuments({
+        lastLogin: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
+      }),
+      Enrollment?.aggregate([
+        { $group: { _id: null, totalTime: { $sum: '$totalTimeSpent' } } }
+      ]).then(result => result[0]?.totalTime || 0) || Promise.resolve(0)
+    ]);
+
     // Calculate revenue (mock data - would come from actual payment records)
     const revenueThisMonth = Math.floor(Math.random() * 50000) + 10000;
 
@@ -867,6 +888,18 @@ router.get('/stats', auth, requireSuperAdmin, async (req, res) => {
       institutionsGrowth: calculateGrowth(newInstitutionsThisMonth, newInstitutionsLastMonth),
       coursesGrowth: calculateGrowth(newCoursesThisMonth, newCoursesLastMonth),
       approvalsChange: calculateGrowth(pendingApprovals, pendingApprovalsLastMonth)
+    };
+
+    // Calculate analytics metrics
+    const analytics = {
+      growthRate: trends.usersGrowth,
+      revenueThisMonth,
+      satisfactionRating: Math.min(5.0, Math.max(3.0, (averageQuizScore / 20) + 3.5)), // Convert quiz scores to 3-5 rating
+      courseCompletionRate: totalEnrollments > 0 ? Math.round((completedEnrollments / totalEnrollments) * 100) : 0,
+      activeUsersThisWeek,
+      averageQuizScore: Math.round(averageQuizScore),
+      totalTimeSpentHours: Math.round(totalTimeSpent / 3600), // Convert seconds to hours
+      platformUtilization: totalUsers > 0 ? Math.round((activeUsersThisWeek / totalUsers) * 100) : 0
     };
 
     // System health metrics
@@ -904,9 +937,13 @@ router.get('/stats', auth, requireSuperAdmin, async (req, res) => {
         superAdmins,
         institutionAdmins,
         newUsersThisMonth,
-        revenueThisMonth
+        revenueThisMonth,
+        completedEnrollments,
+        activeUsersThisWeek,
+        totalTimeSpentHours: analytics.totalTimeSpentHours
       },
       trends,
+      analytics,
       recentUsers,
       recentActivities,
       institutionStats,

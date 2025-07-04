@@ -10,6 +10,13 @@ const SuperModeratorDashboard = () => {
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
 
+  // Helper function to format trend percentages (prevent negative values)
+  const formatTrend = (value) => {
+    if (!value || value === 0) return null;
+    if (value < 0) return 0; // Return 0 instead of negative values for SuperModerator
+    return value;
+  };
+
   // Get current super moderator user
   const currentUser = JSON.parse(localStorage.getItem('superAdminUser') || '{}');
 
@@ -147,7 +154,7 @@ const SuperModeratorDashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <div className="bg-gradient-to-r from-orange-600 to-red-600 shadow-lg">
+      <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-red-500 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div>
@@ -239,7 +246,7 @@ const SuperModeratorDashboard = () => {
                 icon="👥"
                 color="bg-blue-100 dark:bg-blue-900"
                 description="Total registered users"
-                trend={5.2}
+                trend={formatTrend(5.2)}
               />
               <StatCard
                 title="Flagged Content"
@@ -247,7 +254,7 @@ const SuperModeratorDashboard = () => {
                 icon="🚩"
                 color="bg-red-100 dark:bg-red-900"
                 description="Requires moderation"
-                trend={-12.3}
+                trend={formatTrend(-12.3)}
               />
               <StatCard
                 title="Moderation Actions"
@@ -255,7 +262,7 @@ const SuperModeratorDashboard = () => {
                 icon="⚖️"
                 color="bg-green-100 dark:bg-green-900"
                 description="This month"
-                trend={8.7}
+                trend={formatTrend(8.7)}
               />
               <StatCard
                 title="Institutions"
@@ -263,7 +270,7 @@ const SuperModeratorDashboard = () => {
                 icon="🏛️"
                 color="bg-purple-100 dark:bg-purple-900"
                 description="Verified institutions"
-                trend={2.1}
+                trend={null}
               />
               <StatCard
                 title="Pending Approvals"
@@ -278,7 +285,7 @@ const SuperModeratorDashboard = () => {
                 icon="📊"
                 color="bg-indigo-100 dark:bg-indigo-900"
                 description="This quarter"
-                trend={15.4}
+                trend={formatTrend(15.4)}
               />
             </div>
 

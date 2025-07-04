@@ -243,38 +243,159 @@ const RoleBasedHeader = () => {
       return [
         { name: 'Dashboard', href: '/dashboard', type: 'link' },
         {
-          name: 'Course Management',
+          name: 'Course',
           type: 'dropdown',
           items: [
-            { name: 'All Courses', href: '/super-admin/courses', description: 'View and manage all courses', icon: '📚' },
-            { name: 'Create Course', href: '/super-admin/courses/create', description: 'Form to create new courses', icon: '➕' },
-            { name: 'Categories', href: '/super-admin/categories', description: 'Manage course categories', icon: '📂' },
-            { name: 'Course Analytics', href: '/super-admin/course-analytics', description: 'View course performance metrics', icon: '📊' }
+            {
+              name: 'All Courses',
+              href: '/super-admin/courses',
+              description: 'View and manage all courses',
+              icon: (
+                <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+                </svg>
+              )
+            },
+            {
+              name: 'Create Course',
+              href: '/super-admin/courses/create',
+              description: 'Form to create new courses',
+              icon: (
+                <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                </svg>
+              )
+            },
+            {
+              name: 'Categories',
+              href: '/super-admin/categories',
+              description: 'Manage course categories',
+              icon: (
+                <svg className="w-5 h-5 text-purple-500" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M10 4H4c-1.11 0-2 .89-2 2v6c0 1.11.89 2 2 2h6c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm10 0h-6c-1.11 0-2 .89-2 2v6c0 1.11.89 2 2 2h6c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zM10 14H4c-1.11 0-2 .89-2 2v6c0 1.11.89 2 2 2h6c1.11 0 2-.89 2-2v-6c0-1.11-.89-2-2-2zm10 0h-6c-1.11 0-2 .89-2 2v6c0 1.11.89 2 2 2h6c1.11 0 2-.89 2-2v-6c0-1.11-.89-2-2-2z"/>
+                </svg>
+              )
+            },
+            {
+              name: 'Course Analytics',
+              href: '/super-admin/course-analytics',
+              description: 'View course performance metrics',
+              icon: (
+                <svg className="w-5 h-5 text-orange-500" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+                </svg>
+              )
+            }
           ]
         },
         {
-          name: 'Quiz Management',
+          name: 'Quiz',
           type: 'dropdown',
           items: [
-            { name: 'All Quizzes', href: '/super-admin/quizzes', description: 'View and manage all quizzes', icon: '📝' },
-            { name: 'Create Quiz', href: '/super-admin/quizzes/create', description: 'Form to create new quizzes', icon: '➕' },
-            { name: 'Quiz Results', href: '/super-admin/quiz-results', description: 'View and analyze quiz performance', icon: '📈' }
+            {
+              name: 'All Quizzes',
+              href: '/super-admin/quizzes',
+              description: 'View and manage all quizzes',
+              icon: (
+                <svg className="w-5 h-5 text-indigo-500" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                </svg>
+              )
+            },
+            {
+              name: 'Create Quiz',
+              href: '/super-admin/quizzes/create',
+              description: 'Form to create new quizzes',
+              icon: (
+                <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                </svg>
+              )
+            },
+            {
+              name: 'Quiz Results',
+              href: '/super-admin/quiz-results',
+              description: 'View and analyze quiz performance',
+              icon: (
+                <svg className="w-5 h-5 text-purple-500" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/>
+                </svg>
+              )
+            }
           ]
         },
         {
           name: 'Progress',
           type: 'dropdown',
           items: [
-            { name: 'Progress Overview', href: '/super-admin/progress-overview', description: 'Aggregate progress metrics', icon: '📊' },
-            { name: 'Course Completions', href: '/super-admin/course-completions', description: 'Detailed completion tracking', icon: '✅' },
-            { name: 'Learning Paths', href: '/super-admin/learning-paths', description: 'Monitor learning path progress', icon: '🛤️' },
-            { name: 'Intervention Tools', href: '/super-admin/intervention-tools', description: 'Help struggling users', icon: '🔧' }
+            {
+              name: 'Progress Overview',
+              href: '/super-admin/progress-overview',
+              description: 'Aggregate progress metrics',
+              icon: (
+                <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+                </svg>
+              )
+            },
+            {
+              name: 'Course Completions',
+              href: '/super-admin/course-completions',
+              description: 'Detailed completion tracking',
+              icon: (
+                <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                </svg>
+              )
+            },
+            {
+              name: 'Learning Paths',
+              href: '/super-admin/learning-paths',
+              description: 'Monitor learning path progress',
+              icon: (
+                <svg className="w-5 h-5 text-purple-500" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+              )
+            },
+            {
+              name: 'Intervention Tools',
+              href: '/super-admin/intervention-tools',
+              description: 'Help struggling users',
+              icon: (
+                <svg className="w-5 h-5 text-orange-500" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/>
+                </svg>
+              )
+            }
           ]
         },
-        { name: 'User Management', href: '/super-admin/users', type: 'link' },
-        { name: 'Institutions', href: '/super-admin/institutions', type: 'link' },
-        { name: 'Activity Monitor', href: '/super-admin/activity-monitor', type: 'link' },
-        { name: 'User Approvals', href: '/super-admin/user-approvals', type: 'link' }
+        {
+          name: 'User',
+          type: 'dropdown',
+          items: [
+            {
+              name: 'User Management',
+              href: '/super-admin/users',
+              description: 'Manage all user accounts',
+              icon: (
+                <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+              )
+            },
+            {
+              name: 'Activity Monitor',
+              href: '/super-admin/activity-monitor',
+              description: 'Monitor user activity and system logs',
+              icon: (
+                <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              )
+            }
+          ]
+        }
       ];
     }
     return [];
@@ -585,8 +706,8 @@ const RoleBasedHeader = () => {
 
     // Original gradient colors when not scrolled
     if (isSuperAdmin) {
-      console.log('🔴 Returning super admin color (red/orange)');
-      return 'bg-gradient-to-r from-red-600 to-orange-600';
+      console.log('🔴 Returning super admin color (subtle blue/red gradient)');
+      return 'bg-gradient-to-r from-blue-600 via-blue-700 to-red-500';
     }
 
     if (!user) {
@@ -611,10 +732,11 @@ const RoleBasedHeader = () => {
 
   const navigationItems = getNavigationItems();
 
-  // Determine if header should be sticky for student role
+  // Determine if header should be sticky for student role, super admin, and super moderator
   const isStudent = user?.role === USER_ROLES.STUDENT;
+  const isSuperAdminOrModerator = isSuperAdmin && (isSuperAdmin.role === 'Super Admin' || isSuperAdmin.role === 'Super Moderator');
   const isDashboardPage = location.pathname === '/dashboard';
-  const shouldBeSticky = isStudent && !isDashboardPage;
+  const shouldBeSticky = (isStudent || isSuperAdminOrModerator) && !isDashboardPage;
 
   return (
     <header className={`${getHeaderColor()} shadow-lg ${shouldBeSticky ? 'sticky top-0 z-50' : ''} transition-all duration-300`}>
@@ -822,7 +944,7 @@ const RoleBasedHeader = () => {
 
                     {/* My Profile */}
                     <Link
-                      to="/profile"
+                      to={isSuperAdmin ? "/super-admin/profile" : "/profile"}
                       className="group flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 dark:hover:from-green-900/20 dark:hover:to-emerald-900/20 transition-all duration-200 hover:translate-x-1"
                     >
                       <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-200">
@@ -914,13 +1036,13 @@ const RoleBasedHeader = () => {
               <div className="relative" ref={notificationRef}>
                 <button
                   onClick={() => setIsNotificationOpen(!isNotificationOpen)}
-                  className={`relative p-2.5 rounded-xl transition-all duration-200 group ${isScrolled ? 'text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700' : 'text-white hover:text-white/80 hover:bg-white/10'}`}
+                  className={`relative p-2.5 rounded-xl transition-all duration-200 group ${isScrolled ? 'text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700' : isSuperAdmin ? 'text-white hover:text-white/90 hover:bg-white/10' : 'text-white hover:text-white/80 hover:bg-white/10'}`}
                 >
                   <svg className="w-6 h-6 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                   </svg>
                   {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-gradient-to-r from-red-500 to-rose-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium shadow-lg animate-pulse">
+                    <span className={`absolute -top-1 -right-1 text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium shadow-lg animate-pulse ${isSuperAdmin ? 'bg-white text-green-600 border border-green-200' : 'bg-gradient-to-r from-red-500 to-rose-500 text-white'}`}>
                       {unreadCount > 99 ? '99+' : unreadCount}
                     </span>
                   )}

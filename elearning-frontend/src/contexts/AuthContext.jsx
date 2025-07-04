@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { hasSuperAdminSession, getCurrentSessionUser } from '../utils/sessionManager';
 
 const AuthContext = createContext();
 
@@ -19,6 +20,19 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const checkAuth = () => {
       try {
+        // Check for Super Admin session first
+        if (hasSuperAdminSession()) {
+          const superAdminUser = getCurrentSessionUser();
+          const superAdminToken = localStorage.getItem('superAdminToken');
+
+          if (superAdminUser && superAdminToken) {
+            setUser(superAdminUser);
+            setToken(superAdminToken);
+            return;
+          }
+        }
+
+        // Check for regular user session
         const storedToken = localStorage.getItem('token');
         const storedUser = localStorage.getItem('user');
 
@@ -31,6 +45,8 @@ export const AuthProvider = ({ children }) => {
         // Clear invalid data
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        localStorage.removeItem('superAdminToken');
+        localStorage.removeItem('superAdminUser');
       } finally {
         setIsLoading(false);
       }
@@ -54,11 +70,19 @@ export const AuthProvider = ({ children }) => {
     try {
       setUser(null);
       setToken(null);
+
+      // Clear regular user session
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+
+      // Clear Super Admin session
+      localStorage.removeItem('superAdminToken');
+      localStorage.removeItem('superAdminUser');
+
       // Clear any other user-related data
       localStorage.removeItem('userSettings');
       localStorage.removeItem('demoModeEnabled');
+
       // Clear any demo tokens
       const currentToken = localStorage.getItem('token');
       if (currentToken?.includes('demo') || currentToken?.includes('mock')) {

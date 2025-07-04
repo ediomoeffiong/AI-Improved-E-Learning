@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { USER_ROLES } from '../../constants/roles';
 import { useGamification } from '../../contexts/GamificationContext';
 
 function AvailableCoursesSection({
@@ -26,10 +27,32 @@ function AvailableCoursesSection({
   enrolled,
   setModalCourse
 }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, getUserRole } = useAuth();
   const { userStats, addPoints } = useGamification();
   const [showAIRecommendations, setShowAIRecommendations] = useState(false);
   const [aiRecommendations, setAIRecommendations] = useState([]);
+
+  // Fallback check for Super Admin role directly from localStorage
+  const isSuperAdminFromStorage = () => {
+    try {
+      const superAdminUser = localStorage.getItem('superAdminUser');
+      if (superAdminUser) {
+        const userData = JSON.parse(superAdminUser);
+        return userData.role === USER_ROLES.SUPER_ADMIN || userData.role === USER_ROLES.SUPER_MODERATOR;
+      }
+    } catch (error) {
+      console.error('Error checking super admin from storage:', error);
+    }
+    return false;
+  };
+
+  // Get appropriate gradient based on user role
+  const getButtonGradient = () => {
+    if (getUserRole() === USER_ROLES.SUPER_ADMIN || getUserRole() === USER_ROLES.SUPER_MODERATOR || isSuperAdminFromStorage()) {
+      return 'bg-gradient-to-r from-blue-600 via-blue-700 to-red-500 hover:from-blue-700 hover:via-blue-800 hover:to-red-600';
+    }
+    return 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700';
+  };
 
   // Generate AI recommendations based on user activity
   useEffect(() => {
@@ -440,7 +463,7 @@ function AvailableCoursesSection({
         <div className="fixed bottom-40 right-8 z-50">
           <button
             onClick={() => setShowAIRecommendations(!showAIRecommendations)}
-            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110"
+            className={`${getButtonGradient()} text-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110`}
             title="AI Course Recommendations"
           >
             <span className="text-xl">🤖</span>

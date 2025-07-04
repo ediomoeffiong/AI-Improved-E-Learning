@@ -34,6 +34,18 @@ router.get('/', async (req, res) => {
       userRole = 'Student';
       isDemoMode = true;
       console.log('🎭 Using demo mode for notifications');
+    } else if (token && token.startsWith('mock-super-admin-token')) {
+      // Super Admin demo mode
+      userId = 'super-admin-demo';
+      userRole = 'Super Admin';
+      isDemoMode = true;
+      console.log('🎭 Using Super Admin demo mode for notifications');
+    } else if (token && token.startsWith('mock-super-moderator-token')) {
+      // Super Moderator demo mode
+      userId = 'super-moderator-demo';
+      userRole = 'Super Moderator';
+      isDemoMode = true;
+      console.log('🎭 Using Super Moderator demo mode for notifications');
     } else {
       // Try to verify the token
       try {
@@ -209,52 +221,149 @@ router.get('/', async (req, res) => {
     } else {
       // Mock notifications for demo mode
       const now = new Date(); // Define now for demo mode
-      const mockNotifications = [
-        {
-          id: 'mock_1',
-          type: 'user_approval',
-          title: 'New User Registration',
-          message: 'John Doe (Student) needs approval',
-          data: { userId: 'demo-user-1' },
-          timestamp: new Date(now.getTime() - 10 * 60 * 1000), // 10 minutes ago
-          isRead: false,
-          priority: 'high',
-          icon: 'user-plus'
-        },
-        {
-          id: 'mock_2',
-          type: 'enrollment',
-          title: 'New Course Enrollment',
-          message: 'Sarah Smith enrolled in React Fundamentals',
-          data: { enrollmentId: 'demo-enrollment-1' },
-          timestamp: new Date(now.getTime() - 30 * 60 * 1000), // 30 minutes ago
-          isRead: false,
-          priority: 'medium',
-          icon: 'academic-cap'
-        },
-        {
-          id: 'mock_3',
-          type: 'quiz_result',
-          title: 'Quiz Completed',
-          message: 'You scored 85% on JavaScript Basics',
-          data: { attemptId: 'demo-attempt-1' },
-          timestamp: new Date(now.getTime() - 2 * 60 * 60 * 1000), // 2 hours ago
-          isRead: true,
-          priority: 'medium',
-          icon: 'check-circle'
-        },
-        {
-          id: 'mock_4',
-          type: 'system',
-          title: 'Welcome to Demo Mode!',
-          message: 'You are viewing sample data for demonstration',
-          data: {},
-          timestamp: new Date(now.getTime() - 4 * 60 * 60 * 1000), // 4 hours ago
-          isRead: false,
-          priority: 'low',
-          icon: 'sparkles'
-        }
-      ];
+      let mockNotifications = [];
+
+      if (userRole === 'Super Admin' || userRole === 'Super Moderator') {
+        // Super Admin/Moderator specific notifications
+        mockNotifications = [
+          {
+            id: 'mock_admin_1',
+            type: 'user_approval',
+            title: 'New Institution Admin Registration',
+            message: 'Dr. Sarah Johnson (Admin) from University of Lagos needs approval',
+            data: { userId: 'demo-admin-1' },
+            timestamp: new Date(now.getTime() - 5 * 60 * 1000), // 5 minutes ago
+            isRead: false,
+            priority: 'high',
+            icon: 'user-plus'
+          },
+          {
+            id: 'mock_admin_2',
+            type: 'user_approval',
+            title: 'New Moderator Registration',
+            message: 'Prof. Michael Chen (Moderator) from Tech Institute needs approval',
+            data: { userId: 'demo-moderator-1' },
+            timestamp: new Date(now.getTime() - 15 * 60 * 1000), // 15 minutes ago
+            isRead: false,
+            priority: 'high',
+            icon: 'user-plus'
+          },
+          {
+            id: 'mock_admin_3',
+            type: 'system',
+            title: 'Platform Security Alert',
+            message: 'Multiple failed login attempts detected from IP 192.168.1.100',
+            data: { alertType: 'security' },
+            timestamp: new Date(now.getTime() - 25 * 60 * 1000), // 25 minutes ago
+            isRead: false,
+            priority: 'high',
+            icon: 'shield-exclamation'
+          },
+          {
+            id: 'mock_admin_4',
+            type: 'enrollment',
+            title: 'Bulk Course Enrollment',
+            message: '150 students enrolled in "Advanced React Development" course',
+            data: { enrollmentId: 'demo-bulk-enrollment-1' },
+            timestamp: new Date(now.getTime() - 45 * 60 * 1000), // 45 minutes ago
+            isRead: false,
+            priority: 'medium',
+            icon: 'academic-cap'
+          },
+          {
+            id: 'mock_admin_5',
+            type: 'system',
+            title: 'Server Performance Alert',
+            message: 'Database response time increased by 15% - monitoring required',
+            data: { alertType: 'performance' },
+            timestamp: new Date(now.getTime() - 1 * 60 * 60 * 1000), // 1 hour ago
+            isRead: false,
+            priority: 'medium',
+            icon: 'chart-bar'
+          },
+          {
+            id: 'mock_admin_6',
+            type: 'course_update',
+            title: 'New Course Published',
+            message: 'Machine Learning Fundamentals course has been published by Dr. AI Expert',
+            data: { courseId: 'demo-course-ml' },
+            timestamp: new Date(now.getTime() - 2 * 60 * 60 * 1000), // 2 hours ago
+            isRead: false,
+            priority: 'medium',
+            icon: 'book-open'
+          },
+          {
+            id: 'mock_admin_7',
+            type: 'system',
+            title: 'Backup Completed',
+            message: 'Daily system backup completed successfully at 3:00 AM',
+            data: { backupId: 'backup-2024-01-15' },
+            timestamp: new Date(now.getTime() - 3 * 60 * 60 * 1000), // 3 hours ago
+            isRead: true,
+            priority: 'low',
+            icon: 'cloud-arrow-up'
+          },
+          {
+            id: 'mock_admin_8',
+            type: 'system',
+            title: 'Welcome to Super Admin Demo!',
+            message: 'You are viewing sample administrative data for demonstration',
+            data: {},
+            timestamp: new Date(now.getTime() - 4 * 60 * 60 * 1000), // 4 hours ago
+            isRead: false,
+            priority: 'low',
+            icon: 'sparkles'
+          }
+        ];
+      } else {
+        // Student/default notifications
+        mockNotifications = [
+          {
+            id: 'mock_1',
+            type: 'user_approval',
+            title: 'New User Registration',
+            message: 'John Doe (Student) needs approval',
+            data: { userId: 'demo-user-1' },
+            timestamp: new Date(now.getTime() - 10 * 60 * 1000), // 10 minutes ago
+            isRead: false,
+            priority: 'high',
+            icon: 'user-plus'
+          },
+          {
+            id: 'mock_2',
+            type: 'enrollment',
+            title: 'New Course Enrollment',
+            message: 'Sarah Smith enrolled in React Fundamentals',
+            data: { enrollmentId: 'demo-enrollment-1' },
+            timestamp: new Date(now.getTime() - 30 * 60 * 1000), // 30 minutes ago
+            isRead: false,
+            priority: 'medium',
+            icon: 'academic-cap'
+          },
+          {
+            id: 'mock_3',
+            type: 'quiz_result',
+            title: 'Quiz Completed',
+            message: 'You scored 85% on JavaScript Basics',
+            data: { attemptId: 'demo-attempt-1' },
+            timestamp: new Date(now.getTime() - 2 * 60 * 60 * 1000), // 2 hours ago
+            isRead: true,
+            priority: 'medium',
+            icon: 'check-circle'
+          },
+          {
+            id: 'mock_4',
+            type: 'system',
+            title: 'Welcome to Demo Mode!',
+            message: 'You are viewing sample data for demonstration',
+            data: {},
+            timestamp: new Date(now.getTime() - 4 * 60 * 60 * 1000), // 4 hours ago
+            isRead: false,
+            priority: 'low',
+            icon: 'sparkles'
+          }
+        ];
+      }
 
       // Check read status from database for mock notifications too
       try {
@@ -305,6 +414,12 @@ router.put('/:id/read', async (req, res) => {
     if (token === 'demo-token' || !token) {
       // Demo mode - use default demo user
       userId = 'demo-user-id';
+    } else if (token && token.startsWith('mock-super-admin-token')) {
+      // Super Admin demo mode
+      userId = 'super-admin-demo';
+    } else if (token && token.startsWith('mock-super-moderator-token')) {
+      // Super Moderator demo mode
+      userId = 'super-moderator-demo';
     } else {
       // Try to verify the token
       try {
@@ -341,6 +456,16 @@ router.put('/mark-all-read', async (req, res) => {
       // Demo mode - use default demo user
       userId = 'demo-user-id';
       userRole = 'Student';
+      isDemoMode = true;
+    } else if (token && token.startsWith('mock-super-admin-token')) {
+      // Super Admin demo mode
+      userId = 'super-admin-demo';
+      userRole = 'Super Admin';
+      isDemoMode = true;
+    } else if (token && token.startsWith('mock-super-moderator-token')) {
+      // Super Moderator demo mode
+      userId = 'super-moderator-demo';
+      userRole = 'Super Moderator';
       isDemoMode = true;
     } else {
       // Try to verify the token
@@ -413,7 +538,15 @@ router.put('/mark-all-read', async (req, res) => {
       notifications.push(...systemNotifications);
     } else {
       // Mock notification IDs for demo mode
-      const mockNotificationIds = ['mock_1', 'mock_2', 'mock_3', 'mock_4'];
+      let mockNotificationIds;
+      if (userRole === 'Super Admin' || userRole === 'Super Moderator') {
+        mockNotificationIds = [
+          'mock_admin_1', 'mock_admin_2', 'mock_admin_3', 'mock_admin_4',
+          'mock_admin_5', 'mock_admin_6', 'mock_admin_7', 'mock_admin_8'
+        ];
+      } else {
+        mockNotificationIds = ['mock_1', 'mock_2', 'mock_3', 'mock_4'];
+      }
       mockNotificationIds.forEach(id => {
         notifications.push({ id });
       });
