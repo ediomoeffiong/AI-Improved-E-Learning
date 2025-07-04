@@ -146,7 +146,7 @@ const DashboardTabs = ({ activeTab, onTabChange, dashboardData }) => {
   };
 
   return (
-    <div className="mb-6 sm:mb-8">
+    <div className="mb-12 sm:mb-16">
       <div className="relative">
         {/* Enhanced Tab Navigation Container */}
         <nav
@@ -230,7 +230,7 @@ const DashboardTabs = ({ activeTab, onTabChange, dashboardData }) => {
 
         {/* Keyboard Navigation Hint */}
         {focusedTab && (
-          <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 dark:text-gray-400 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm px-2 py-1 rounded-lg border border-gray-200/50 dark:border-gray-700/50 z-50">
+          <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 dark:text-gray-400 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm px-3 py-2 rounded-lg border border-gray-200/50 dark:border-gray-700/50 shadow-lg z-50">
             Use ← → keys to navigate, Enter to select
           </div>
         )}
