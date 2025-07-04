@@ -648,27 +648,134 @@ html {
 /* Enhanced Tab Navigation Styles */
 .tab-navigation {
   position: relative;
-  background: rgb(255, 255, 255);
+  background:
+    radial-gradient(circle at 30% 20%, rgba(99, 102, 241, 0.4) 0%, transparent 60%),
+    radial-gradient(circle at 70% 80%, rgba(59, 130, 246, 0.35) 0%, transparent 60%),
+    radial-gradient(circle at 20% 70%, rgba(139, 92, 246, 0.3) 0%, transparent 50%),
+    linear-gradient(135deg,
+      rgba(99, 102, 241, 0.8) 0%,
+      rgba(139, 92, 246, 0.7) 25%,
+      rgba(59, 130, 246, 0.7) 50%,
+      rgba(168, 85, 247, 0.75) 75%,
+      rgba(99, 102, 241, 0.8) 100%
+    );
   backdrop-filter: blur(20px);
   border-radius: 24px;
   padding: 6px;
-  border: 1px solid rgb(209, 213, 219);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  box-shadow:
+    0 8px 32px rgba(99, 102, 241, 0.25),
+    0 4px 16px rgba(139, 92, 246, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  overflow: hidden;
+}
+
+.tab-navigation::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    rgba(99, 102, 241, 0.2),
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  animation: shimmer 4s infinite;
+  pointer-events: none;
 }
 
 .dark .tab-navigation {
-  background: rgb(31, 41, 55);
-  border: 1px solid rgb(75, 85, 99);
+  background:
+    radial-gradient(circle at 30% 20%, rgba(99, 102, 241, 0.5) 0%, transparent 60%),
+    radial-gradient(circle at 70% 80%, rgba(59, 130, 246, 0.4) 0%, transparent 60%),
+    radial-gradient(circle at 20% 70%, rgba(139, 92, 246, 0.35) 0%, transparent 50%),
+    linear-gradient(135deg,
+      rgba(30, 27, 75, 0.9) 0%,
+      rgba(45, 55, 130, 0.85) 25%,
+      rgba(67, 56, 202, 0.8) 50%,
+      rgba(79, 70, 229, 0.85) 75%,
+      rgba(99, 102, 241, 0.9) 100%
+    );
+  border: 1px solid rgba(139, 92, 246, 0.5);
+  box-shadow:
+    0 8px 32px rgba(99, 102, 241, 0.3),
+    0 4px 16px rgba(139, 92, 246, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.dark .tab-navigation::before {
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    rgba(99, 102, 241, 0.3),
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    left: 100%;
+    opacity: 0;
+  }
+}
+
+/* Add a subtle floating animation for the navigation */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+.tab-navigation {
+  animation: float 6s ease-in-out infinite;
 }
 
 .tab-slider {
   position: absolute;
   top: 6px;
   bottom: 6px;
-  background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+  background: linear-gradient(135deg,
+    #6366f1 0%,
+    #8b5cf6 25%,
+    #3b82f6 50%,
+    #6366f1 75%,
+    #8b5cf6 100%
+  );
   border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  box-shadow:
+    0 8px 25px rgba(99, 102, 241, 0.4),
+    0 4px 12px rgba(139, 92, 246, 0.3),
+    0 2px 8px rgba(59, 130, 246, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
   transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tab-slider::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent);
+  border-radius: 16px;
+  pointer-events: none;
 }
 
 .tab-button {
@@ -679,6 +786,7 @@ html {
 
 .tab-button:hover {
   transform: translateY(-1px);
+  backdrop-filter: blur(8px);
 }
 
 .tab-button.active {
