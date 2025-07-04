@@ -69,29 +69,29 @@ const RoleBasedHeader = () => {
           name: 'Course Management',
           type: 'dropdown',
           items: [
-            { name: '📚 All Courses', href: '/super-admin/courses', description: 'View and manage all courses' },
-            { name: '➕ Create Course', href: '/super-admin/courses/create', description: 'Form to create new courses' },
-            { name: '📂 Categories', href: '/super-admin/categories', description: 'Manage course categories' },
-            { name: '📊 Course Analytics', href: '/super-admin/course-analytics', description: 'View course performance metrics' }
+            { name: 'All Courses', href: '/super-admin/courses', description: 'View and manage all courses', icon: '📚' },
+            { name: 'Create Course', href: '/super-admin/courses/create', description: 'Form to create new courses', icon: '➕' },
+            { name: 'Categories', href: '/super-admin/categories', description: 'Manage course categories', icon: '📂' },
+            { name: 'Course Analytics', href: '/super-admin/course-analytics', description: 'View course performance metrics', icon: '📊' }
           ]
         },
         {
           name: 'Quiz Management',
           type: 'dropdown',
           items: [
-            { name: '📝 All Quizzes', href: '/super-admin/quizzes', description: 'View and manage all quizzes' },
-            { name: '➕ Create Quiz', href: '/super-admin/quizzes/create', description: 'Form to create new quizzes' },
-            { name: '📈 Quiz Results', href: '/super-admin/quiz-results', description: 'View and analyze quiz performance' }
+            { name: 'All Quizzes', href: '/super-admin/quizzes', description: 'View and manage all quizzes', icon: '📝' },
+            { name: 'Create Quiz', href: '/super-admin/quizzes/create', description: 'Form to create new quizzes', icon: '➕' },
+            { name: 'Quiz Results', href: '/super-admin/quiz-results', description: 'View and analyze quiz performance', icon: '📈' }
           ]
         },
         {
           name: 'Progress',
           type: 'dropdown',
           items: [
-            { name: '📊 Progress Overview', href: '/super-admin/progress-overview', description: 'Aggregate progress metrics' },
-            { name: '✅ Course Completions', href: '/super-admin/course-completions', description: 'Detailed completion tracking' },
-            { name: '🛤️ Learning Paths', href: '/super-admin/learning-paths', description: 'Monitor learning path progress' },
-            { name: '🔧 Intervention Tools', href: '/super-admin/intervention-tools', description: 'Help struggling users' }
+            { name: 'Progress Overview', href: '/super-admin/progress-overview', description: 'Aggregate progress metrics', icon: '📊' },
+            { name: 'Course Completions', href: '/super-admin/course-completions', description: 'Detailed completion tracking', icon: '✅' },
+            { name: 'Learning Paths', href: '/super-admin/learning-paths', description: 'Monitor learning path progress', icon: '🛤️' },
+            { name: 'Intervention Tools', href: '/super-admin/intervention-tools', description: 'Help struggling users', icon: '🔧' }
           ]
         },
         { name: 'User Management', href: '/super-admin/users', type: 'link' },
@@ -146,21 +146,21 @@ const RoleBasedHeader = () => {
             name: 'User Management',
             type: 'dropdown',
             items: [
-              { name: '✅ User Approvals', href: '/admin/approvals', description: 'Approve pending user registrations' },
-              { name: '🎓 Students', href: '/admin/students', description: 'Manage student accounts' },
-              { name: '👨‍🏫 Instructors', href: '/admin/instructors', description: 'Manage instructor accounts' },
-              { name: '🛡️ Moderators', href: '/admin/moderators', description: 'Manage moderator accounts' },
-              { name: '📊 User Reports', href: '/admin/user-reports', description: 'View user activity reports' }
+              { name: 'User Approvals', href: '/admin/approvals', description: 'Approve pending user registrations', icon: '✅' },
+              { name: 'Students', href: '/admin/students', description: 'Manage student accounts', icon: '🎓' },
+              { name: 'Instructors', href: '/admin/instructors', description: 'Manage instructor accounts', icon: '👨‍🏫' },
+              { name: 'Moderators', href: '/admin/moderators', description: 'Manage moderator accounts', icon: '🛡️' },
+              { name: 'User Reports', href: '/admin/user-reports', description: 'View user activity reports', icon: '📊' }
             ]
           },
           {
             name: 'Institution Management',
             type: 'dropdown',
             items: [
-              { name: '⚙️ Institution Settings', href: '/admin/institution-settings', description: 'Configure institution settings' },
-              { name: '🏢 Department Management', href: '/admin/departments', description: 'Manage institution departments' },
-              { name: '📚 Course Oversight', href: '/admin/course-oversight', description: 'Oversee institution courses' },
-              { name: '📋 Institution Reports', href: '/admin/reports', description: 'Generate institution reports' }
+              { name: 'Institution Settings', href: '/admin/institution-settings', description: 'Configure institution settings', icon: '⚙️' },
+              { name: 'Department Management', href: '/admin/departments', description: 'Manage institution departments', icon: '🏢' },
+              { name: 'Course Oversight', href: '/admin/course-oversight', description: 'Oversee institution courses', icon: '📚' },
+              { name: 'Institution Reports', href: '/admin/reports', description: 'Generate institution reports', icon: '📋' }
             ]
           }
         ];
@@ -172,20 +172,20 @@ const RoleBasedHeader = () => {
             name: 'User Monitoring',
             type: 'dropdown',
             items: [
-              { name: '👥 Assigned Users', href: '/moderator/users', description: 'Monitor assigned users' },
-              { name: '📈 User Activities', href: '/moderator/activities', description: 'Track user activities and engagement' },
-              { name: '📊 User Reports', href: '/moderator/user-reports', description: 'Generate user activity reports' },
-              { name: '🤝 User Assistance', href: '/moderator/assistance', description: 'Provide support to users' }
+              { name: 'Assigned Users', href: '/moderator/users', description: 'Monitor assigned users', icon: '👥' },
+              { name: 'User Activities', href: '/moderator/activities', description: 'Track user activities and engagement', icon: '📈' },
+              { name: 'User Reports', href: '/moderator/user-reports', description: 'Generate user activity reports', icon: '📊' },
+              { name: 'User Assistance', href: '/moderator/assistance', description: 'Provide support to users', icon: '🤝' }
             ]
           },
           {
             name: 'Content Moderation',
             type: 'dropdown',
             items: [
-              { name: '🚩 Flagged Items', href: '/moderator/flagged', description: 'Review flagged content and activities' },
-              { name: '📝 Content Review', href: '/moderator/content-review', description: 'Review and moderate user content' },
-              { name: '⚠️ Violation Reports', href: '/moderator/violations', description: 'Handle policy violation reports' },
-              { name: '🔧 Moderation Tools', href: '/moderator/tools', description: 'Access moderation tools and settings' }
+              { name: 'Flagged Items', href: '/moderator/flagged', description: 'Review flagged content and activities', icon: '🚩' },
+              { name: 'Content Review', href: '/moderator/content-review', description: 'Review and moderate user content', icon: '📝' },
+              { name: 'Violation Reports', href: '/moderator/violations', description: 'Handle policy violation reports', icon: '⚠️' },
+              { name: 'Moderation Tools', href: '/moderator/tools', description: 'Access moderation tools and settings', icon: '🔧' }
             ]
           }
         ];
@@ -197,30 +197,30 @@ const RoleBasedHeader = () => {
             name: 'Course Management',
             type: 'dropdown',
             items: [
-              { name: '📚 My Courses', href: '/instructor/courses', description: 'Manage your created courses' },
-              { name: '➕ Create Course', href: '/instructor/courses/create', description: 'Create a new course' },
-              { name: '📊 Course Analytics', href: '/instructor/analytics', description: 'View course performance metrics' },
-              { name: '📄 Course Materials', href: '/instructor/materials', description: 'Manage course resources and materials' }
+              { name: 'My Courses', href: '/instructor/courses', description: 'Manage your created courses', icon: '📚' },
+              { name: 'Create Course', href: '/instructor/courses/create', description: 'Create a new course', icon: '➕' },
+              { name: 'Course Analytics', href: '/instructor/analytics', description: 'View course performance metrics', icon: '📊' },
+              { name: 'Course Materials', href: '/instructor/materials', description: 'Manage course resources and materials', icon: '📄' }
             ]
           },
           {
             name: 'Student Management',
             type: 'dropdown',
             items: [
-              { name: '🎓 My Students', href: '/instructor/students', description: 'View and manage your students' },
-              { name: '📈 Student Progress', href: '/instructor/student-progress', description: 'Track student learning progress' },
-              { name: '📝 Grade Management', href: '/instructor/grades', description: 'Manage student grades and assessments' },
-              { name: '📋 Student Reports', href: '/instructor/student-reports', description: 'Generate student performance reports' }
+              { name: 'My Students', href: '/instructor/students', description: 'View and manage your students', icon: '🎓' },
+              { name: 'Student Progress', href: '/instructor/student-progress', description: 'Track student learning progress', icon: '📈' },
+              { name: 'Grade Management', href: '/instructor/grades', description: 'Manage student grades and assessments', icon: '📝' },
+              { name: 'Student Reports', href: '/instructor/student-reports', description: 'Generate student performance reports', icon: '📋' }
             ]
           },
           {
             name: 'Content Creation',
             type: 'dropdown',
             items: [
-              { name: '✏️ Create Content', href: '/instructor/create', description: 'Create new course content' },
-              { name: '📝 Quiz Builder', href: '/instructor/quiz-builder', description: 'Create and manage quizzes' },
-              { name: '📋 Assignment Creator', href: '/instructor/assignments', description: 'Create and manage assignments' },
-              { name: '🎬 Media Library', href: '/instructor/media', description: 'Manage course videos and media' }
+              { name: 'Create Content', href: '/instructor/create', description: 'Create new course content', icon: '✏️' },
+              { name: 'Quiz Builder', href: '/instructor/quiz-builder', description: 'Create and manage quizzes', icon: '📝' },
+              { name: 'Assignment Creator', href: '/instructor/assignments', description: 'Create and manage assignments', icon: '📋' },
+              { name: 'Media Library', href: '/instructor/media', description: 'Manage course videos and media', icon: '🎬' }
             ]
           }
         ];
@@ -233,33 +233,33 @@ const RoleBasedHeader = () => {
             name: 'Courses',
             type: 'dropdown',
             items: [
-              { name: '📊 Course Dashboard', href: '/courses/dashboard', description: 'View your course progress and overview' },
-              { name: '📚 All Courses', href: '/courses', description: 'Browse all available courses' },
-              { name: '🎓 My Courses', href: '/courses/my-courses', description: 'View your enrolled courses' },
-              { name: '📂 Course Categories', href: '/courses/categories', description: 'Browse courses by category' },
-              { name: '🔍 Course Search', href: '/courses/search', description: 'Search for specific courses' }
+              { name: 'Course Dashboard', href: '/courses/dashboard', description: 'View your course progress and overview', icon: '📊' },
+              { name: 'All Courses', href: '/courses', description: 'Browse all available courses', icon: '📚' },
+              { name: 'My Courses', href: '/courses/my-courses', description: 'View your enrolled courses', icon: '🎓' },
+              { name: 'Course Categories', href: '/courses/categories', description: 'Browse courses by category', icon: '📂' },
+              { name: 'Course Search', href: '/courses/search', description: 'Search for specific courses', icon: '🔍' }
             ]
           },
           {
             name: 'Quizzes',
             type: 'dropdown',
             items: [
-              { name: '📊 Quiz Dashboard', href: '/quiz/dashboard', description: 'View your quiz performance overview' },
-              { name: '📝 Available Quizzes', href: '/quizzes', description: 'Browse all available quizzes' },
-              { name: '📈 My Quiz Results', href: '/quizzes/results', description: 'View your quiz scores and history' },
-              { name: '🎯 Practice Tests', href: '/quizzes/practice', description: 'Take practice quizzes' },
-              { name: '📂 Quiz Categories', href: '/quizzes/categories', description: 'Browse quizzes by subject' }
+              { name: 'Quiz Dashboard', href: '/quiz/dashboard', description: 'View your quiz performance overview', icon: '📊' },
+              { name: 'Available Quizzes', href: '/quizzes', description: 'Browse all available quizzes', icon: '📝' },
+              { name: 'My Quiz Results', href: '/quizzes/results', description: 'View your quiz scores and history', icon: '📈' },
+              { name: 'Practice Tests', href: '/quizzes/practice', description: 'Take practice quizzes', icon: '🎯' },
+              { name: 'Quiz Categories', href: '/quizzes/categories', description: 'Browse quizzes by subject', icon: '📂' }
             ]
           },
           {
             name: 'Progress',
             type: 'dropdown',
             items: [
-              { name: '📊 Progress Dashboard', href: '/progress/dashboard', description: 'View your overall learning progress' },
-              { name: '📋 Performance Reports', href: '/progress/reports', description: 'Detailed performance analytics' },
-              { name: '📝 Activity Logs', href: '/progress/activity', description: 'View your learning activity history' },
-              { name: '🏆 Achievements', href: '/progress/achievements', description: 'View your earned badges and achievements' },
-              { name: '💡 Personalized Recommendations', href: '/progress/recommendations', description: 'Get AI-powered learning suggestions' }
+              { name: 'Progress Dashboard', href: '/progress/dashboard', description: 'View your overall learning progress', icon: '📊' },
+              { name: 'Performance Reports', href: '/progress/reports', description: 'Detailed performance analytics', icon: '📋' },
+              { name: 'Activity Logs', href: '/progress/activity', description: 'View your learning activity history', icon: '📝' },
+              { name: 'Achievements', href: '/progress/achievements', description: 'View your earned badges and achievements', icon: '🏆' },
+              { name: 'Personalized Recommendations', href: '/progress/recommendations', description: 'Get AI-powered learning suggestions', icon: '💡' }
             ]
           }
         ];
